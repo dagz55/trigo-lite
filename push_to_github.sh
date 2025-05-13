@@ -4,7 +4,7 @@
 # Target repository: dagz55/trigo-lite.git
 
 REPO_URL="https://github.com/dagz55/trigo-lite.git"
-BRANCH_NAME="main" # Or your preferred default branch, e.g., master
+BRANCH_NAME="master" # Or your preferred default branch
 
 # Check if git is installed
 if ! command -v git &> /dev/null; then
@@ -17,7 +17,7 @@ if [ ! -d ".git" ]; then
     echo "Initializing new Git repository..."
     git init -b "$BRANCH_NAME"
     if [ $? -ne 0 ]; then
-        echo "Failed to initialize git repository. If a default branch name other than 'main' was created (e.g. 'master'), adjust BRANCH_NAME in this script."
+        echo "Failed to initialize git repository. If a default branch name other than '$BRANCH_NAME' was created, adjust BRANCH_NAME in this script."
         exit 1
     fi
     echo "Git repository initialized on branch '$BRANCH_NAME'."
@@ -52,11 +52,11 @@ COMMIT_MESSAGE="$DEFAULT_COMMIT_MESSAGE"
 if git diff --staged --quiet; then
     echo "No changes staged for commit. If you want to push existing commits, you can run 'git push' manually or re-run this script after making new changes."
 else
-    read -p "Enter commit message (default: \"$DEFAULT_COMMIT_MESSAGE\"): " USER_INPUT_MESSAGE
+    read -p "Enter commit message (default: "$DEFAULT_COMMIT_MESSAGE"): " USER_INPUT_MESSAGE
     if [ ! -z "$USER_INPUT_MESSAGE" ]; then
         COMMIT_MESSAGE="$USER_INPUT_MESSAGE"
     fi
-    echo "Committing files with message: \"$COMMIT_MESSAGE\""
+    echo "Committing files with message: "$COMMIT_MESSAGE""
     git commit -m "$COMMIT_MESSAGE"
     if [ $? -ne 0 ]; then
         echo "Failed to commit files. This might be because there are no actual changes to commit, or a git pre-commit hook failed."
@@ -74,7 +74,7 @@ if [ $? -ne 0 ]; then
     echo "Failed to push to GitHub. Please ensure:"
     echo "1. The remote repository $REPO_URL exists and you have push permissions."
     echo "2. Your local branch '$BRANCH_NAME' is up-to-date or can be fast-forwarded."
-    echo "3. You have authenticated with Git for GitHub."
+    echo "3. You have authenticated with Git for GitHub (e.g., using a Personal Access Token or SSH key)."
     exit 1
 fi
 
