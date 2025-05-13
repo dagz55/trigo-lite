@@ -4,16 +4,16 @@
 import type { MapRef, ViewState } from 'react-map-gl';
 import Map, { Marker, Popup, Source, Layer, NavigationControl, FullscreenControl, ScaleControl } from 'react-map-gl';
 import * as React from 'react';
-import type { Trider, RideRequest, Coordinates } from '@/types';
+import type { Trider, RideRequest, Coordinates, TodaZone } from '@/types';
 import { Bike, UserRound, MapPin } from 'lucide-react';
-import type { MapLayerMouseEvent, LngLatLike } from 'mapbox-gl';
+import { createGeoJSONCircle } from '@/lib/geoUtils';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 // Las Piñas City, Philippines Coordinates
 const DEFAULT_LONGITUDE = 120.9938;
 const DEFAULT_LATITUDE = 14.4445;
-const DEFAULT_ZOOM = 13; // Adjusted zoom for a city view
+const DEFAULT_ZOOM = 12; 
 
 interface MapboxMapProps {
   initialViewState?: Partial<ViewState>;
@@ -25,13 +25,14 @@ interface MapboxMapProps {
   onSelectRideRequest: (rideRequest: RideRequest | null) => void;
   routeGeoJson: GeoJSON.FeatureCollection | null;
   heatmapData: GeoJSON.FeatureCollection | null;
+  todaZones: TodaZone[];
 }
 
 const triderStatusColors: Record<Trider['status'], string> = {
-  available: 'text-accent-foreground bg-accent', // Lime green
-  busy: 'text-destructive-foreground bg-destructive', // Red
-  offline: 'text-muted-foreground bg-muted', // Gray
-  assigned: 'text-primary-foreground bg-primary', // Teal
+  available: 'text-accent-foreground bg-accent', 
+  busy: 'text-destructive-foreground bg-destructive', 
+  offline: 'text-muted-foreground bg-muted',
+  assigned: 'text-primary-foreground bg-primary',
 };
 
 const rideRequestStatusColors: Record<RideRequest['status'], string> = {
@@ -53,6 +54,7 @@ export function MapboxMap({
   onSelectRideRequest,
   routeGeoJson,
   heatmapData,
+  todaZones,
 }: MapboxMapProps) {
   const [viewState, setViewState] = React.useState<Partial<ViewState>>({
     longitude: DEFAULT_LONGITUDE,
@@ -60,7 +62,7 @@ export function MapboxMap({
     zoom: DEFAULT_ZOOM,
     pitch: 30,
     bearing: 0,
-    ...initialViewState, // initialViewState from props will override defaults
+    ...initialViewState,
   });
 
   const [popupInfo, setPopupInfo] = React.useState<{
@@ -72,29 +74,26 @@ export function MapboxMap({
 
   const mapRef = React.useRef<MapRef>(null);
   
-  // Default primary color from globals.css: hsl(180, 100%, 25.1%)
-  const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(180, 100%, 25.1%)');
+  const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(180, 100%, 25.1%)'); // Default HSL for teal
 
   React.useEffect(() => {
     if (!MAPBOX_TOKEN) {
       console.error("Mapbox token is not configured. Set NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN.");
     }
-    
-    // Resolve CSS variable for primary color
     if (typeof window !== 'undefined') {
       const primaryColorVar = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
       if (primaryColorVar) {
-        // primaryColorVar is typically "H S% L%" or "H S L"
-        const parts = primaryColorVar.split(' ');
+        const parts = primaryColorVar.split(' ').map(p => p.trim());
         if (parts.length === 3) {
-           // Ensure saturation and lightness have '%'
+          const h = parts[0];
           const s = parts[1].endsWith('%') ? parts[1] : `${parts[1]}%`;
           const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`;
-          setResolvedPrimaryColor(`hsl(${parts[0]}, ${s}, ${l})`);
+          setResolvedPrimaryColor(`hsl(${h}, ${s}, ${l})`);
         } else {
-            // Fallback if format is unexpected, though unlikely with current globals.css
-            console.warn("Could not parse --primary CSS variable for Mapbox:", primaryColorVar);
+           setResolvedPrimaryColor('teal'); // Fallback color
         }
+      } else {
+        setResolvedPrimaryColor('teal'); // Fallback color
       }
     }
   }, []);
@@ -109,6 +108,7 @@ export function MapboxMap({
         <>
           <p>Status: <span className={`px-2 py-0.5 rounded-full text-xs ${triderStatusColors[trider.status]}`}>{trider.status}</span></p>
           <p>Vehicle: {trider.vehicleType || 'N/A'}</p>
+          <p>TODA Zone: {trider.todaZoneName || 'N/A'}</p>
         </>
       )
     });
@@ -117,6 +117,7 @@ export function MapboxMap({
 
   const handleRideRequestClick = (request: RideRequest) => {
     onSelectRideRequest(request);
+    const pickupZone = todaZones.find(z => z.id === request.pickupTodaZoneId);
     setPopupInfo({
       longitude: request.pickupLocation.longitude,
       latitude: request.pickupLocation.latitude,
@@ -126,11 +127,20 @@ export function MapboxMap({
           <p>Status: <span className={`px-2 py-0.5 rounded-full text-xs ${rideRequestStatusColors[request.status]}`}>{request.status}</span></p>
           <p>From: {request.pickupAddress || `${request.pickupLocation.latitude.toFixed(4)}, ${request.pickupLocation.longitude.toFixed(4)}`}</p>
           <p>To: {request.dropoffAddress || `${request.dropoffLocation.latitude.toFixed(4)}, ${request.dropoffLocation.longitude.toFixed(4)}`}</p>
+          {request.fare && <p>Fare: ₱{request.fare.toFixed(2)}</p>}
+          {pickupZone && <p>Pickup Zone: {pickupZone.name}</p>}
         </>
       )
     });
      mapRef.current?.flyTo({ center: [request.pickupLocation.longitude, request.pickupLocation.latitude], zoom: 14 });
   };
+
+  const todaZoneFeatures: GeoJSON.FeatureCollection<GeoJSON.Polygon> = React.useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: todaZones.map(zone => createGeoJSONCircle([zone.center.longitude, zone.center.latitude], zone.radiusKm))
+    };
+  }, [todaZones]);
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -140,7 +150,7 @@ export function MapboxMap({
     );
   }
 
-  const routeLayer: GeoJSON.LineString | any = { // any for LayerProps type issue
+  const routeLayer: any = {
     id: 'route',
     type: 'line',
     source: 'route',
@@ -149,13 +159,13 @@ export function MapboxMap({
       'line-cap': 'round',
     },
     paint: {
-      'line-color': resolvedPrimaryColor, // Use resolved HSL color
+      'line-color': resolvedPrimaryColor,
       'line-width': 6,
       'line-opacity': 0.8,
     },
   };
   
-  const heatmapLayer: GeoJSON.CircleLayer | any = { // any for LayerProps type issue
+  const heatmapLayer: any = {
     id: 'heatmap',
     type: 'heatmap',
     source: 'heatmap-data',
@@ -179,6 +189,50 @@ export function MapboxMap({
     }
   };
 
+  const todaZoneLayer: any = {
+    id: 'toda-zones',
+    type: 'fill',
+    source: 'toda-zones-source',
+    paint: {
+      'fill-color': resolvedPrimaryColor,
+      'fill-opacity': 0.1,
+      'fill-outline-color': resolvedPrimaryColor,
+    }
+  };
+   const todaZoneLabelLayer: any = {
+    id: 'toda-zone-labels',
+    type: 'symbol',
+    source: 'toda-zones-labels-source', // Needs separate source with point geometry
+    layout: {
+      'text-field': ['get', 'name'],
+      'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+      'text-offset': [0, 0.6],
+      'text-anchor': 'top',
+      'text-size': 10,
+    },
+    paint: {
+      'text-color': 'hsl(var(--foreground))',
+      'text-halo-color': 'hsl(var(--background))',
+      'text-halo-width': 1,
+    }
+  };
+
+  const todaZoneLabelFeatures: GeoJSON.FeatureCollection<GeoJSON.Point> = React.useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: todaZones.map(zone => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [zone.center.longitude, zone.center.latitude]
+        },
+        properties: {
+          name: zone.name
+        }
+      }))
+    };
+  }, [todaZones]);
+
 
   return (
     <Map
@@ -186,13 +240,22 @@ export function MapboxMap({
       ref={mapRef}
       onMove={evt => setViewState(evt.viewState)}
       style={{ width: '100%', height: '100%' }}
-      mapStyle="mapbox://styles/mapbox/streets-v12" // Or use a custom style: mapbox://styles/your_username/your_style_id
+      mapStyle="mapbox://styles/mapbox/streets-v12"
       mapboxAccessToken={MAPBOX_TOKEN}
       attributionControl={true}
     >
       <FullscreenControl position="top-right" />
       <NavigationControl position="top-right" />
       <ScaleControl />
+
+      <Source id="toda-zones-source" type="geojson" data={todaZoneFeatures}>
+        {/* @ts-ignore */}
+        <Layer {...todaZoneLayer} />
+      </Source>
+      <Source id="toda-zones-labels-source" type="geojson" data={todaZoneLabelFeatures}>
+        {/* @ts-ignore */}
+        <Layer {...todaZoneLabelLayer} />
+      </Source>
 
       {triders.map(trider => (
         <Marker
@@ -210,24 +273,28 @@ export function MapboxMap({
 
       {rideRequests.map(request => (
         <React.Fragment key={`ride-${request.id}`}>
-          <Marker
-            longitude={request.pickupLocation.longitude}
-            latitude={request.pickupLocation.latitude}
-            onClick={() => handleRideRequestClick(request)}
-            style={{ cursor: 'pointer' }}
-            offset={[0, -15]}
-          >
-            <MapPin size={30} className="text-green-500" fill="currentColor" />
-          </Marker>
-          <Marker
-            longitude={request.dropoffLocation.longitude}
-            latitude={request.dropoffLocation.latitude}
-            onClick={() => handleRideRequestClick(request)}
-            style={{ cursor: 'pointer' }}
-            offset={[0, -15]}
-          >
-            <MapPin size={30} className="text-red-500" fill="currentColor" />
-          </Marker>
+          {request.status === 'pending' || request.status === 'assigned' || request.status === 'in-progress' ? (
+            <>
+            <Marker
+              longitude={request.pickupLocation.longitude}
+              latitude={request.pickupLocation.latitude}
+              onClick={() => handleRideRequestClick(request)}
+              style={{ cursor: 'pointer' }}
+              offset={[0, -15]}
+            >
+              <MapPin size={30} className="text-green-500" fill="currentColor" />
+            </Marker>
+            <Marker
+              longitude={request.dropoffLocation.longitude}
+              latitude={request.dropoffLocation.latitude}
+              onClick={() => handleRideRequestClick(request)}
+              style={{ cursor: 'pointer' }}
+              offset={[0, -15]}
+            >
+              <MapPin size={30} className="text-red-500" fill="currentColor" />
+            </Marker>
+            </>
+          ) : null}
         </React.Fragment>
       ))}
       
@@ -237,15 +304,16 @@ export function MapboxMap({
           latitude={popupInfo.latitude}
           onClose={() => {
             setPopupInfo(null);
-            onSelectTrider(null);
-            onSelectRideRequest(null);
+            // Not deselecting here to keep selection in lists
+            // onSelectTrider(null); 
+            // onSelectRideRequest(null);
           }}
           closeButton={true}
           closeOnClick={false}
           anchor="bottom"
           offset={30}
         >
-          <div className="p-2">
+          <div className="p-2 max-w-xs">
             <h3 className="font-semibold text-md mb-1">{popupInfo.title}</h3>
             {popupInfo.details}
           </div>
@@ -254,14 +322,14 @@ export function MapboxMap({
 
       {routeGeoJson && (
         <Source id="route" type="geojson" data={routeGeoJson}>
-           {/* @ts-ignore LayerProps type mismatch with Mapbox GL JS Layer type */}
+           {/* @ts-ignore */}
           <Layer {...routeLayer} />
         </Source>
       )}
 
       {heatmapData && (
          <Source id="heatmap-data" type="geojson" data={heatmapData}>
-          {/* @ts-ignore LayerProps type mismatch with Mapbox GL JS Layer type */}
+          {/* @ts-ignore */}
           <Layer {...heatmapLayer} />
         </Source>
       )}

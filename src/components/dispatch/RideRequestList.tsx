@@ -1,6 +1,7 @@
+
 "use client";
 
-import type { RideRequest } from '@/types';
+import type { RideRequest, TodaZone } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -13,6 +14,7 @@ interface RideRequestListProps {
   rideRequests: RideRequest[];
   selectedRideRequestId: string | null;
   onSelectRideRequest: (request: RideRequest) => void;
+  todaZones: TodaZone[];
 }
 
 const statusStyles: Record<RideRequest['status'], string> = {
@@ -27,9 +29,10 @@ interface RideRequestItemProps {
   request: RideRequest;
   isSelected: boolean;
   onSelect: () => void;
+  pickupZoneName?: string;
 }
 
-function RideRequestItem({ request, isSelected, onSelect }: RideRequestItemProps) {
+function RideRequestItem({ request, isSelected, onSelect, pickupZoneName }: RideRequestItemProps) {
   const [formattedTime, setFormattedTime] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -67,9 +70,12 @@ function RideRequestItem({ request, isSelected, onSelect }: RideRequestItemProps
               <span className="truncate">To: {request.dropoffAddress || `(${request.dropoffLocation.latitude.toFixed(3)}, ${request.dropoffLocation.longitude.toFixed(3)})`}</span>
             </div>
           </div>
+           <p className="text-xs text-muted-foreground mt-1">
+            Zone: {pickupZoneName || "N/A"}
+          </p>
           <p className="text-xs text-muted-foreground mt-1.5">
             {formattedTime || 'Calculating time...'}
-            {request.fare && ` - $${request.fare.toFixed(2)}`}
+            {request.fare && ` - ₱${request.fare.toFixed(2)}`}
           </p>
         </div>
       </div>
@@ -78,11 +84,11 @@ function RideRequestItem({ request, isSelected, onSelect }: RideRequestItemProps
 }
 
 
-export function RideRequestList({ rideRequests, selectedRideRequestId, onSelectRideRequest }: RideRequestListProps) {
+export function RideRequestList({ rideRequests, selectedRideRequestId, onSelectRideRequest, todaZones }: RideRequestListProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="text-lg">Ride Requests ({rideRequests.length})</CardTitle>
+        <CardTitle className="text-lg">Ride Requests ({rideRequests.filter(r => r.status === 'pending').length})</CardTitle>
       </CardHeader>
       <CardContent className="p-0 flex-grow overflow-hidden">
         <ScrollArea className="h-full p-4 pt-0">
@@ -90,15 +96,19 @@ export function RideRequestList({ rideRequests, selectedRideRequestId, onSelectR
             <p className="text-muted-foreground text-sm text-center py-4">No active ride requests.</p>
           ) : (
             <ul className="space-y-3">
-              {rideRequests.map((request) => (
-                <li key={request.id}>
-                  <RideRequestItem
-                    request={request}
-                    isSelected={selectedRideRequestId === request.id}
-                    onSelect={() => onSelectRideRequest(request)}
-                  />
-                </li>
-              ))}
+              {rideRequests.map((request) => {
+                const pickupZone = todaZones.find(z => z.id === request.pickupTodaZoneId);
+                return (
+                  <li key={request.id}>
+                    <RideRequestItem
+                      request={request}
+                      isSelected={selectedRideRequestId === request.id}
+                      onSelect={() => onSelectRideRequest(request)}
+                      pickupZoneName={pickupZone?.name}
+                    />
+                  </li>
+                );
+              })}
             </ul>
           )}
         </ScrollArea>
@@ -106,3 +116,4 @@ export function RideRequestList({ rideRequests, selectedRideRequestId, onSelectR
     </Card>
   );
 }
+
