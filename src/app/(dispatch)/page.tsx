@@ -19,10 +19,10 @@ const LNG_OFFSET = 0.05; // Approx 5.5 km
 
 // Mock Data around Las Piñas
 const initialTriders: Trider[] = [
-  { id: 'trider-1', name: 'Juan Dela Cruz', location: { latitude: LAS_PINAS_CENTER.latitude + (Math.random() - 0.5) * 0.02, longitude: LAS_PINAS_CENTER.longitude + (Math.random() - 0.5) * 0.02 }, status: 'available', vehicleType: 'Tricycle' },
-  { id: 'trider-2', name: 'Maria Clara', location: { latitude: LAS_PINAS_CENTER.latitude - (Math.random() - 0.5) * 0.02, longitude: LAS_PINAS_CENTER.longitude - (Math.random() - 0.5) * 0.02 }, status: 'busy', vehicleType: 'E-Bike' },
-  { id: 'trider-3', name: 'Crisostomo Ibarra', location: { latitude: LAS_PINAS_CENTER.latitude + (Math.random() - 0.5) * 0.01, longitude: LAS_PINAS_CENTER.longitude - (Math.random() - 0.5) * 0.01 }, status: 'offline', vehicleType: 'Tricycle' },
-  { id: 'trider-4', name: 'Sisa K.', location: { latitude: LAS_PINAS_CENTER.latitude - (Math.random() - 0.5) * 0.01, longitude: LAS_PINAS_CENTER.longitude + (Math.random() - 0.5) * 0.01 }, status: 'available', vehicleType: 'Tricycle' },
+  { id: 'trider-1', name: 'Juan Dela Cruz', location: { latitude: LAS_PINAS_CENTER.latitude + 0.005, longitude: LAS_PINAS_CENTER.longitude + 0.005 }, status: 'available', vehicleType: 'Tricycle' },
+  { id: 'trider-2', name: 'Maria Clara', location: { latitude: LAS_PINAS_CENTER.latitude - 0.005, longitude: LAS_PINAS_CENTER.longitude - 0.005 }, status: 'busy', vehicleType: 'E-Bike' },
+  { id: 'trider-3', name: 'Crisostomo Ibarra', location: { latitude: LAS_PINAS_CENTER.latitude + 0.002, longitude: LAS_PINAS_CENTER.longitude - 0.002 }, status: 'offline', vehicleType: 'Tricycle' },
+  { id: 'trider-4', name: 'Sisa K.', location: { latitude: LAS_PINAS_CENTER.latitude - 0.002, longitude: LAS_PINAS_CENTER.longitude + 0.002 }, status: 'available', vehicleType: 'Tricycle' },
 ];
 
 const initialRideRequests: RideRequest[] = [
