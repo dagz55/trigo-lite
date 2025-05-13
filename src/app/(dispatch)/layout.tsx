@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { LogOut, Settings, LayoutDashboard, MapIcon, Users, Siren } from 'lucide-react'; // Changed AlertOctagon to Siren
+import { LogOut, Settings, LayoutDashboard, MapIcon, Users, Siren, CarTaxiFront } from 'lucide-react'; // Changed AlertOctagon to Siren, Added CarTaxiFront
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation"; // Import usePathname
 
 // TriGo Logo SVG
 const TriGoLogo = () => (
@@ -37,12 +38,19 @@ const TriGoLogo = () => (
   </svg>
 );
 
+// TriGo Alert Logo (Placeholder - replace with actual SVG or Image component if provided)
+const TriGoAlertLogo = () => (
+  <Siren className="text-destructive" /> // Using Siren as placeholder, user might provide specific SVG
+);
+
 
 export default function DispatchLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname(); // Get current path
+
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
@@ -55,33 +63,33 @@ export default function DispatchLayout({
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive>
+              <SidebarMenuButton asChild isActive={pathname === "/"}>
                 <Link href="/">
                   <LayoutDashboard />
                   <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/triders"}>
+                <Link href="/triders">
+                  <CarTaxiFront /> {/* Users icon was here, changed to CarTaxiFront for "Triders" */}
+                  <span className="group-data-[collapsible=icon]:hidden">Triders</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="#">
+              <SidebarMenuButton asChild isActive={pathname === "/live-map"}>
+                <Link href="#"> {/* Update href when live map page exists */}
                   <MapIcon />
                   <span className="group-data-[collapsible=icon]:hidden">Live Map</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="#">
-                  <Users />
-                  <span className="group-data-[collapsible=icon]:hidden">Triders</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="#">
-                  <Siren /> {/* Changed from AlertOctagon */}
+              <SidebarMenuButton asChild isActive={pathname === "/alerts"}>
+                <Link href="#"> {/* Update href when alerts page exists */}
+                  <TriGoAlertLogo /> {/* Using the new TriGoAlertLogo */}
                    <span className="group-data-[collapsible=icon]:hidden">Alerts</span>
                 </Link>
               </SidebarMenuButton>
@@ -92,8 +100,8 @@ export default function DispatchLayout({
            <Separator className="my-2 group-data-[collapsible=icon]:hidden" />
            <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="#">
+              <SidebarMenuButton asChild isActive={pathname === "/settings"}>
+                <Link href="#">  {/* Update href when settings page exists */}
                   <Settings />
                   <span className="group-data-[collapsible=icon]:hidden">Settings</span>
                 </Link>
@@ -101,7 +109,7 @@ export default function DispatchLayout({
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="#">
+                <Link href="#"> {/* Update href for logout functionality */}
                   <LogOut />
                   <span className="group-data-[collapsible=icon]:hidden">Logout</span>
                 </Link>
@@ -118,7 +126,7 @@ export default function DispatchLayout({
             <h1 className="text-lg font-semibold text-primary">TriGo Dispatch</h1>
           </div>
         </header>
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto bg-background"> {/* Added bg-background for consistency */}
           {children}
         </main>
       </SidebarInset>
