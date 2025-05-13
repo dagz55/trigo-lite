@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -16,9 +17,26 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { LogOut, Settings, LayoutDashboard, MapIcon, Users, AlertOctagon } from 'lucide-react';
+import { LogOut, Settings, LayoutDashboard, MapIcon, Users, Siren } from 'lucide-react'; // Changed AlertOctagon to Siren
 import Link from "next/link";
 import Image from "next/image";
+
+// TriGo Logo SVG
+const TriGoLogo = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+    <circle cx="16" cy="16" r="13" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M9.5 20V14C9.5 12.8954 10.3954 12 11.5 12H17.5C18.6046 12 19.5 12.8954 19.5 14V20" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+    {/* Roof part of the cabin, connected to the top line of the cabin */}
+    <path d="M9.5 14C9.5 11.5 12.3125 9.5 16 9.5C19.6875 9.5 22.5 11.5 22.5 14H19.5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+     {/* Simpler roof */}
+    <path d="M M9.5 12 Q16 8 22.5 12 L19.5 12" stroke="currentColor" strokeWidth="1.2" fill="none" />
+
+    <path d="M19.5 13H21.5C22.0523 13 22.5 13.4477 22.5 14V17C22.5 17.5523 22.0523 18 21.5 18H19.5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+    <circle cx="12" cy="20.5" r="1.5" stroke="currentColor" strokeWidth="1" fill="none"/>
+    <circle cx="17" cy="20.5" r="1.5" stroke="currentColor" strokeWidth="1" fill="none"/>
+  </svg>
+);
+
 
 export default function DispatchLayout({
   children,
@@ -30,13 +48,7 @@ export default function DispatchLayout({
       <Sidebar>
         <SidebarHeader className="p-4">
           <div className="flex items-center gap-2">
-            {/* Placeholder for Logo - Using SVG for simplicity */}
-            <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-              <circle cx="50" cy="30" r="10" fill="currentColor"/>
-              <path d="M20 70 Q50 40 80 70 T20 70" stroke="currentColor" strokeWidth="8" fill="none"/>
-              <circle cx="30" cy="70" r="8" fill="currentColor"/>
-              <circle cx="70" cy="70" r="8" fill="currentColor"/>
-            </svg>
+            <TriGoLogo />
             <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">TriGo Dispatch</h1>
           </div>
         </SidebarHeader>
@@ -69,7 +81,7 @@ export default function DispatchLayout({
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="#">
-                  <AlertOctagon />
+                  <Siren /> {/* Changed from AlertOctagon */}
                    <span className="group-data-[collapsible=icon]:hidden">Alerts</span>
                 </Link>
               </SidebarMenuButton>
@@ -101,7 +113,10 @@ export default function DispatchLayout({
       <SidebarInset className="flex flex-col">
          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2 md:hidden">
           <SidebarTrigger />
-          <h1 className="text-lg font-semibold text-primary">TriGo Dispatch</h1>
+           <div className="flex items-center gap-2">
+            <TriGoLogo />
+            <h1 className="text-lg font-semibold text-primary">TriGo Dispatch</h1>
+          </div>
         </header>
         <main className="flex-1 overflow-auto">
           {children}
