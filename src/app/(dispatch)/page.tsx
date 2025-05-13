@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -11,22 +12,48 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RouteIcon } from 'lucide-react';
 
-// Mock Data
+// Las Piñas City, Philippines Coordinates
+const LAS_PINAS_CENTER: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
+const LAT_OFFSET = 0.05; // Approx 5.5 km
+const LNG_OFFSET = 0.05; // Approx 5.5 km
+
+// Mock Data around Las Piñas
 const initialTriders: Trider[] = [
-  { id: 'trider-1', name: 'Juan Dela Cruz', location: { latitude: 37.785, longitude: -122.42 }, status: 'available', vehicleType: 'Tricycle' },
-  { id: 'trider-2', name: 'Maria Clara', location: { latitude: 37.77, longitude: -122.43 }, status: 'busy', vehicleType: 'E-Bike' },
-  { id: 'trider-3', name: 'Crisostomo Ibarra', location: { latitude: 37.79, longitude: -122.41 }, status: 'offline', vehicleType: 'Tricycle' },
-  { id: 'trider-4', name: 'Sisa K.', location: { latitude: 37.76, longitude: -122.40 }, status: 'available', vehicleType: 'Tricycle' },
+  { id: 'trider-1', name: 'Juan Dela Cruz', location: { latitude: LAS_PINAS_CENTER.latitude + (Math.random() - 0.5) * 0.02, longitude: LAS_PINAS_CENTER.longitude + (Math.random() - 0.5) * 0.02 }, status: 'available', vehicleType: 'Tricycle' },
+  { id: 'trider-2', name: 'Maria Clara', location: { latitude: LAS_PINAS_CENTER.latitude - (Math.random() - 0.5) * 0.02, longitude: LAS_PINAS_CENTER.longitude - (Math.random() - 0.5) * 0.02 }, status: 'busy', vehicleType: 'E-Bike' },
+  { id: 'trider-3', name: 'Crisostomo Ibarra', location: { latitude: LAS_PINAS_CENTER.latitude + (Math.random() - 0.5) * 0.01, longitude: LAS_PINAS_CENTER.longitude - (Math.random() - 0.5) * 0.01 }, status: 'offline', vehicleType: 'Tricycle' },
+  { id: 'trider-4', name: 'Sisa K.', location: { latitude: LAS_PINAS_CENTER.latitude - (Math.random() - 0.5) * 0.01, longitude: LAS_PINAS_CENTER.longitude + (Math.random() - 0.5) * 0.01 }, status: 'available', vehicleType: 'Tricycle' },
 ];
 
 const initialRideRequests: RideRequest[] = [
-  { id: 'ride-1', passengerName: 'John Doe', pickupLocation: { latitude: 37.775, longitude: -122.418 }, dropoffLocation: { latitude: 37.785, longitude: -122.408 }, pickupAddress: '123 Market St', dropoffAddress: '456 Main St', status: 'pending', fare: 15.50, requestedAt: new Date(Date.now() - 5 * 60 * 1000) },
-  { id: 'ride-2', passengerName: 'Jane Smith', pickupLocation: { latitude: 37.780, longitude: -122.425 }, dropoffLocation: { latitude: 37.790, longitude: -122.415 }, pickupAddress: '789 Mission Rd', dropoffAddress: '321 Powell Ave', status: 'assigned', assignedTriderId: 'trider-2', fare: 12.00, requestedAt: new Date(Date.now() - 10 * 60 * 1000) },
+  { 
+    id: 'ride-1', 
+    passengerName: 'John Doe', 
+    pickupLocation: { latitude: LAS_PINAS_CENTER.latitude + 0.01, longitude: LAS_PINAS_CENTER.longitude - 0.01 }, 
+    dropoffLocation: { latitude: LAS_PINAS_CENTER.latitude - 0.01, longitude: LAS_PINAS_CENTER.longitude + 0.01 }, 
+    pickupAddress: 'Alabang-Zapote Road, Las Piñas', 
+    dropoffAddress: 'SM Southmall, Las Piñas', 
+    status: 'pending', 
+    fare: 75.50, 
+    requestedAt: new Date(Date.now() - 5 * 60 * 1000) 
+  },
+  { 
+    id: 'ride-2', 
+    passengerName: 'Jane Smith', 
+    pickupLocation: { latitude: LAS_PINAS_CENTER.latitude - 0.005, longitude: LAS_PINAS_CENTER.longitude + 0.005 }, 
+    dropoffLocation: { latitude: LAS_PINAS_CENTER.latitude + 0.005, longitude: LAS_PINAS_CENTER.longitude - 0.005 }, 
+    pickupAddress: 'Pilar Village, Las Piñas', 
+    dropoffAddress: 'BF Resort Village, Las Piñas', 
+    status: 'assigned', 
+    assignedTriderId: 'trider-2', 
+    fare: 60.00, 
+    requestedAt: new Date(Date.now() - 10 * 60 * 1000) 
+  },
 ];
 
 const initialAiInsights: AiInsight[] = [
-  { id: 'ai-1', title: 'High Demand Alert', description: 'Increased ride requests in Downtown area. Consider deploying more triders.', severity: 'warning', timestamp: new Date(Date.now() - 2 * 60 * 1000), relatedLocation: { latitude: 37.78, longitude: -122.41 } },
-  { id: 'ai-2', title: 'Route Optimization Available', description: 'Trider Juan Dela Cruz can take a faster route for current assignment.', severity: 'info', timestamp: new Date(Date.now() - 15 * 60 * 1000) },
+  { id: 'ai-1', title: 'High Demand Alert', description: 'Increased ride requests near Zapote area. Consider deploying more triders.', severity: 'warning', timestamp: new Date(Date.now() - 2 * 60 * 1000), relatedLocation: { latitude: LAS_PINAS_CENTER.latitude + 0.02, longitude: LAS_PINAS_CENTER.longitude - 0.02 } },
+  { id: 'ai-2', title: 'Route Optimization Available', description: 'Trider Juan Dela Cruz can take a faster route via Friendship Route.', severity: 'info', timestamp: new Date(Date.now() - 15 * 60 * 1000) },
 ];
 
 
@@ -90,8 +117,14 @@ export default function DispatchPage() {
       const newRide: RideRequest = {
         id: newRideId,
         passengerName: `Passenger ${Math.floor(Math.random() * 1000)}`,
-        pickupLocation: { latitude: 37.77 + (Math.random() - 0.5) * 0.05, longitude: -122.42 + (Math.random() - 0.5) * 0.05 },
-        dropoffLocation: { latitude: 37.78 + (Math.random() - 0.5) * 0.05, longitude: -122.41 + (Math.random() - 0.5) * 0.05 },
+        pickupLocation: { 
+          latitude: LAS_PINAS_CENTER.latitude + (Math.random() - 0.5) * LAT_OFFSET, 
+          longitude: LAS_PINAS_CENTER.longitude + (Math.random() - 0.5) * LNG_OFFSET 
+        },
+        dropoffLocation: { 
+          latitude: LAS_PINAS_CENTER.latitude + (Math.random() - 0.5) * LAT_OFFSET, 
+          longitude: LAS_PINAS_CENTER.longitude + (Math.random() - 0.5) * LNG_OFFSET
+        },
         status: 'pending',
         requestedAt: new Date(),
       };
@@ -104,7 +137,7 @@ export default function DispatchPage() {
       const newInsight: AiInsight = {
         id: newInsightId,
         title: `Dynamic Pricing Update`,
-        description: `Demand surge near Ferry Building. Fares increased by 1.2x.`,
+        description: `Demand surge near Perpetual Help Medical Center. Fares increased by 1.2x.`,
         severity: 'info',
         timestamp: new Date(),
       };
@@ -267,6 +300,11 @@ export default function DispatchPage() {
         {/* Right Panel: Map */}
         <div className="lg:col-span-2 h-full min-h-[400px] lg:min-h-0 rounded-lg overflow-hidden shadow-lg border">
           <MapboxMap
+            initialViewState={{ // Pass initial view state to center on Las Piñas
+              longitude: LAS_PINAS_CENTER.longitude,
+              latitude: LAS_PINAS_CENTER.latitude,
+              zoom: 13, // Adjusted zoom for a city view
+            }}
             triders={triders}
             rideRequests={rideRequests}
             selectedTrider={selectedTrider}
@@ -281,3 +319,4 @@ export default function DispatchPage() {
     </div>
   );
 }
+

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { MapRef, ViewState } from 'react-map-gl';
@@ -8,6 +9,11 @@ import { Bike, UserRound, MapPin } from 'lucide-react';
 import type { MapLayerMouseEvent, LngLatLike } from 'mapbox-gl';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+
+// Las Piñas City, Philippines Coordinates
+const DEFAULT_LONGITUDE = 120.9938;
+const DEFAULT_LATITUDE = 14.4445;
+const DEFAULT_ZOOM = 13; // Adjusted zoom for a city view
 
 interface MapboxMapProps {
   initialViewState?: Partial<ViewState>;
@@ -49,12 +55,12 @@ export function MapboxMap({
   heatmapData,
 }: MapboxMapProps) {
   const [viewState, setViewState] = React.useState<Partial<ViewState>>({
-    longitude: -122.4194, // Default to San Francisco
-    latitude: 37.7749,
-    zoom: 11,
+    longitude: DEFAULT_LONGITUDE,
+    latitude: DEFAULT_LATITUDE,
+    zoom: DEFAULT_ZOOM,
     pitch: 30,
     bearing: 0,
-    ...initialViewState,
+    ...initialViewState, // initialViewState from props will override defaults
   });
 
   const [popupInfo, setPopupInfo] = React.useState<{
@@ -242,3 +248,4 @@ export function MapboxMap({
     </Map>
   );
 }
+
