@@ -71,10 +71,31 @@ export function MapboxMap({
   } | null>(null);
 
   const mapRef = React.useRef<MapRef>(null);
+  
+  // Default primary color from globals.css: hsl(180, 100%, 25.1%)
+  const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(180, 100%, 25.1%)');
 
   React.useEffect(() => {
     if (!MAPBOX_TOKEN) {
       console.error("Mapbox token is not configured. Set NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN.");
+    }
+    
+    // Resolve CSS variable for primary color
+    if (typeof window !== 'undefined') {
+      const primaryColorVar = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+      if (primaryColorVar) {
+        // primaryColorVar is typically "H S% L%" or "H S L"
+        const parts = primaryColorVar.split(' ');
+        if (parts.length === 3) {
+           // Ensure saturation and lightness have '%'
+          const s = parts[1].endsWith('%') ? parts[1] : `${parts[1]}%`;
+          const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`;
+          setResolvedPrimaryColor(`hsl(${parts[0]}, ${s}, ${l})`);
+        } else {
+            // Fallback if format is unexpected, though unlikely with current globals.css
+            console.warn("Could not parse --primary CSS variable for Mapbox:", primaryColorVar);
+        }
+      }
     }
   }, []);
 
@@ -128,7 +149,7 @@ export function MapboxMap({
       'line-cap': 'round',
     },
     paint: {
-      'line-color': 'hsl(var(--primary))', // Teal
+      'line-color': resolvedPrimaryColor, // Use resolved HSL color
       'line-width': 6,
       'line-opacity': 0.8,
     },
