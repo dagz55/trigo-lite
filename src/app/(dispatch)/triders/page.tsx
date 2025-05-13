@@ -2,84 +2,63 @@
 "use client";
 
 import * as React from 'react';
-import type { TriderProfile, TodaZone, ChatMessage, TriderExtendedStatus } from '@/types';
+import type { TriderProfile, ChatMessage, TriderExtendedStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { TridersTable } from '@/components/triders/TridersTable';
 import { TriderDetailPanel } from '@/components/triders/TriderDetailPanel';
 import { TriderChatSheet } from '@/components/triders/TriderChatSheet';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle, Search } from 'lucide-react';
+import { getRandomPointInCircle } from '@/lib/geoUtils'; // For random locations
 
-// Mock Data - Extending initialTriders from dispatch page for more details
-const initialTridersProfiles: TriderProfile[] = [
-  { 
-    id: 'trider-1', name: 'Juan Dela Cruz', 
-    location: { latitude: 14.440300, longitude: 121.000600 }, 
-    status: 'available', vehicleType: 'Tricycle', todaZoneId: '1', todaZoneName: 'ACAPODA',
-    contactNumber: '+639171234567', profilePictureUrl: 'https://picsum.photos/seed/juan/100/100',
-    wallet: {
-      totalEarnedAllTime: 15250.75, currentBalance: 1250.50,
-      todayTotalRides: 5, todayTotalFareCollected: 350.00, todayTotalCommission: 70.00, todayNetEarnings: 280.00,
-      paymentLogs: [{id: 'pay-1', date: new Date(Date.now() - 2*24*60*60*1000), amount: 1000, status: 'completed', method: 'GCash', referenceId: 'GCASH123'}],
-      recentRides: [{id: 'ride-a', date: new Date(), pickupAddress: 'Admiral Village', dropoffAddress: 'SM Southmall', fare: 70, commissionDeducted: 14, netEarnings: 56}],
-    }
-  },
-  { 
-    id: 'trider-2', name: 'Maria Clara', 
-    location: { latitude: 14.416700, longitude: 121.008200 }, 
-    status: 'en-route', vehicleType: 'E-Bike', todaZoneId: '3', todaZoneName: 'ATODA',
-    contactNumber: '+639177654321', profilePictureUrl: 'https://picsum.photos/seed/maria/100/100',
-    wallet: {
-      totalEarnedAllTime: 22500.00, currentBalance: 2500.75,
-      todayTotalRides: 8, todayTotalFareCollected: 640.00, todayTotalCommission: 128.00, todayNetEarnings: 512.00,
-      paymentLogs: [{id: 'pay-2', date: new Date(Date.now() - 5*24*60*60*1000), amount: 1500, status: 'completed', method: 'GCash', referenceId: 'GCASH456'}],
-      recentRides: [{id: 'ride-b', date: new Date(), pickupAddress: 'Pilar Village', dropoffAddress: 'Festival Mall', fare: 80, commissionDeducted: 16, netEarnings: 64}],
-    }
-  },
-  { 
-    id: 'trider-3', name: 'Crisostomo Ibarra', 
-    location: { latitude: 14.432500, longitude: 121.005000 }, 
-    status: 'offline', vehicleType: 'Tricycle', todaZoneId: '5', todaZoneName: 'BFRSSCV',
-    lastSeen: new Date(Date.now() - 3*60*60*1000), profilePictureUrl: 'https://picsum.photos/seed/crisostomo/100/100',
-    wallet: {
-      totalEarnedAllTime: 8700.25, currentBalance: 300.00,
-      todayTotalRides: 0, todayTotalFareCollected: 0, todayTotalCommission: 0, todayNetEarnings: 0,
-      paymentLogs: [], recentRides: [],
-    }
-  },
-   { 
-    id: 'trider-4', name: 'Sisa K.', 
-    location: { latitude: 14.403000, longitude: 121.012000 }, 
-    status: 'available', vehicleType: 'Tricycle', todaZoneId: '10', todaZoneName: 'MAMTTODA',
-    contactNumber: '+639221112233', profilePictureUrl: 'https://picsum.photos/seed/sisa/100/100',
-    wallet: {
-      totalEarnedAllTime: 12340.50, currentBalance: 850.25,
-      todayTotalRides: 3, todayTotalFareCollected: 280.00, todayTotalCommission: 56.00, todayNetEarnings: 224.00,
-      paymentLogs: [{id: 'pay-3', date: new Date(Date.now() - 1*24*60*60*1000), amount: 500, status: 'completed', method: 'GCash', referenceId: 'GCASH789'}],
-      recentRides: [{id: 'ride-c', date: new Date(Date.now() - 1*60*60*1000), pickupAddress: 'Moonwalk Village', dropoffAddress: 'City Hall', fare: 90, commissionDeducted: 18, netEarnings: 72}],
-    }
-  },
-  { 
-    id: 'trider-5', name: 'Elias P.', 
-    location: { latitude: 14.447800, longitude: 120.977100 }, 
-    status: 'suspended', vehicleType: 'Tricycle', todaZoneId: '13', todaZoneName: 'PVTODA',
-    contactNumber: '+639334445566', profilePictureUrl: 'https://picsum.photos/seed/elias/100/100',
-    wallet: {
-      totalEarnedAllTime: 5200.00, currentBalance: 150.00,
-      todayTotalRides: 0, todayTotalFareCollected: 0, todayTotalCommission: 0, todayNetEarnings: 0,
-      paymentLogs: [],
-      recentRides: [],
-    }
-  },
+// TODO: Replace mock data with Supabase fetching.
+// Example: const { data: triders, error } = await supabase.from('triders').select('*');
+
+const apostleNames = [
+  "Peter", "Andrew", "James Z.", "John", "Philip", "Bartholomew", 
+  "Thomas", "Matthew", "James A.", "Thaddaeus", "Simon Z.", "Matthias"
 ];
+
+const initialTridersProfiles: TriderProfile[] = apostleNames.map((name, index) => {
+  const todaZoneIndex = index % appTodaZones.length;
+  const todaZone = appTodaZones[todaZoneIndex];
+  const randomLocationInZone = getRandomPointInCircle(todaZone.center, todaZone.radiusKm * 0.8);
+  
+  // Alternate statuses for variety
+  const statuses: TriderExtendedStatus[] = ['available', 'en-route', 'offline', 'suspended'];
+  const status = statuses[index % statuses.length];
+
+  return {
+    id: `trider-apostle-${index + 1}`,
+    name: name,
+    location: randomLocationInZone,
+    status: status,
+    vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
+    todaZoneId: todaZone.id,
+    todaZoneName: todaZone.name,
+    contactNumber: `+63917${1000000 + index * 12345}`.slice(0,13),
+    profilePictureUrl: `https://picsum.photos/seed/${name.toLowerCase().replace(/\s/g, '')}/100/100`,
+    lastSeen: status === 'offline' ? new Date(Date.now() - (index + 1) * 60 * 60 * 1000) : undefined,
+    wallet: {
+      totalEarnedAllTime: (Math.random() * 20000 + 5000),
+      currentBalance: (Math.random() * 3000 + 200),
+      todayTotalRides: status === 'offline' || status === 'suspended' ? 0 : Math.floor(Math.random() * 10),
+      todayTotalFareCollected: status === 'offline' || status === 'suspended' ? 0 : (Math.random() * 500 + 50),
+      todayTotalCommission: status === 'offline' || status === 'suspended' ? 0 : (Math.random() * 100 + 10),
+      todayNetEarnings: status === 'offline' || status === 'suspended' ? 0 : (Math.random() * 400 + 40),
+      paymentLogs: status === 'available' || status === 'en-route' ? [{id: `pay-${index}`, date: new Date(Date.now() - (index+1)*24*60*60*1000), amount: (Math.random()*500+500), status: 'completed', method: 'GCash', referenceId: `GCASHAPOSTLE${index}`}] : [],
+      recentRides: status === 'available' || status === 'en-route' ? [{id: `ride-apostle-${index}`, date: new Date(Date.now() - index*30*60*1000), pickupAddress: `${todaZone.areaOfOperation} Pickup`, dropoffAddress: `Nearby Dropoff ${index}`, fare: (Math.random()*50+50), commissionDeducted: (Math.random()*10+10), netEarnings: (Math.random()*40+40)}] : [],
+    }
+  };
+});
 
 
 export default function TridersPage() {
+  // TODO: Replace useState with data fetching from Supabase (e.g., React Query or SWR)
   const [triders, setTriders] = React.useState<TriderProfile[]>(initialTridersProfiles);
   const [filteredTriders, setFilteredTriders] = React.useState<TriderProfile[]>(initialTridersProfiles);
   const [selectedTrider, setSelectedTrider] = React.useState<TriderProfile | null>(null);
@@ -90,12 +69,14 @@ export default function TridersPage() {
 
   const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false);
   const [chatTargetTrider, setChatTargetTrider] = React.useState<TriderProfile | null>(null);
-  const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([]); // Mock messages
+  // TODO: Fetch chat messages from Supabase for the selected trider
+  const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([]); 
 
   const { toast } = useToast();
   const todaZones = appTodaZones;
 
   React.useEffect(() => {
+    // This filtering logic would ideally be part of the Supabase query
     let currentTriders = [...triders];
     if (nameFilter) {
       currentTriders = currentTriders.filter(t => t.name.toLowerCase().includes(nameFilter.toLowerCase()));
@@ -110,21 +91,23 @@ export default function TridersPage() {
   }, [nameFilter, zoneFilter, statusFilter, triders]);
 
   // Simulate real-time location updates (simplified)
+  // TODO: In a real app, this would come from Supabase Realtime or periodic fetches for trider locations
   React.useEffect(() => {
     const interval = setInterval(() => {
       setTriders(prevTriders =>
         prevTriders.map(trider => {
           if (trider.status === 'offline' || trider.status === 'suspended') return trider;
-          return {
-            ...trider,
-            location: {
-              latitude: trider.location.latitude + (Math.random() - 0.5) * 0.0005,
-              longitude: trider.location.longitude + (Math.random() - 0.5) * 0.0005,
-            },
-          };
+          const currentZone = appTodaZones.find(z => z.id === trider.todaZoneId);
+          const newLocation = currentZone 
+            ? getRandomPointInCircle(currentZone.center, currentZone.radiusKm * 0.8) 
+            : { 
+                latitude: trider.location.latitude + (Math.random() - 0.5) * 0.0005,
+                longitude: trider.location.longitude + (Math.random() - 0.5) * 0.0005,
+              };
+          return { ...trider, location: newLocation };
         })
       );
-    }, 10000); // Update every 10 seconds
+    }, 10000); 
     return () => clearInterval(interval);
   }, []);
 
@@ -139,10 +122,11 @@ export default function TridersPage() {
       return;
     }
     setChatTargetTrider(trider);
-    // Mock loading previous messages for this trider
+    // TODO: Fetch actual chat messages from Supabase for this trider & dispatcher
+    // Example: const { data, error } = await supabase.from('ride_chat_messages').select('*').or(`sender_id.eq.${trider.id},receiver_id.eq.${trider.id}`).order('timestamp');
     setChatMessages([
-      { id: 'msg1', senderId: trider.id, receiverId: 'dispatcher', content: 'Hello, Dispatch! I am at my post.', timestamp: new Date(Date.now() - 5*60*1000)},
-      { id: 'msg2', senderId: 'dispatcher', receiverId: trider.id, content: `Hi ${trider.name}, acknowledged. Stay safe!`, timestamp: new Date(Date.now() - 4*60*1000)},
+      { id: 'msg1', senderId: trider.id, receiverId: 'dispatcher', content: 'Hello, Dispatch! Reporting for duty.', timestamp: new Date(Date.now() - 5*60*1000)},
+      { id: 'msg2', senderId: 'dispatcher', receiverId: trider.id, content: `Hi ${trider.name}, acknowledged. Have a good shift!`, timestamp: new Date(Date.now() - 4*60*1000)},
     ]);
     setIsChatSheetOpen(true);
   };
@@ -151,20 +135,23 @@ export default function TridersPage() {
     if (!chatTargetTrider) return;
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
-      senderId: 'dispatcher', // Assuming dispatcher is sending
+      senderId: 'dispatcher', 
       receiverId: chatTargetTrider.id,
       content: messageContent,
       timestamp: new Date(),
     };
+    // TODO: Insert new message into Supabase `ride_chat_messages` table
+    // Example: await supabase.from('ride_chat_messages').insert(newMessage);
     setChatMessages(prev => [...prev, newMessage]);
-    // Here you would typically send the message via Supabase Realtime
-    toast({ title: "Message Sent", description: `To ${chatTargetTrider.name}: ${messageContent}`});
+    toast({ title: "Message Sent (Mock)", description: `To ${chatTargetTrider.name}: ${messageContent}`});
   };
   
   const handleTriderStatusChange = (triderId: string, newStatus: TriderExtendedStatus) => {
-    setTriders(prev => prev.map(t => t.id === triderId ? {...t, status: newStatus} : t));
-    setSelectedTrider(prev => prev && prev.id === triderId ? {...prev, status: newStatus} : prev);
-    toast({ title: "Status Updated", description: `Trider status changed to ${newStatus}.`});
+    // TODO: Update trider status in Supabase
+    // Example: await supabase.from('triders').update({ status: newStatus, updated_at: new Date() }).eq('id', triderId);
+    setTriders(prev => prev.map(t => t.id === triderId ? {...t, status: newStatus, ...(newStatus === 'offline' && { lastSeen: new Date() })} : t));
+    setSelectedTrider(prev => prev && prev.id === triderId ? {...prev, status: newStatus, ...(newStatus === 'offline' && { lastSeen: new Date() })} : prev);
+    toast({ title: "Status Updated (Mock)", description: `Trider status changed to ${newStatus}.`});
   };
 
   const handlePingTrider = (trider: TriderProfile) => {
@@ -172,20 +159,21 @@ export default function TridersPage() {
        toast({ title: "Cannot Ping", description: `${trider.name} is not online.`, variant: "destructive"});
        return;
     }
-    // Mock ping functionality
-    toast({ title: "Trider Pinged", description: `Notification sent to ${trider.name}.`});
+    // TODO: Implement actual ping functionality (e.g., Supabase Realtime notification or push notification)
+    toast({ title: "Trider Pinged (Mock)", description: `Notification sent to ${trider.name}.`});
   };
 
   const handleSendPayout = (trider: TriderProfile, amount: number) => {
-     // Mock payout functionality
-    toast({ title: "Payout Initiated", description: `₱${amount.toFixed(2)} payout to ${trider.name} is being processed.`});
-    // Update wallet locally (mock)
+    // TODO: Integrate with actual payout service (e.g., GCash API) and record in Supabase
+    // Example: await supabase.from('payment_logs').insert({ trider_id: trider.id, amount, status: 'pending', method: 'GCash' });
+    toast({ title: "Payout Initiated (Mock)", description: `₱${amount.toFixed(2)} payout to ${trider.name} is being processed.`});
+    
     setTriders(prev => prev.map(t => t.id === trider.id ? {
       ...t, 
       wallet: {
         ...t.wallet, 
         currentBalance: t.wallet.currentBalance - amount,
-        paymentLogs: [{ id: `pay-${Date.now()}`, date: new Date(), amount, status: 'pending', method: 'GCash', referenceId: `GCASHMOCK${Date.now()}`}, ...t.wallet.paymentLogs]
+        paymentLogs: [{ id: `pay-mock-${Date.now()}`, date: new Date(), amount, status: 'pending', method: 'GCash (Mock)', referenceId: `MOCKPAY${Date.now()}`}, ...t.wallet.paymentLogs]
       }
     } : t));
      setSelectedTrider(prev => prev && prev.id === trider.id ? {
@@ -193,7 +181,7 @@ export default function TridersPage() {
       wallet: {
         ...prev.wallet, 
         currentBalance: prev.wallet.currentBalance - amount,
-        paymentLogs: [{ id: `pay-${Date.now()}`, date: new Date(), amount, status: 'pending', method: 'GCash', referenceId: `GCASHMOCK${Date.now()}`}, ...prev.wallet.paymentLogs]
+        paymentLogs: [{ id: `pay-mock-${Date.now()}`, date: new Date(), amount, status: 'pending', method: 'GCash (Mock)', referenceId: `MOCKPAY${Date.now()}`}, ...prev.wallet.paymentLogs]
       }
     } : prev);
   };
@@ -202,9 +190,10 @@ export default function TridersPage() {
   const statusOptions: { value: TriderExtendedStatus | 'all'; label: string }[] = [
     { value: 'all', label: 'All Statuses' },
     { value: 'available', label: 'Available' },
-    { value: 'en-route', label: 'En Route' }, // Covers 'busy' and 'assigned'
+    { value: 'en-route', label: 'En Route' },
     { value: 'offline', label: 'Offline' },
     { value: 'suspended', label: 'Suspended' },
+    // 'assigned' and 'busy' can be covered by 'en-route' for filtering simplicity, or added if more granularity is needed.
   ];
 
 
@@ -213,7 +202,7 @@ export default function TridersPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Trider Management Dashboard</CardTitle>
-          <CardDescription>Monitor, manage, and communicate with your triders.</CardDescription>
+          <CardDescription>Monitor, manage, and communicate with your triders. Data is currently mocked. {/* TODO: Remove "Data is currently mocked." when Supabase is live */}</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
