@@ -74,27 +74,41 @@ export function MapboxMap({
 
   const mapRef = React.useRef<MapRef>(null);
   
-  const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(180, 100%, 25.1%)'); // Default HSL for teal
+  const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(180, 100%, 25.1%)'); 
+  const [resolvedForegroundColor, setResolvedForegroundColor] = React.useState<string>('hsl(240, 10%, 3.9%)'); // Default dark
+  const [resolvedBackgroundColor, setResolvedBackgroundColor] = React.useState<string>('hsl(0, 0%, 94.1%)'); // Default light gray
+
+  const parseHslString = (hslString: string): string => {
+    // Converts "H S% L%" to "hsl(H, S%, L%)" if not already in that format
+    const parts = hslString.split(' ').map(p => p.trim());
+    if (parts.length === 3 && !hslString.startsWith('hsl(')) {
+        const h = parts[0];
+        const s = parts[1].endsWith('%') ? parts[1] : `${parts[1]}%`;
+        const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`;
+        return `hsl(${h}, ${s}, ${l})`;
+    }
+    return hslString; // Assume it's already a valid color string or direct HSL
+  };
+
 
   React.useEffect(() => {
     if (!MAPBOX_TOKEN) {
       console.error("Mapbox token is not configured. Set NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN.");
     }
     if (typeof window !== 'undefined') {
-      const primaryColorVar = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-      if (primaryColorVar) {
-        const parts = primaryColorVar.split(' ').map(p => p.trim());
-        if (parts.length === 3) {
-          const h = parts[0];
-          const s = parts[1].endsWith('%') ? parts[1] : `${parts[1]}%`;
-          const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`;
-          setResolvedPrimaryColor(`hsl(${h}, ${s}, ${l})`);
-        } else {
-           setResolvedPrimaryColor('teal'); // Fallback color
-        }
-      } else {
-        setResolvedPrimaryColor('teal'); // Fallback color
-      }
+      const computedStyles = getComputedStyle(document.documentElement);
+      
+      const primaryColorVar = computedStyles.getPropertyValue('--primary').trim();
+      if (primaryColorVar) setResolvedPrimaryColor(parseHslString(primaryColorVar));
+      else setResolvedPrimaryColor('teal'); // Fallback
+
+      const foregroundColorVar = computedStyles.getPropertyValue('--foreground').trim();
+      if (foregroundColorVar) setResolvedForegroundColor(parseHslString(foregroundColorVar));
+      else setResolvedForegroundColor('#0A0A0A'); // Fallback for foreground (default dark)
+
+      const backgroundColorVar = computedStyles.getPropertyValue('--background').trim();
+      if (backgroundColorVar) setResolvedBackgroundColor(parseHslString(backgroundColorVar));
+      else setResolvedBackgroundColor('#F0F0F0'); // Fallback for background (default light gray)
     }
   }, []);
 
@@ -202,7 +216,7 @@ export function MapboxMap({
    const todaZoneLabelLayer: any = {
     id: 'toda-zone-labels',
     type: 'symbol',
-    source: 'toda-zones-labels-source', // Needs separate source with point geometry
+    source: 'toda-zones-labels-source', 
     layout: {
       'text-field': ['get', 'name'],
       'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
@@ -211,8 +225,8 @@ export function MapboxMap({
       'text-size': 10,
     },
     paint: {
-      'text-color': 'hsl(var(--foreground))',
-      'text-halo-color': 'hsl(var(--background))',
+      'text-color': resolvedForegroundColor,
+      'text-halo-color': resolvedBackgroundColor,
       'text-halo-width': 1,
     }
   };
@@ -249,11 +263,11 @@ export function MapboxMap({
       <ScaleControl />
 
       <Source id="toda-zones-source" type="geojson" data={todaZoneFeatures}>
-        {/* @ts-ignore */}
+        {/* @ts-ignore LayerProps type mismatch */}
         <Layer {...todaZoneLayer} />
       </Source>
       <Source id="toda-zones-labels-source" type="geojson" data={todaZoneLabelFeatures}>
-        {/* @ts-ignore */}
+        {/* @ts-ignore LayerProps type mismatch */}
         <Layer {...todaZoneLabelLayer} />
       </Source>
 
@@ -304,9 +318,6 @@ export function MapboxMap({
           latitude={popupInfo.latitude}
           onClose={() => {
             setPopupInfo(null);
-            // Not deselecting here to keep selection in lists
-            // onSelectTrider(null); 
-            // onSelectRideRequest(null);
           }}
           closeButton={true}
           closeOnClick={false}
@@ -322,14 +333,14 @@ export function MapboxMap({
 
       {routeGeoJson && (
         <Source id="route" type="geojson" data={routeGeoJson}>
-           {/* @ts-ignore */}
+           {/* @ts-ignore LayerProps type mismatch */}
           <Layer {...routeLayer} />
         </Source>
       )}
 
       {heatmapData && (
          <Source id="heatmap-data" type="geojson" data={heatmapData}>
-          {/* @ts-ignore */}
+          {/* @ts-ignore LayerProps type mismatch */}
           <Layer {...heatmapLayer} />
         </Source>
       )}
