@@ -14,10 +14,9 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Settings, LayoutDashboard, MapIcon, Users, Siren, CarTaxiFront } from 'lucide-react';
+import { Settings, LayoutDashboard, MapIcon, Users, Siren, CarTaxiFront, LogIn, UserPlus } from 'lucide-react';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 
 // TriGo Logo SVG
@@ -43,6 +42,9 @@ export default function DispatchLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname(); 
+
+  // Placeholder for user state if needed in the future
+  const isAuthenticated = false; // Assume not authenticated after removing Clerk
 
   return (
     <SidebarProvider defaultOpen>
@@ -91,25 +93,33 @@ export default function DispatchLayout({
         </SidebarContent>
         <SidebarFooter className="p-2">
            <Separator className="my-2 group-data-[collapsible=icon]:hidden" />
-           <div className="p-2 flex items-center justify-between group-data-[collapsible=icon]:justify-center">
-            <SignedIn>
-              <UserButton afterSignOutUrl="/sign-in" appearance={{
-                elements: {
-                  avatarBox: "w-8 h-8",
-                  userButtonPopoverCard: "bg-card text-card-foreground border-border",
-                }
-              }}/>
-              <span className="text-sm ml-2 group-data-[collapsible=icon]:hidden">
-                Profile & Logout
-              </span>
-            </SignedIn>
-            <SignedOut>
-                <SignInButton mode="modal">
-                  <Button variant="outline" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2">
-                    Sign In
-                  </Button>
-                </SignInButton>
-            </SignedOut>
+           <div className="p-2 flex flex-col items-center justify-between group-data-[collapsible=icon]:justify-center space-y-2">
+            {isAuthenticated ? (
+              <>
+                {/* Placeholder for authenticated user display */}
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-muted rounded-full group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10" />
+                  <span className="text-sm ml-2 group-data-[collapsible=icon]:hidden">
+                    User Profile
+                  </span>
+                </div>
+                <Button variant="outline" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2">
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* Placeholder Sign In / Sign Up buttons */}
+                <Button variant="outline" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2">
+                  <LogIn className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
+                </Button>
+                 <Button variant="default" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2">
+                  <UserPlus className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">Sign Up</span>
+                </Button>
+              </>
+            )}
            </div>
             <Separator className="my-2 group-data-[collapsible=icon]:hidden" />
            <SidebarMenu>
@@ -132,14 +142,16 @@ export default function DispatchLayout({
             <h1 className="text-lg font-semibold text-primary">TriGo Dispatch</h1>
           </div>
           <div className="ml-auto">
-            <SignedIn>
-              <UserButton afterSignOutUrl="/sign-in" />
-            </SignedIn>
-             <SignedOut>
-                <SignInButton mode="modal">
-                  <Button variant="outline" size="sm">Sign In</Button>
-                </SignInButton>
-            </SignedOut>
+            {isAuthenticated ? (
+              <Button variant="ghost" size="icon">
+                {/* Placeholder for mobile user avatar/logout */}
+                <Users className="h-5 w-5"/>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm">
+                <LogIn className="h-4 w-4"/>
+              </Button>
+            )}
           </div>
         </header>
         <main className="flex-1 overflow-auto bg-background">

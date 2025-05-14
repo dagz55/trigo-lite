@@ -1,19 +1,7 @@
+// Clerk middleware removed. 
+// If you need to protect routes, you'll need to implement new middleware
+// with your chosen authentication solution.
 
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import type { NextRequest } from 'next/server';
-
-const isProtectedRoute = createRouteMatcher([
-  '/', 
-  '/triders(.*)',
-  // Add any other routes you want to protect here
-]);
-
-export default clerkMiddleware((auth, req: NextRequest) => {
-  if (isProtectedRoute(req)) {
-    auth().protect();
-  }
-});
-
-export const config = {
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
-};
+// export const config = {
+//   matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+// };

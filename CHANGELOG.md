@@ -22,8 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Detailed trider panel with map preview, status controls, and wallet info (mocked).
     - Chat functionality UI (mocked).
     - Simulated payout and status change actions.
-- Clerk authentication for user sign-in, sign-up.
-- Protected routes for dispatch and trider management dashboards using Clerk middleware.
 - Custom TriGo logo and alert icon in the sidebar.
 - Helper utilities for geolocation (`geoUtils.ts`).
 - Defined TODA zones for Las Piñas City, Philippines.
@@ -36,14 +34,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refined map marker colors and styles for better visibility.
 - Corrected Mapbox GL JS color parsing issues for dynamic theme colors.
 - Updated trider names to Jesus' apostles (12 triders with mock profiles).
+- Updated README.md and CHANGELOG.md to reflect Clerk removal and configuration updates.
 
 ### Fixed
 - Resolved Mapbox GL JS errors related to paint property color types by using resolved HSL strings.
-- Addressed Clerk authentication configuration issues related to custom domains and proxy URLs in README.
+- Addressed Clerk authentication configuration issues related to custom domains and proxy URLs in README (prior to removal).
 - Ensured map layers (route, TODA zones, labels, heatmap) use correctly resolved color values from CSS variables.
 
 ### Removed
-- Placeholder middleware.
+- Placeholder middleware (prior to Clerk removal).
+- Clerk authentication:
+    - Removed `@clerk/nextjs` dependency.
+    - Deleted Clerk sign-in and sign-up pages.
+    - Removed Clerk UI components from layouts.
+    - Removed Clerk middleware.
+    - Removed `ClerkProvider` from root layout.
+    - Routes previously protected by Clerk are now publicly accessible.
 
 ## [0.1.0] - YYYY-MM-DD (Replace with actual date of first significant version)
 - Initial release.
