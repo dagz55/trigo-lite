@@ -62,7 +62,7 @@ export function MapboxMap({
     longitude: initialViewState?.longitude ?? FALLBACK_LONGITUDE,
     latitude: initialViewState?.latitude ?? FALLBACK_LATITUDE,
     zoom: initialViewState?.zoom ?? FALLBACK_ZOOM,
-    pitch: 30, // Default pitch
+    pitch: 45, // Default pitch for 3D view
     bearing: 0, // Default bearing
     ...initialViewState, // Apply any other settings from initialViewState
   });
@@ -359,3 +359,4 @@ export function MapboxMap({
     </Map>
   );
 }
+
