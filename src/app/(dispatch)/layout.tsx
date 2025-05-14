@@ -110,13 +110,17 @@ export default function DispatchLayout({
             ) : (
               <>
                 {/* Placeholder Sign In / Sign Up buttons */}
-                <Button variant="outline" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2">
-                  <LogIn className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
+                <Button variant="outline" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2" asChild>
+                  <Link href="/sign-in">
+                    <LogIn className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
+                  </Link>
                 </Button>
-                 <Button variant="default" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2">
-                  <UserPlus className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">Sign Up</span>
+                 <Button variant="default" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2" asChild>
+                  <Link href="/sign-up">
+                    <UserPlus className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">Sign Up</span>
+                  </Link>
                 </Button>
               </>
             )}
@@ -125,7 +129,7 @@ export default function DispatchLayout({
            <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/settings"}>
-                <Link href="#"> 
+                <Link href="/settings"> 
                   <Settings />
                   <span className="group-data-[collapsible=icon]:hidden">Settings</span>
                 </Link>
@@ -148,9 +152,11 @@ export default function DispatchLayout({
                 <Users className="h-5 w-5"/>
               </Button>
             ) : (
-              <Button variant="outline" size="sm">
-                <LogIn className="h-4 w-4"/>
-              </Button>
+               <Button variant="outline" size="sm" asChild>
+                  <Link href="/sign-in">
+                    <LogIn className="h-4 w-4"/>
+                  </Link>
+                </Button>
             )}
           </div>
         </header>

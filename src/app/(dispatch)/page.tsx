@@ -13,13 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { isPointInCircle, getRandomPointInCircle } from '@/lib/geoUtils';
+import { useSettings } from '@/contexts/SettingsContext'; // Import useSettings
 
-// Las Piñas City, Philippines Coordinates
-const LAS_PINAS_CENTER: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
-
-// TODO: Replace mock data with Supabase fetching.
-// Example: const { data: tridersFromDb, error: tridersError } = await supabase.from('triders').select('*');
-// Example: const { data: rideRequestsFromDb, error: requestsError } = await supabase.from('ride_requests').select('*').eq('status', 'pending');
+// Las Piñas City, Philippines Coordinates (used as fallback if settings not loaded)
+const FALLBACK_LAS_PINAS_CENTER: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
 
 const apostleNames = [
   "Peter", "Andrew", "James Z.", "John", "Philip", "Bartholomew", 
@@ -27,14 +24,13 @@ const apostleNames = [
 ];
 
 const initialTridersData: Omit<Trider, 'todaZoneName'>[] = apostleNames.map((name, index) => {
-  const todaZoneIndex = index % appTodaZones.length; // Distribute among available TODA zones
+  const todaZoneIndex = index % appTodaZones.length; 
   const todaZone = appTodaZones[todaZoneIndex];
   const randomLocationInZone = getRandomPointInCircle(todaZone.center, todaZone.radiusKm * 0.8);
   
-  // Alternate statuses for variety, ensuring some are available for dispatch
   const statuses: Trider['status'][] = ['available', 'busy', 'offline', 'assigned'];
   let status = statuses[index % statuses.length];
-  if (index < 4) status = 'available'; // Ensure first few are available
+  if (index < 4) status = 'available';
 
   return {
     id: `trider-apostle-${index + 1}`,
@@ -56,8 +52,8 @@ const initialRideRequests: RideRequest[] = [
   { 
     id: 'ride-1', 
     passengerName: 'Maria Makiling', 
-    pickupLocation: getRandomPointInCircle(appTodaZones[0].center, appTodaZones[0].radiusKm * 0.7), // ACAPODA
-    dropoffLocation: { latitude: LAS_PINAS_CENTER.latitude - 0.01, longitude: LAS_PINAS_CENTER.longitude + 0.01 }, 
+    pickupLocation: getRandomPointInCircle(appTodaZones[0].center, appTodaZones[0].radiusKm * 0.7),
+    dropoffLocation: { latitude: FALLBACK_LAS_PINAS_CENTER.latitude - 0.01, longitude: FALLBACK_LAS_PINAS_CENTER.longitude + 0.01 }, 
     pickupAddress: `${appTodaZones[0].areaOfOperation} area`, 
     dropoffAddress: 'SM Southmall, Las Piñas', 
     status: 'pending', 
@@ -68,12 +64,12 @@ const initialRideRequests: RideRequest[] = [
   { 
     id: 'ride-2', 
     passengerName: 'Bernardo Carpio', 
-    pickupLocation: getRandomPointInCircle(appTodaZones[2].center, appTodaZones[2].radiusKm * 0.7), // ATODA
-    dropoffLocation: { latitude: LAS_PINAS_CENTER.latitude + 0.005, longitude: LAS_PINAS_CENTER.longitude - 0.005 }, 
+    pickupLocation: getRandomPointInCircle(appTodaZones[2].center, appTodaZones[2].radiusKm * 0.7),
+    dropoffLocation: { latitude: FALLBACK_LAS_PINAS_CENTER.latitude + 0.005, longitude: FALLBACK_LAS_PINAS_CENTER.longitude - 0.005 }, 
     pickupAddress: `${appTodaZones[2].areaOfOperation} area`, 
     dropoffAddress: 'BF Resort Village, Las Piñas', 
     status: 'assigned', 
-    assignedTriderId: initialTriders.find(t => t.todaZoneId === appTodaZones[2].id && t.status !== 'offline')?.id || initialTriders[2].id, // Assign to an ATODA trider if available
+    assignedTriderId: initialTriders.find(t => t.todaZoneId === appTodaZones[2].id && t.status !== 'offline')?.id || initialTriders[2].id,
     fare: 60.00, 
     requestedAt: new Date(Date.now() - 10 * 60 * 1000),
     pickupTodaZoneId: appTodaZones[2].id,
@@ -89,7 +85,16 @@ const initialAiInsights: AiInsight[] = [
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 export default function DispatchPage() {
-  // TODO: Replace useState with data fetching from Supabase (e.g., React Query or SWR) for triders, rideRequests
+  const { 
+    defaultMapZoom, 
+    defaultMapCenter, 
+    showHeatmap, 
+    rideRequestIntervalMs, 
+    triderUpdateIntervalMs,
+    aiInsightIntervalMs,
+    isLoading: settingsLoading 
+  } = useSettings();
+
   const [triders, setTriders] = React.useState<Trider[]>(initialTriders);
   const [rideRequests, setRideRequests] = React.useState<RideRequest[]>(initialRideRequests);
   const [aiInsights, setAiInsights] = React.useState<AiInsight[]>(initialAiInsights);
@@ -116,8 +121,6 @@ export default function DispatchPage() {
   }, [todaZones]);
 
   React.useEffect(() => {
-    // Initialize pickupTodaZoneId for existing requests
-    // TODO: This logic might be handled by Supabase or backend when creating requests
     setRideRequests(prevRequests => 
       prevRequests.map(req => {
         if (!req.pickupTodaZoneId) {
@@ -127,12 +130,11 @@ export default function DispatchPage() {
         return req;
       })
     );
-  }, [getTodaZoneForLocation]); // Removed initialRideRequests from deps as it's static after init.
+  }, [getTodaZoneForLocation]);
 
 
-  // Simulate real-time trider location updates
-  // TODO: This should be driven by actual location updates from triders via Supabase Realtime or polling
   React.useEffect(() => {
+    if (settingsLoading) return; // Wait for settings to load
     const interval = setInterval(() => {
       setTriders(prevTriders =>
         prevTriders.map(trider => {
@@ -143,7 +145,7 @@ export default function DispatchPage() {
 
           if (trider.status === 'assigned' || trider.status === 'busy') {
             const ride = rideRequests.find(r => r.assignedTriderId === trider.id && (r.status === 'assigned' || r.status === 'in-progress'));
-            if (ride && triderZone) { // Move towards target if ride exists AND in a zone
+            if (ride && triderZone) { 
               const targetLat = ride.status === 'assigned' ? ride.pickupLocation.latitude : ride.dropoffLocation.latitude;
               const targetLon = ride.status === 'assigned' ? ride.pickupLocation.longitude : ride.dropoffLocation.longitude;
               
@@ -151,36 +153,31 @@ export default function DispatchPage() {
                 latitude: trider.location.latitude + (targetLat - trider.location.latitude) * 0.1 + (Math.random() - 0.5) * 0.0002,
                 longitude: trider.location.longitude + (targetLon - trider.location.longitude) * 0.1 + (Math.random() - 0.5) * 0.0002,
               };
-              // If moving towards target takes it out of zone, just move randomly within zone
               if (isPointInCircle(potentialLocation, triderZone.center, triderZone.radiusKm)) {
                 newLocation = potentialLocation;
               } else {
                 newLocation = getRandomPointInCircle(triderZone.center, triderZone.radiusKm * 0.95);
               }
 
-            } else if (triderZone) { // Busy but no specific ride, or ride target outside zone, random move within zone
+            } else if (triderZone) { 
                 newLocation = getRandomPointInCircle(triderZone.center, triderZone.radiusKm * 0.95);
             }
           } else if (trider.status === 'available' && triderZone) {
-            // For available triders, random move within their zone
              newLocation = getRandomPointInCircle(triderZone.center, triderZone.radiusKm * 0.95);
           }
-          // Ensure trider stays within their TODA zone if they have one
           if(triderZone && !isPointInCircle(newLocation, triderZone.center, triderZone.radiusKm)) {
-             return { ...trider, location: getRandomPointInCircle(triderZone.center, triderZone.radiusKm * 0.9) }; // Snap back if out of bounds
+             return { ...trider, location: getRandomPointInCircle(triderZone.center, triderZone.radiusKm * 0.9) };
           }
           return { ...trider, location: newLocation };
         })
       );
-    }, 5000);
+    }, triderUpdateIntervalMs); // Use setting
     return () => clearInterval(interval);
-  }, [rideRequests, todaZones]);
+  }, [rideRequests, todaZones, triderUpdateIntervalMs, settingsLoading]);
 
 
-  // Simulate new ride requests and AI insights
-  // TODO: New ride requests should come from a user-facing app and be inserted into Supabase, then listened to via Realtime.
-  // TODO: AI insights could be generated by a separate backend process/Genkit flow and stored in Supabase.
   React.useEffect(() => {
+    if (settingsLoading) return; // Wait for settings
     const rideInterval = setInterval(() => {
       if (todaZones.length === 0) return;
 
@@ -188,12 +185,10 @@ export default function DispatchPage() {
       const pickupLocation = getRandomPointInCircle(randomPickupZone.center, randomPickupZone.radiusKm * 0.9);
       
       let randomDropoffZone = todaZones[Math.floor(Math.random() * todaZones.length)];
-      // Ensure dropoff is not in the same zone for more realistic requests, or pick any if only one zone
       if (todaZones.length > 1 && randomDropoffZone.id === randomPickupZone.id) {
         randomDropoffZone = todaZones[(todaZones.findIndex(z => z.id === randomPickupZone.id) + 1) % todaZones.length];
       }
       const dropoffLocation = getRandomPointInCircle(randomDropoffZone.center, randomDropoffZone.radiusKm * 0.9);
-
 
       const newRideId = `ride-${Date.now()}`;
       const newRide: RideRequest = {
@@ -210,7 +205,7 @@ export default function DispatchPage() {
       };
       setRideRequests(prev => [newRide, ...prev.slice(0,19)]);
       toast({ title: "New Ride Request (Mock)", description: `${newRide.passengerName} in ${randomPickupZone.name} needs a ride.` });
-    }, 30000);
+    }, rideRequestIntervalMs); // Use setting
 
     const insightInterval = setInterval(() => {
       const newInsightId = `ai-${Date.now()}`;
@@ -224,16 +219,15 @@ export default function DispatchPage() {
         relatedLocation: randomZone?.center
       };
       setAiInsights(prev => [newInsight, ...prev.slice(0,4)]);
-    }, 60000);
+    }, aiInsightIntervalMs); // Use setting
 
     return () => {
       clearInterval(rideInterval);
       clearInterval(insightInterval);
     };
-  }, [toast, todaZones, getTodaZoneForLocation]);
+  }, [toast, todaZones, getTodaZoneForLocation, rideRequestIntervalMs, aiInsightIntervalMs, settingsLoading]);
 
   React.useEffect(() => {
-    // TODO: Heatmap data could be derived from historical ride data in Supabase.
     const features = rideRequests.map(req => ({
       type: 'Feature' as const,
       properties: { mag: Math.random() * 5 + 1 }, 
@@ -269,7 +263,6 @@ export default function DispatchPage() {
       } else {
         const updatedRequest = { ...request, pickupTodaZoneId: pickupZoneId };
         setSelectedRideRequest(updatedRequest);
-        // Filter candidate triders to those available AND in the same TODA zone as the pickup.
         const availableTridersInZone = triders.filter(t => t.status === 'available' && t.todaZoneId === pickupZoneId);
         setCandidateTriders(availableTridersInZone);
         
@@ -281,15 +274,14 @@ export default function DispatchPage() {
           fetchRoute(selectedTrider.location, request.pickupLocation, request.dropoffLocation);
         } else {
           setRouteGeoJson(null);
-          // If a trider was selected from a different zone, clear it or inform user.
           if (selectedTrider && pickupZoneId !== selectedTrider.todaZoneId) {
              toast({ title: "Zone Mismatch", description: `Selected trider ${selectedTrider.name} is not in the pickup zone for this request.`, variant: "destructive" });
-             setSelectedTrider(null); // Optionally clear selected trider
+             setSelectedTrider(null);
           }
         }
       }
-    } else { // No request selected
-      setCandidateTriders(triders.filter(t => t.status === 'available')); // Show all available if no request selected
+    } else {
+      setCandidateTriders(triders.filter(t => t.status === 'available'));
       setRouteGeoJson(null);
     }
   };
@@ -353,19 +345,13 @@ export default function DispatchPage() {
       return;
     }
 
-    // TODO: Update trider and ride request status in Supabase
-    // Example: await supabase.from('triders').update({ status: 'assigned' }).eq('id', selectedTrider.id);
-    // Example: await supabase.from('ride_requests').update({ status: 'assigned', assigned_trider_id: selectedTrider.id }).eq('id', selectedRideRequest.id);
     setTriders(prev => prev.map(t => t.id === selectedTrider.id ? { ...t, status: 'assigned' } : t));
     setRideRequests(prev => prev.map(r => r.id === selectedRideRequest.id ? { ...r, status: 'assigned', assignedTriderId: selectedTrider.id } : r));
     
     toast({ title: "Ride Dispatched! (Mock)", description: `${selectedTrider.name} assigned to ${selectedRideRequest.passengerName}.` });
     fetchRoute(selectedTrider.location, selectedRideRequest.pickupLocation, selectedRideRequest.dropoffLocation);
-    // After dispatch, reset selections or update candidate triders
     setSelectedTrider(null);
-    // setSelectedRideRequest(null); // Or keep it selected but update its status display
     setCandidateTriders(triders.filter(t => t.status === 'available' && t.todaZoneId === ridePickupZoneId));
-
   };
 
   const isDispatchDisabled = !selectedTrider || 
@@ -375,6 +361,20 @@ export default function DispatchPage() {
                              isFetchingRoute ||
                              selectedTrider.todaZoneId !== (selectedRideRequest.pickupTodaZoneId || getTodaZoneForLocation(selectedRideRequest.pickupLocation)?.id);
 
+  const mapInitialViewState = React.useMemo(() => ({
+    longitude: defaultMapCenter.longitude,
+    latitude: defaultMapCenter.latitude,
+    zoom: defaultMapZoom,
+  }), [defaultMapCenter, defaultMapZoom]);
+
+  if (settingsLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2">Loading dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height,0px))] md:h-screen">
@@ -424,11 +424,7 @@ export default function DispatchPage() {
 
         <div className="lg:col-span-2 h-full min-h-[400px] lg:min-h-0 rounded-lg overflow-hidden shadow-lg border">
           <MapboxMap
-            initialViewState={{
-              longitude: LAS_PINAS_CENTER.longitude,
-              latitude: LAS_PINAS_CENTER.latitude,
-              zoom: 12.5, // Slightly more zoomed in for Las Piñas
-            }}
+            initialViewState={mapInitialViewState}
             triders={triders}
             rideRequests={rideRequests}
             selectedTrider={selectedTrider}
@@ -438,6 +434,7 @@ export default function DispatchPage() {
             routeGeoJson={routeGeoJson}
             heatmapData={heatmapData}
             todaZones={todaZones}
+            showHeatmap={showHeatmap}
           />
         </div>
       </div>

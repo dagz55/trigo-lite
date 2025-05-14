@@ -10,13 +10,13 @@ import { createGeoJSONCircle } from '@/lib/geoUtils';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
-// Las Piñas City, Philippines Coordinates
-const DEFAULT_LONGITUDE = 120.9938;
-const DEFAULT_LATITUDE = 14.4445;
-const DEFAULT_ZOOM = 12; 
+// Default fallbacks if not provided by settings
+const FALLBACK_LONGITUDE = 120.9938;
+const FALLBACK_LATITUDE = 14.4445;
+const FALLBACK_ZOOM = 12.5; 
 
 interface MapboxMapProps {
-  initialViewState?: Partial<ViewState>;
+  initialViewState?: Partial<ViewState>; // This will come from settings or page defaults
   triders: Trider[];
   rideRequests: RideRequest[];
   selectedTrider: Trider | null;
@@ -26,6 +26,7 @@ interface MapboxMapProps {
   routeGeoJson: GeoJSON.FeatureCollection | null;
   heatmapData: GeoJSON.FeatureCollection | null;
   todaZones: TodaZone[];
+  showHeatmap: boolean; // Controlled by settings
 }
 
 const triderStatusColors: Record<Trider['status'], string> = {
@@ -55,15 +56,29 @@ export function MapboxMap({
   routeGeoJson,
   heatmapData,
   todaZones,
+  showHeatmap,
 }: MapboxMapProps) {
   const [viewState, setViewState] = React.useState<Partial<ViewState>>({
-    longitude: DEFAULT_LONGITUDE,
-    latitude: DEFAULT_LATITUDE,
-    zoom: DEFAULT_ZOOM,
-    pitch: 30,
-    bearing: 0,
-    ...initialViewState,
+    longitude: initialViewState?.longitude ?? FALLBACK_LONGITUDE,
+    latitude: initialViewState?.latitude ?? FALLBACK_LATITUDE,
+    zoom: initialViewState?.zoom ?? FALLBACK_ZOOM,
+    pitch: 30, // Default pitch
+    bearing: 0, // Default bearing
+    ...initialViewState, // Apply any other settings from initialViewState
   });
+  
+  // Update viewState if initialViewState prop changes (e.g., from settings context)
+  React.useEffect(() => {
+    if (initialViewState) {
+      setViewState(prev => ({
+        ...prev, // Keep pitch, bearing etc. unless overridden
+        longitude: initialViewState.longitude ?? prev.longitude,
+        latitude: initialViewState.latitude ?? prev.latitude,
+        zoom: initialViewState.zoom ?? prev.zoom,
+      }));
+    }
+  }, [initialViewState]);
+
 
   const [popupInfo, setPopupInfo] = React.useState<{
     longitude: number;
@@ -75,11 +90,10 @@ export function MapboxMap({
   const mapRef = React.useRef<MapRef>(null);
   
   const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(180, 100%, 25.1%)'); 
-  const [resolvedForegroundColor, setResolvedForegroundColor] = React.useState<string>('hsl(240, 10%, 3.9%)'); // Default dark
-  const [resolvedBackgroundColor, setResolvedBackgroundColor] = React.useState<string>('hsl(0, 0%, 94.1%)'); // Default light gray
+  const [resolvedForegroundColor, setResolvedForegroundColor] = React.useState<string>('hsl(240, 10%, 3.9%)');
+  const [resolvedBackgroundColor, setResolvedBackgroundColor] = React.useState<string>('hsl(0, 0%, 94.1%)');
 
   const parseHslString = (hslString: string): string => {
-    // Converts "H S% L%" to "hsl(H, S%, L%)" if not already in that format
     const parts = hslString.split(' ').map(p => p.trim());
     if (parts.length === 3 && !hslString.startsWith('hsl(')) {
         const h = parts[0];
@@ -87,7 +101,7 @@ export function MapboxMap({
         const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`;
         return `hsl(${h}, ${s}, ${l})`;
     }
-    return hslString; // Assume it's already a valid color string or direct HSL
+    return hslString;
   };
 
 
@@ -99,16 +113,13 @@ export function MapboxMap({
       const computedStyles = getComputedStyle(document.documentElement);
       
       const primaryColorVar = computedStyles.getPropertyValue('--primary').trim();
-      if (primaryColorVar) setResolvedPrimaryColor(parseHslString(primaryColorVar));
-      else setResolvedPrimaryColor('teal'); // Fallback
+      setResolvedPrimaryColor(primaryColorVar ? parseHslString(primaryColorVar) : 'teal');
 
       const foregroundColorVar = computedStyles.getPropertyValue('--foreground').trim();
-      if (foregroundColorVar) setResolvedForegroundColor(parseHslString(foregroundColorVar));
-      else setResolvedForegroundColor('#0A0A0A'); // Fallback for foreground (default dark)
+      setResolvedForegroundColor(foregroundColorVar ? parseHslString(foregroundColorVar) : '#0A0A0A');
 
       const backgroundColorVar = computedStyles.getPropertyValue('--background').trim();
-      if (backgroundColorVar) setResolvedBackgroundColor(parseHslString(backgroundColorVar));
-      else setResolvedBackgroundColor('#F0F0F0'); // Fallback for background (default light gray)
+      setResolvedBackgroundColor(backgroundColorVar ? parseHslString(backgroundColorVar) : '#F0F0F0');
     }
   }, []);
 
@@ -338,7 +349,7 @@ export function MapboxMap({
         </Source>
       )}
 
-      {heatmapData && (
+      {showHeatmap && heatmapData && (
          <Source id="heatmap-data" type="geojson" data={heatmapData}>
           {/* @ts-ignore LayerProps type mismatch */}
           <Layer {...heatmapLayer} />
@@ -348,4 +359,3 @@ export function MapboxMap({
     </Map>
   );
 }
-

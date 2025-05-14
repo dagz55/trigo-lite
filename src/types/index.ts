@@ -97,3 +97,22 @@ export interface ChatMessage {
   timestamp: Date;
   isRead?: boolean;
 }
+
+// App Settings
+export type ThemeSetting = 'light' | 'dark' | 'system';
+
+export interface AppSettings {
+  theme: ThemeSetting;
+  defaultMapZoom: number;
+  defaultMapCenter: Coordinates;
+  showHeatmap: boolean;
+  rideRequestIntervalMs: number;
+  triderUpdateIntervalMs: number;
+  aiInsightIntervalMs: number;
+}
+
+// For SettingsContext updates
+export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings> = {
+  key: K;
+  value: AppSettings[K];
+};
