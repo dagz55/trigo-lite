@@ -82,25 +82,26 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
     # GOOGLE_API_KEY=your_google_ai_studio_api_key
     ```
 
-    **Notes on Clerk `NEXT_PUBLIC_CLERK_DOMAIN` and `CLERK_PROXY_URL`:**
+    **CRITICAL Notes on Clerk `NEXT_PUBLIC_CLERK_DOMAIN` and `CLERK_PROXY_URL` for Production:**
+
+    This application uses Clerk's **proxy setup**. This means your Next.js application backend itself acts as a proxy for Clerk's services. Authentication routes like `/sign-in` and `/sign-up` are handled by your application, which then communicates with Clerk.
+
     *   **Development (e.g., `http://localhost:9002`):**
-        *   If your app runs on `http://localhost:9002`, you might not need to set `NEXT_PUBLIC_CLERK_DOMAIN` and `CLERK_PROXY_URL` explicitly if Clerk's default development setup works for you.
-        *   However, if you encounter issues or want to prepare for production, set them:
-            *   `NEXT_PUBLIC_CLERK_DOMAIN=localhost` (or your specific local hostname if not just 'localhost')
-            *   `CLERK_PROXY_URL=http://localhost:9002` (ensure this matches your dev server URL)
+        *   `NEXT_PUBLIC_CLERK_DOMAIN=localhost`
+        *   `CLERK_PROXY_URL=http://localhost:9002` (Match your dev server URL and port)
     *   **Production (e.g., `https://app.trigo.live`):**
-        *   `CLERK_PROXY_URL=https://app.trigo.live` (**Must include `https://`**)
-        *   `NEXT_PUBLIC_CLERK_DOMAIN=app.trigo.live` (The domain your users access your app on)
-        *   This configuration tells Clerk that authentication requests originating from your frontend at `app.trigo.live` are legitimate and should be handled by your backend also at `app.trigo.live` acting as a proxy.
+        *   `CLERK_PROXY_URL=https://app.trigo.live` (**MUST include `https://` and be the full, public URL of your deployed application.**)
+        *   `NEXT_PUBLIC_CLERK_DOMAIN=app.trigo.live` (The domain your users access your app on. Do not include `https://` here.)
 
-4.  **Configure Clerk DNS for Production (Custom Domain):**
-    If you are using a custom domain for your application (e.g., `app.trigo.live`) and want Clerk to operate seamlessly under this domain (e.g., handling sign-in at `app.trigo.live/sign-in`), you need to ensure your DNS is correctly set up for your hosting provider.
+    **Why is this important?**
+    If `CLERK_PROXY_URL` is incorrect (e.g., missing `https://`, wrong domain, or points to a non-existent URL), Clerk's authentication flow will break. Errors like "unsupported protocol" often arise from `CLERK_PROXY_URL` not having `https://` in a production HTTPS environment. Errors like "server IP address could not be found" for `accounts.yourdomain.com` can happen if Clerk is misconfigured to look for a separate `accounts` subdomain instead of using your app as the proxy.
 
-    Clerk's JWT tokens are typically issued for the domain specified in your Clerk dashboard settings. For custom domains, you'll use the "Proxy URL" setup with the `CLERK_PROXY_URL` environment variable.
+4.  **Configure DNS for Production (Custom Domain):**
+    If you are using a custom domain (e.g., `app.trigo.live`), your primary DNS setup is for your application itself.
 
-    **DNS Setup (General Guidance):**
-    *   Your primary application domain (e.g., `app.trigo.live`) should have an `A` record or `CNAME` record pointing to your hosting provider (e.g., Vercel, Netlify, your server IP).
-    *   **Clerk's recommended setup for custom domains with Next.js (like this project) involves setting the `CLERK_PROXY_URL` environment variable to your application's full public URL (e.g., `https://app.trigo.live`).** This makes your application backend proxy requests to Clerk, allowing authentication to happen under your domain. No separate `clerk.` or `accounts.` CNAME records are typically needed for Clerk itself when using the proxy method.
+    **DNS Setup (General Guidance for `app.trigo.live`):**
+    *   Your application domain (e.g., `app.trigo.live`) should have an `A` record or `CNAME` record pointing to your hosting provider (e.g., Vercel, Netlify, your server IP).
+    *   **With the proxy setup used in this app, you typically DO NOT need separate `CNAME` records for Clerk like `clerk.yourdomain.com` or `accounts.yourdomain.com`.** Your application at `CLERK_PROXY_URL` handles the Clerk interaction.
 
     **Example DNS `CNAME` for `app.trigo.live` (if hosting on Vercel):**
     *   Type: `CNAME`
@@ -112,38 +113,44 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_... # Your actual publishable key
     CLERK_SECRET_KEY=sk_test_... # Your actual secret key
 
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in       # Path on your app
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up       # Path on your app
     NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
     NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
 
     # Essential for custom domain proxy setup:
-    CLERK_PROXY_URL=https://app.trigo.live # CRITICAL: Must be the full URL where your app is hosted, including https
-    NEXT_PUBLIC_CLERK_DOMAIN=app.trigo.live  # The domain Clerk should associate with (for cookies, etc.)
+    CLERK_PROXY_URL=https://app.trigo.live # CRITICAL: Full HTTPS URL of your app
+    NEXT_PUBLIC_CLERK_DOMAIN=app.trigo.live  # Your app's domain
     ```
 
     *   **Verify your domain setup in the Clerk Dashboard:**
         *   Go to your Clerk application -> API Keys. Note your Publishable Key and Secret Key.
-        *   Go to Clerk application -> Paths. Ensure "Sign-in URL", "Sign-up URL", etc., match your app's routes (e.g., `/sign-in`, `/sign-up`).
-        *   Go to Clerk application -> Domains. For a proxy setup, the "Frontend API URL" and "Accounts portal URL" are less critical as your app handles these. However, ensure no settings there conflict with your proxy setup. If you previously had a CNAME setup (e.g., `clerk.yourdomain.com`), you might need to adjust settings if you're moving to a full proxy model.
+        *   Go to Clerk application -> Paths. Ensure "Sign-in URL", "Sign-up URL", etc., match your app's routes (e.g., `/sign-in`, `/sign-up`). These are paths on *your* application.
+        *   Go to Clerk application -> Domains.
+            *   For a proxy setup, your primary concern is that your application is reachable at `CLERK_PROXY_URL`.
+            *   If you previously configured a "Custom Domain" in Clerk (e.g., `clerk.yourdomain.com`), ensure this is not conflicting. With the proxy setup, Clerk does not need its own subdomain.
+            *   The "Frontend API URL" and "Accounts portal URL" listed in the Clerk Dashboard may reflect Clerk's own domains (like `*.clerk.accounts.dev`). This is normal when using proxy, as your app (via `CLERK_PROXY_URL`) is the effective frontend.
 
-    **Troubleshooting Clerk Issues:**
+    **Troubleshooting Clerk Errors:**
 
     *   **"Server IP address could not be found" for `accounts.yourdomain.com` or `clerk.yourdomain.com`:**
-        This error usually means that a `CNAME` record for a Clerk-specific subdomain (e.g., `accounts.yourdomain.com` or the one shown as "Frontend API URL" in your Clerk dashboard if it's like `clerk.happy.panda-12.lcl.dev`) is either missing or misconfigured in your DNS settings.
-        1.  **Using Proxy (Recommended for this app structure):** If you are using the `CLERK_PROXY_URL` (e.g., `https://app.trigo.live`), your app *itself* acts as the frontend for Clerk. In this case, you generally **do not need** a CNAME record for `accounts.yourdomain.com` or `clerk.yourdomain.com` pointing to Clerk's servers. The error might appear if `CLERK_PROXY_URL` is missing or incorrect, or if Clerk dashboard settings are still trying to direct to a separate `accounts.` subdomain.
-            *   **Ensure `CLERK_PROXY_URL` is correctly set to your app's full public HTTPS URL.**
-            *   **Ensure `NEXT_PUBLIC_CLERK_SIGN_IN_URL` (and `_SIGN_UP_URL`) point to paths on *your* app (e.g., `/sign-in`).**
-            *   Review your Clerk Dashboard settings under "Domains" and "Paths" to ensure they align with your app handling these routes directly.
-        2.  **If NOT using Proxy (Clerk Hosted UI on subdomain):** If you intend for Clerk to host UI on `accounts.yourdomain.com`, then you *do* need a CNAME record for `accounts` (or whatever subdomain Clerk specifies) pointing to Clerk's servers. This is less common for Next.js apps that embed Clerk components.
-        3.  **DNS Propagation:** DNS changes can take time to propagate (up to 48 hours, but usually much faster). Use a DNS checker tool to verify.
+        This typically occurs if:
+        1.  Your Clerk application in the Dashboard is configured to use a custom Clerk subdomain (e.g., `accounts.yourdomain.com`) AND you haven't set up the corresponding CNAME record in your DNS.
+        2.  **More likely for this project:** Your `CLERK_PROXY_URL` or `NEXT_PUBLIC_CLERK_DOMAIN` might be incorrect, causing Clerk to fall back or attempt to use a separate domain structure.
+        **Solution for this project:** Ensure `CLERK_PROXY_URL` points to your *application's* full HTTPS URL (e.g., `https://app.trigo.live`) and `NEXT_PUBLIC_CLERK_DOMAIN` is set to your app's domain (e.g., `app.trigo.live`). Your app itself serves the Clerk UI components on its own paths (e.g., `https://app.trigo.live/sign-in`). **No CNAME for `accounts.yourdomain.com` should be needed for Clerk when using the proxy setup correctly.**
 
-    *   **"accounts.trigo.live uses an unsupported protocol" or similar protocol errors:**
+    *   **"`accounts.trigo.live` uses an unsupported protocol" or similar SSL/protocol errors:**
         This error strongly suggests that Clerk is attempting to connect to a URL using `http` when `https` is expected, or the URL is malformed.
-        1.  **Check `CLERK_PROXY_URL`:** Ensure this environment variable includes the `https://` prefix for your production URL (e.g., `CLERK_PROXY_URL=https://app.trigo.live`, NOT `CLERK_PROXY_URL=app.trigo.live`).
-        2.  **Check `NEXT_PUBLIC_CLERK_DOMAIN`:** Ensure this is the correct hostname (e.g., `app.trigo.live`).
-        3.  **Clerk Dashboard Settings:** Double-check any URLs configured in your Clerk dashboard (e.g., under "Paths" or "Domains"). Ensure they also use `https://` where appropriate and align with your proxy setup. If `accounts.trigo.live` is appearing in error messages, it indicates that Clerk is still attempting to use that subdomain, which might be due to misconfiguration in the dashboard or environment variables not correctly enforcing the proxy behavior.
-        4.  **Mixed Content:** Ensure your entire application is served over HTTPS in production.
+        1.  **Check `CLERK_PROXY_URL`:** This is the most common culprit. **Ensure this environment variable includes the `https://` prefix for your production URL** (e.g., `CLERK_PROXY_URL=https://app.trigo.live`, NOT `CLERK_PROXY_URL=app.trigo.live`).
+        2.  **Check `NEXT_PUBLIC_CLERK_DOMAIN`:** Ensure this is the correct hostname without the protocol (e.g., `app.trigo.live`).
+        3.  **Clerk Dashboard Settings:** Double-check any URLs configured in your Clerk dashboard (e.g., under "Paths" or "Domains"). Ensure they also use `https://` where appropriate if they refer to your application directly. If `accounts.trigo.live` is appearing in error messages, it indicates that Clerk is still attempting to use that subdomain, likely due to misconfiguration in environment variables or the dashboard not correctly recognizing the proxy setup.
+        4.  **Mixed Content:** Ensure your entire application is served over HTTPS in production. Your hosting provider should enforce HTTPS.
+
+    *   **Infinite Redirects or "Too many redirects":**
+        This can happen if your middleware or Clerk settings create a loop.
+        1.  Check your `middleware.ts` and ensure `NEXT_PUBLIC_CLERK_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_SIGN_UP_URL` are correct and accessible.
+        2.  Ensure your `CLERK_PROXY_URL` and `NEXT_PUBLIC_CLERK_DOMAIN` are correctly set for your environment.
+        3.  Verify your Clerk application "Paths" settings in the dashboard are correct.
 
 5.  **Run the development server:**
     ```bash
@@ -226,4 +233,4 @@ Please refer to contributing guidelines if available. For now, ensure code quali
 ## License
 
 This project is licensed under [Specify License Here - e.g., MIT License].
-
+```
