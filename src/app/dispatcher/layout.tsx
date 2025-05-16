@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -58,32 +59,40 @@ export default function DispatcherLayout({ // Renamed from DispatchLayout
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher"}>
                 <Link href="/dispatcher">
-                  <LayoutDashboard />
-                  <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
+                  <span style={{ display: "contents" }}>
+                    <LayoutDashboard />
+                    <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/triders"}>
                 <Link href="/dispatcher/triders">
-                  <CarTaxiFront />
-                  <span className="group-data-[collapsible=icon]:hidden">Triders</span>
+                  <span style={{ display: "contents" }}>
+                    <CarTaxiFront />
+                    <span className="group-data-[collapsible=icon]:hidden">Triders</span>
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === "/dispatcher/live-map"}> {/* Assuming live-map will be under /dispatcher */}
+              <SidebarMenuButton asChild isActive={pathname === "/dispatcher/live-map"}>
                 <Link href="#"> {/* Update href when live map page exists */}
-                  <MapIcon />
-                  <span className="group-data-[collapsible=icon]:hidden">Live Map</span>
+                  <span style={{ display: "contents" }}>
+                    <MapIcon />
+                    <span className="group-data-[collapsible=icon]:hidden">Live Map</span>
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === "/dispatcher/alerts"}> {/* Assuming alerts will be under /dispatcher */}
+              <SidebarMenuButton asChild isActive={pathname === "/dispatcher/alerts"}>
                 <Link href="#"> {/* Update href when alerts page exists */}
-                  <TriGoAlertLogo /> 
-                   <span className="group-data-[collapsible=icon]:hidden">Alerts</span>
+                  <span style={{ display: "contents" }}>
+                    <TriGoAlertLogo /> 
+                    <span className="group-data-[collapsible=icon]:hidden">Alerts</span>
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -108,14 +117,18 @@ export default function DispatcherLayout({ // Renamed from DispatchLayout
               <>
                 <Button variant="outline" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2" asChild>
                   <Link href="/sign-in">
-                    <LogIn className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
+                     <span style={{ display: "contents" }}>
+                      <LogIn className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">Sign In</span>
+                    </span>
                   </Link>
                 </Button>
                  <Button variant="default" className="w-full group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:p-2" asChild>
                   <Link href="/sign-up">
-                    <UserPlus className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Sign Up</span>
+                    <span style={{ display: "contents" }}>
+                      <UserPlus className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">Sign Up</span>
+                    </span>
                   </Link>
                 </Button>
               </>
@@ -126,8 +139,10 @@ export default function DispatcherLayout({ // Renamed from DispatchLayout
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/settings"}>
                 <Link href="/dispatcher/settings"> 
-                  <Settings />
-                  <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                  <span style={{ display: "contents" }}>
+                    <Settings />
+                    <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
