@@ -13,12 +13,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { isPointInCircle, getRandomPointInCircle, calculateDistance } from '@/lib/geoUtils';
-import { useSettings } from '@/contexts/SettingsContext'; 
+import { useSettings, DEFAULT_TODA_BASE_FARE } from '@/contexts/SettingsContext'; 
 
 const FALLBACK_LAS_PINAS_CENTER: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
 const TALON_KUATRO_ZONE_ID = '2'; // APHDA (Talon Kuatro)
 const TEPTODA_ZONE_ID = '7'; // TEPTODA (Talon Equitable)
 const P1TODA_ZONE_ID = '21'; // P1TODA (Pamplona Uno)
+const FARE_PER_KM = 10;
 
 const talonKuatroZone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID);
 const teptodaZone = appTodaZones.find(z => z.id === TEPTODA_ZONE_ID);
@@ -106,7 +107,7 @@ const initialRideRequests: RideRequest[] = [
     pickupAddress: `${talonKuatroZone.areaOfOperation} area`, 
     dropoffAddress: 'Alabang Town Center', 
     status: 'pending', 
-    fare: 85.00, 
+    fare: 85.00, // Will be recalculated if settings are used
     requestedAt: new Date(Date.now() - 3 * 60 * 1000),
     pickupTodaZoneId: TALON_KUATRO_ZONE_ID,
     ticketId: `TKT-${Date.now() + 1}`
@@ -119,7 +120,7 @@ const initialRideRequests: RideRequest[] = [
     pickupAddress: `${teptodaZone.areaOfOperation} area`, 
     dropoffAddress: 'Perpetual Help Medical Center', 
     status: 'pending', 
-    fare: 70.00, 
+    fare: 70.00, // Will be recalculated
     requestedAt: new Date(Date.now() - 5 * 60 * 1000),
     pickupTodaZoneId: TEPTODA_ZONE_ID,
     ticketId: `TKT-${Date.now() + 3}`
@@ -133,7 +134,7 @@ const initialRideRequests: RideRequest[] = [
     dropoffAddress: 'Robinsons Place Las Piñas', 
     status: 'assigned', 
     assignedTriderId: initialTriders.find(t => t.todaZoneId === TALON_KUATRO_ZONE_ID && t.status !== 'offline')?.id || initialTriders[0].id,
-    fare: 55.00, 
+    fare: 55.00, // Will be recalculated
     requestedAt: new Date(Date.now() - 8 * 60 * 1000),
     pickupTodaZoneId: TALON_KUATRO_ZONE_ID,
     ticketId: `TKT-${Date.now() + 2}`
@@ -158,7 +159,8 @@ export default function DispatcherPage() {
     triderUpdateIntervalMs,
     aiInsightIntervalMs,
     isLoading: settingsLoading,
-    baseFare
+    getTodaBaseFare,
+    convenienceFee
   } = useSettings();
 
   const [triders, setTriders] = React.useState<Trider[]>(initialTriders);
@@ -186,17 +188,30 @@ export default function DispatcherPage() {
     return null;
   }, [todaZones]);
 
+  const calculateMockFare = React.useCallback((pickupLoc: Coordinates, dropoffLoc: Coordinates, pickupZoneId: string | null): number => {
+    if (!pickupLoc || !dropoffLoc || !pickupZoneId) return 0;
+    const distance = calculateDistance(pickupLoc, dropoffLoc);
+    const todaBase = getTodaBaseFare(pickupZoneId);
+    const fare = todaBase + (distance * FARE_PER_KM) + convenienceFee;
+    return parseFloat(fare.toFixed(2));
+  }, [getTodaBaseFare, convenienceFee]);
+
   React.useEffect(() => {
+    if (settingsLoading) return; // Ensure settings are loaded before recalculating fares
     setRideRequests(prevRequests => 
       prevRequests.map(req => {
-        if (!req.pickupTodaZoneId) {
-          const zone = getTodaZoneForLocation(req.pickupLocation);
-          return { ...req, pickupTodaZoneId: zone?.id || null };
+        const updatedReq = { ...req };
+        if (!updatedReq.pickupTodaZoneId) {
+          const zone = getTodaZoneForLocation(updatedReq.pickupLocation);
+          updatedReq.pickupTodaZoneId = zone?.id || null;
         }
-        return req;
+        if (updatedReq.pickupTodaZoneId) {
+           updatedReq.fare = calculateMockFare(updatedReq.pickupLocation, updatedReq.dropoffLocation, updatedReq.pickupTodaZoneId);
+        }
+        return updatedReq;
       })
     );
-  }, [getTodaZoneForLocation]);
+  }, [getTodaZoneForLocation, calculateMockFare, settingsLoading]);
 
 
   React.useEffect(() => {
@@ -244,7 +259,7 @@ export default function DispatcherPage() {
     const rideInterval = setInterval(() => {
       if (todaZones.length === 0) return;
 
-      const randomPickupZone = todaZones[Math.floor(Math.random() * todaZones.length)]; // New rides can come from any zone
+      const randomPickupZone = todaZones[Math.floor(Math.random() * todaZones.length)]; 
       const pickupLocation = getRandomPointInCircle(randomPickupZone.center, randomPickupZone.radiusKm * 0.9);
       
       let randomDropoffZone = todaZones[Math.floor(Math.random() * todaZones.length)];
@@ -254,7 +269,7 @@ export default function DispatcherPage() {
       const dropoffLocation = getRandomPointInCircle(randomDropoffZone.center, randomDropoffZone.radiusKm * 0.9);
 
       const newRideId = `ride-dispatch-${Date.now()}`;
-      const fare = baseFare + calculateDistance(pickupLocation, dropoffLocation) * 10; 
+      const fare = calculateMockFare(pickupLocation, dropoffLocation, randomPickupZone.id);
       const newRide: RideRequest = {
         id: newRideId,
         passengerName: `Passenger ${Math.floor(Math.random() * 1000)}`,
@@ -264,8 +279,8 @@ export default function DispatcherPage() {
         dropoffAddress: `${randomDropoffZone.areaOfOperation} vicinity`,
         status: 'pending',
         requestedAt: new Date(),
-        pickupTodaZoneId: randomPickupZone.id, // Pickup zone ID for the request
-        fare: parseFloat(fare.toFixed(2)),
+        pickupTodaZoneId: randomPickupZone.id, 
+        fare: fare,
         ticketId: `TKT-${Date.now()}`
       };
       setRideRequests(prev => [newRide, ...prev.slice(0,19)]);
@@ -290,7 +305,7 @@ export default function DispatcherPage() {
       clearInterval(rideInterval);
       clearInterval(insightInterval);
     };
-  }, [toast, todaZones, getTodaZoneForLocation, rideRequestIntervalMs, aiInsightIntervalMs, settingsLoading, baseFare]);
+  }, [toast, todaZones, getTodaZoneForLocation, rideRequestIntervalMs, aiInsightIntervalMs, settingsLoading, calculateMockFare]);
 
   React.useEffect(() => {
     const features = rideRequests.map(req => ({
@@ -428,8 +443,11 @@ export default function DispatcherPage() {
           
           const updatedCandidateTriders = triders.filter(t => t.status === 'available' && t.todaZoneId === ridePickupZoneId && t.id !== selectedTrider!.id);
           setCandidateTriders(updatedCandidateTriders);
+          setSelectedTrider(null); // Deselect trider after dispatch
       })
-      .catch(() => {});
+      .catch(() => {
+        // Error toast is handled by fetchRouteAndUpdateTrider
+      });
   };
 
   const isDispatchDisabled = !selectedTrider || 
@@ -519,4 +537,3 @@ export default function DispatcherPage() {
     </div>
   );
 }
-

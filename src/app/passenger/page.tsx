@@ -12,7 +12,7 @@ import Map, { Marker, Popup, Source, Layer, NavigationControl, MapRef } from 're
 import type { Coordinates, PassengerRideState, TriderProfile, RideRequest, RoutePath, TodaZone, MockPassengerProfile, PassengerSettings, PassengerMapStyle } from '@/types';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { getRandomPointInCircle, calculateDistance, isPointInCircle } from '@/lib/geoUtils';
-import { useSettings as useGeneralSettings } from '@/contexts/SettingsContext'; 
+import { useSettings as useGeneralSettings, DEFAULT_TODA_BASE_FARE } from '@/contexts/SettingsContext'; 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2'; 
+const FARE_PER_KM = 10; // Standard fare per kilometer
 
 const FIREBASE_ORANGE_HSL_STRING = 'hsl(33, 100%, 50%)'; 
 const FIREBASE_ORANGE_BORDER_HSL_STRING = 'hsl(33, 100%, 60%)'; 
@@ -54,13 +55,12 @@ interface MapboxGeocodingFeature {
 }
 
 export default function PassengerPage() {
-  const { defaultMapCenter, defaultMapZoom, isLoading: settingsLoading, baseFare } = useGeneralSettings();
+  const { defaultMapCenter, defaultMapZoom, isLoading: settingsLoading, getTodaBaseFare, convenienceFee } = useGeneralSettings();
   const { toast } = useToast();
 
   const [loadedPassengerProfile, setLoadedPassengerProfile] = React.useState<MockPassengerProfile | null>(null);
   const [currentPassengerSettings, setCurrentPassengerSettings] = React.useState<PassengerSettings>({ mapStyle: DEFAULT_PASSENGER_MAP_STYLE });
   const [mapStyleUrl, setMapStyleUrl] = React.useState('mapbox://styles/mapbox/streets-v12');
-
 
   const [viewState, setViewState] = React.useState({
     longitude: defaultMapCenter.longitude,
@@ -184,6 +184,13 @@ export default function PassengerPage() {
     }
   };
 
+  const calculateEstimatedFare = (pickupLoc: Coordinates, dropoffLoc: Coordinates, pickupZoneId: string | null): number => {
+    if (!pickupLoc || !dropoffLoc || !pickupZoneId) return 0;
+    const distance = calculateDistance(pickupLoc, dropoffLoc);
+    const todaBase = getTodaBaseFare(pickupZoneId);
+    const fare = todaBase + (distance * FARE_PER_KM) + convenienceFee;
+    return parseFloat(fare.toFixed(2));
+  };
 
   const performGeolocation = async () => {
     setIsGeolocating(true);
@@ -300,17 +307,15 @@ export default function PassengerPage() {
         setRideState(prev => ({ ...prev, countdownSeconds: Math.max(0, (prev.countdownSeconds || 0) - 1) }));
       }, 1000);
     } else if (rideState.countdownSeconds === 0) {
-      if (rideState.status === 'triderAssigned') {
-        setRideState(prevRs => ({ ...prevRs, status: 'inProgress', currentTriderPathIndex: 0, countdownSeconds: null, estimatedDurationSeconds: null }));
-         if (rideState.pickupLocation && rideState.dropoffLocation) { // Corrected: Use rideState
-           fetchRoute(rideState.pickupLocation, rideState.dropoffLocation, 'pickupToDropoff');
-         }
+      if (rideState.status === 'triderAssigned' && rideState.pickupLocation && rideState.dropoffLocation) {
+        setRideState(prev => ({ ...prev, status: 'inProgress', currentTriderPathIndex: 0, countdownSeconds: null, estimatedDurationSeconds: null }));
+        fetchRoute(rideState.pickupLocation, rideState.dropoffLocation, 'pickupToDropoff');
       } else if (rideState.status === 'inProgress') {
-        setRideState(prevRs => ({ ...prevRs, status: 'completed', countdownSeconds: null, estimatedDurationSeconds: null }));
+        setRideState(prev => ({ ...prev, status: 'completed', countdownSeconds: null, estimatedDurationSeconds: null }));
       }
     }
     return () => clearInterval(countdownIntervalId);
-  }, [rideState.status, rideState.countdownSeconds, rideState.estimatedDurationSeconds, rideState.pickupLocation, rideState.dropoffLocation]); // Added dependencies
+  }, [rideState.status, rideState.countdownSeconds, rideState.estimatedDurationSeconds, rideState.pickupLocation, rideState.dropoffLocation]);
 
 
   React.useEffect(() => {
@@ -387,8 +392,8 @@ export default function PassengerPage() {
       toast({title: "Pickup Set", description: `Zone: ${selectedZone?.name || 'N/A'}. Now select dropoff.`});
       if (rideState.dropoffLocation) {
         fetchRoute(location, rideState.dropoffLocation, 'confirmation');
-        const fare = baseFare + calculateDistance(location, rideState.dropoffLocation) * 10; 
-        setRideState(prev => ({...prev, estimatedFare: parseFloat(fare.toFixed(2))}));
+        const fare = calculateEstimatedFare(location, rideState.dropoffLocation, selectedZone?.id || null);
+        setRideState(prev => ({...prev, estimatedFare: fare}));
       }
     } else {
       setRideState(prev => ({ ...prev, dropoffLocation: location, dropoffAddress: suggestion.place_name, status: prev.pickupLocation ? 'confirmingRide' : 'selectingDropoff' }));
@@ -397,8 +402,8 @@ export default function PassengerPage() {
       toast({title: "Dropoff Set", description: "Review details and confirm."});
       if (rideState.pickupLocation) {
         fetchRoute(rideState.pickupLocation, location, 'confirmation');
-        const fare = baseFare + calculateDistance(rideState.pickupLocation, location) * 10;
-        setRideState(prev => ({...prev, estimatedFare: parseFloat(fare.toFixed(2))}));
+        const fare = calculateEstimatedFare(rideState.pickupLocation, location, rideState.pickupTodaZoneId);
+        setRideState(prev => ({...prev, estimatedFare: fare}));
       }
     }
     setViewState(prev => ({ ...prev, ...location, zoom: 15 }));
@@ -419,20 +424,19 @@ export default function PassengerPage() {
       toast({ title: "Pickup Set by Map Click", description: `Zone: ${clickedZone?.name || 'N/A'}. Now select your dropoff location.` });
        if (rideState.dropoffLocation) {
          fetchRoute(newLocation, rideState.dropoffLocation, 'confirmation');
-         const fare = baseFare + calculateDistance(newLocation, rideState.dropoffLocation) * 10;
-         setRideState(prev => ({...prev, estimatedFare: parseFloat(fare.toFixed(2))}));
+         const fare = calculateEstimatedFare(newLocation, rideState.dropoffLocation, clickedZone?.id || null);
+         setRideState(prev => ({...prev, estimatedFare: fare}));
        }
     } else if (!rideState.dropoffLocation || rideState.status === 'selectingDropoff') {
       if (!rideState.pickupLocation) return; 
-      const fare = baseFare + calculateDistance(rideState.pickupLocation, newLocation) * 10; 
-      setRideState(prev => ({ ...prev, status: 'confirmingRide', dropoffLocation: newLocation, dropoffAddress: newAddress, estimatedFare: parseFloat(fare.toFixed(2)) }));
+      const fare = calculateEstimatedFare(rideState.pickupLocation, newLocation, rideState.pickupTodaZoneId);
+      setRideState(prev => ({ ...prev, status: 'confirmingRide', dropoffLocation: newLocation, dropoffAddress: newAddress, estimatedFare: fare }));
       setDropoffInput(newAddress);
       setDropoffSuggestions([]);
       if(rideState.pickupLocation) fetchRoute(rideState.pickupLocation, newLocation, 'confirmation');
       toast({ title: "Dropoff Set by Map Click", description: "Confirm your ride details." });
     }
   };
-
 
   const handleRequestRide = () => {
     if (!rideState.pickupLocation || !rideState.dropoffLocation) {
@@ -559,7 +563,7 @@ export default function PassengerPage() {
             </CardHeader>
             <CardContent className="space-y-3">
             {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.currentRideId && (
-                <Alert variant="default" style={{ borderColor: FIREBASE_ORANGE_BORDER_HSL_STRING }}>
+                <Alert variant="default" style={{ borderColor: FIREBASE_ORANGE_BORDER_HSL_STRING }} className="bg-black/20 backdrop-blur-sm">
                     <Ticket className="h-5 w-5" style={{ color: FIREBASE_ORANGE_HSL_STRING }} />
                     <AlertTitle className="font-semibold" style={{ color: FIREBASE_ORANGE_HSL_STRING }}>Ride Ticket #: {rideState.currentRideId}</AlertTitle>
                     {rideState.countdownSeconds !== null && rideState.estimatedDurationSeconds !== null && (
@@ -749,4 +753,3 @@ export default function PassengerPage() {
     </div>
   );
 }
-

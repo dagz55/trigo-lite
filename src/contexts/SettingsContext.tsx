@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { AppSettings, Coordinates, ThemeSetting, UpdateSettingPayload } from '@/types';
+import type { AppSettings, Coordinates, ThemeSetting } from '@/types';
 import * as React from 'react';
 
 const LAS_PINAS_CENTER_DEFAULT: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
@@ -9,6 +9,8 @@ const DEFAULT_ZOOM = 12.5;
 const DEFAULT_RIDE_REQUEST_INTERVAL = 30000; // 30 seconds
 const DEFAULT_TRIDER_UPDATE_INTERVAL = 5000;  // 5 seconds
 const DEFAULT_AI_INSIGHT_INTERVAL = 60000; // 60 seconds
+const DEFAULT_CONVENIENCE_FEE = 1.00; // Default ₱1.00
+export const DEFAULT_TODA_BASE_FARE = 20.00; // Default ₱20.00
 
 const defaultSettings: AppSettings = {
   theme: 'system',
@@ -18,12 +20,15 @@ const defaultSettings: AppSettings = {
   rideRequestIntervalMs: DEFAULT_RIDE_REQUEST_INTERVAL,
   triderUpdateIntervalMs: DEFAULT_TRIDER_UPDATE_INTERVAL,
   aiInsightIntervalMs: DEFAULT_AI_INSIGHT_INTERVAL,
+  convenienceFee: DEFAULT_CONVENIENCE_FEE,
+  todaBaseFares: {}, // Will be populated or use default on access
 };
 
 interface SettingsContextType extends AppSettings {
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   resetSettings: () => void;
   isLoading: boolean;
+  getTodaBaseFare: (todaZoneId: string) => number;
 }
 
 const SettingsContext = React.createContext<SettingsContextType | undefined>(undefined);
@@ -33,17 +38,19 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Load settings from localStorage on initial client-side render
     try {
       const storedSettings = localStorage.getItem('triGoAppSettings');
       if (storedSettings) {
         const parsedSettings = JSON.parse(storedSettings) as Partial<AppSettings>;
-        // Merge with defaults to ensure all keys are present
-        setSettings(prev => ({ ...prev, ...parsedSettings }));
+        setSettings(prev => ({ 
+          ...prev, 
+          ...parsedSettings,
+          todaBaseFares: parsedSettings.todaBaseFares || {}, // Ensure todaBaseFares is an object
+          convenienceFee: parsedSettings.convenienceFee ?? DEFAULT_CONVENIENCE_FEE,
+        }));
       }
     } catch (error) {
       console.error("Failed to load settings from localStorage:", error);
-      // Use defaults if loading fails
       setSettings(defaultSettings);
     } finally {
       setIsLoading(false);
@@ -51,8 +58,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
   }, []);
 
   React.useEffect(() => {
-    // Apply theme
-    if (isLoading) return; // Don't apply theme until settings are loaded
+    if (isLoading) return; 
 
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
@@ -63,7 +69,6 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     }
     root.classList.add(effectiveTheme);
     
-    // Save settings to localStorage whenever they change
     try {
         localStorage.setItem('triGoAppSettings', JSON.stringify(settings));
     } catch (error) {
@@ -72,7 +77,6 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
 
   }, [settings, isLoading]);
 
-  // System theme listener
   React.useEffect(() => {
     if (settings.theme !== 'system' || isLoading) return;
 
@@ -103,11 +107,16 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     }
   };
 
+  const getTodaBaseFare = (todaZoneId: string): number => {
+    return settings.todaBaseFares[todaZoneId] ?? DEFAULT_TODA_BASE_FARE;
+  };
+
   const contextValue = React.useMemo(() => ({
     ...settings,
     updateSetting,
     resetSettings,
     isLoading,
+    getTodaBaseFare,
   }), [settings, isLoading]);
 
 
