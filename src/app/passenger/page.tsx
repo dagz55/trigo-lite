@@ -12,34 +12,34 @@ import Map, { Marker, Popup, Source, Layer, NavigationControl, MapRef } from 're
 import type { Coordinates, PassengerRideState, TriderProfile, RideRequest, RoutePath, TodaZone, MockPassengerProfile, PassengerSettings, PassengerMapStyle } from '@/types';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { getRandomPointInCircle, calculateDistance, isPointInCircle } from '@/lib/geoUtils';
-import { useSettings as useGeneralSettings } from '@/contexts/SettingsContext'; // Renamed to avoid conflict
+import { useSettings as useGeneralSettings } from '@/contexts/SettingsContext'; 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
-const TALON_KUATRO_ZONE_ID = '2'; // Default for trider assignment simulation if not passenger-specific
+const TALON_KUATRO_ZONE_ID = '2'; 
 
-const FIREBASE_ORANGE_HSL = 'hsl(33, 100%, 50%)'; 
-const FIREBASE_ORANGE_BORDER_HSL = 'hsl(33, 100%, 60%)'; // Slightly lighter for border
-const NEON_GREEN_TEXT_HSL = 'hsl(120, 100%, 60%)'; // For timer text
-const NEON_GREEN_FINAL_COUNTDOWN_HSL = 'hsl(120, 100%, 75%)'; // Brighter for final seconds
+const FIREBASE_ORANGE_HSL_STRING = 'hsl(33, 100%, 50%)'; 
+const FIREBASE_ORANGE_BORDER_HSL_STRING = 'hsl(33, 100%, 60%)'; 
+const NEON_GREEN_TEXT_HSL_STRING = 'hsl(120, 100%, 60%)'; 
+const NEON_GREEN_FINAL_COUNTDOWN_HSL_STRING = 'hsl(120, 100%, 75%)';
 
 const DEFAULT_PASSENGER_MAP_STYLE: PassengerMapStyle = 'streets';
 
-const mockTridersForDemo: TriderProfile[] = ['Simon', 'Judas Isc.', 'Mary M.', 'Lazarus', 'Martha'].map((name, index) => {
+const mockTridersForDemo: TriderProfile[] = ['Simon TK', 'Judas Isc. TK', 'Mary M. TK', 'Lazarus TK', 'Martha TK'].map((name, index) => {
   const zone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID); 
   if (!zone) throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_ZONE_ID} not found for mock triders.`);
   return {
     id: `trider-sim-tk-${index + 1}`,
-    name: `${name} (TK)`,
+    name: `${name}`,
     location: getRandomPointInCircle(zone.center, zone.radiusKm * 0.5),
     status: 'available',
     vehicleType: 'Tricycle',
     todaZoneId: zone.id,
     todaZoneName: zone.name,
-    profilePictureUrl: `https://placehold.co/100x100.png?text=${name.charAt(0)}`,
+    profilePictureUrl: `https://placehold.co/100x100.png?text=${name.split(' ')[0].charAt(0)}`,
     dataAiHint: "driver portrait",
     wallet: { currentBalance: 100, totalEarnedAllTime: 500, todayTotalRides: 0, todayTotalFareCollected: 0, todayNetEarnings: 0, todayTotalCommission: 0, paymentLogs: [], recentRides: [] },
     currentPath: null,
@@ -98,7 +98,7 @@ export default function PassengerPage() {
   const [activeSuggestionBox, setActiveSuggestionBox] = React.useState<'pickup' | 'dropoff' | null>(null);
   
   const [triderToPickupRouteColor, setTriderToPickupRouteColor] = React.useState('hsl(var(--accent))'); 
-  const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(FIREBASE_ORANGE_HSL);
+  const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(FIREBASE_ORANGE_HSL_STRING);
 
   const mapRef = React.useRef<MapRef | null>(null);
 
@@ -301,16 +301,16 @@ export default function PassengerPage() {
       }, 1000);
     } else if (rideState.countdownSeconds === 0) {
       if (rideState.status === 'triderAssigned') {
-        setRideState(rs => ({ ...rs, status: 'inProgress', currentTriderPathIndex: 0, countdownSeconds: null, estimatedDurationSeconds: null }));
-         if (rs.pickupLocation && rs.dropoffLocation) {
-           fetchRoute(rs.pickupLocation, rs.dropoffLocation, 'pickupToDropoff');
+        setRideState(prevRs => ({ ...prevRs, status: 'inProgress', currentTriderPathIndex: 0, countdownSeconds: null, estimatedDurationSeconds: null }));
+         if (rideState.pickupLocation && rideState.dropoffLocation) { // Corrected: Use rideState
+           fetchRoute(rideState.pickupLocation, rideState.dropoffLocation, 'pickupToDropoff');
          }
       } else if (rideState.status === 'inProgress') {
-        setRideState(rs => ({ ...rs, status: 'completed', countdownSeconds: null, estimatedDurationSeconds: null }));
+        setRideState(prevRs => ({ ...prevRs, status: 'completed', countdownSeconds: null, estimatedDurationSeconds: null }));
       }
     }
     return () => clearInterval(countdownIntervalId);
-  }, [rideState.status, rideState.countdownSeconds, rideState.estimatedDurationSeconds]);
+  }, [rideState.status, rideState.countdownSeconds, rideState.estimatedDurationSeconds, rideState.pickupLocation, rideState.dropoffLocation]); // Added dependencies
 
 
   React.useEffect(() => {
@@ -520,7 +520,7 @@ export default function PassengerPage() {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary mr-2" /> <p>Loading Passenger Experience...</p></div>;
   }
 
-  const countdownColorStyle = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 ? { color: NEON_GREEN_FINAL_COUNTDOWN_HSL } : { color: NEON_GREEN_TEXT_HSL };
+  const countdownColorStyle = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 ? { color: NEON_GREEN_FINAL_COUNTDOWN_HSL_STRING } : { color: NEON_GREEN_TEXT_HSL_STRING };
   if (rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 && rideState.countdownSeconds > 0) {
     console.log(`Playing countdown sound: ${rideState.countdownSeconds}`); 
   }
@@ -529,7 +529,7 @@ export default function PassengerPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       <header className="p-4 border-b shadow-sm">
-        <h1 className="text-2xl font-semibold flex items-center" style={{ color: FIREBASE_ORANGE_HSL }}>
+        <h1 className="text-2xl font-semibold flex items-center" style={{ color: FIREBASE_ORANGE_HSL_STRING }}>
           <User className="mr-2" /> TriGo Passenger ({rideState.passengerName})
         </h1>
       </header>
@@ -559,9 +559,9 @@ export default function PassengerPage() {
             </CardHeader>
             <CardContent className="space-y-3">
             {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.currentRideId && (
-                <Alert variant="default" style={{ borderColor: FIREBASE_ORANGE_BORDER_HSL }}>
-                    <Ticket className="h-5 w-5" style={{ color: FIREBASE_ORANGE_HSL }} />
-                    <AlertTitle className="font-semibold" style={{ color: FIREBASE_ORANGE_HSL }}>Ride Ticket #: {rideState.currentRideId}</AlertTitle>
+                <Alert variant="default" style={{ borderColor: FIREBASE_ORANGE_BORDER_HSL_STRING }}>
+                    <Ticket className="h-5 w-5" style={{ color: FIREBASE_ORANGE_HSL_STRING }} />
+                    <AlertTitle className="font-semibold" style={{ color: FIREBASE_ORANGE_HSL_STRING }}>Ride Ticket #: {rideState.currentRideId}</AlertTitle>
                     {rideState.countdownSeconds !== null && rideState.estimatedDurationSeconds !== null && (
                          <div className="mt-2 p-3 rounded-lg bg-black/70 backdrop-blur-sm border border-lime-500/50 shadow-lg">
                             <p className={`text-3xl font-mono text-center ${rideState.countdownSeconds <= 10 ? 'animate-pulse' : ''}`} style={countdownColorStyle}>
@@ -644,7 +644,7 @@ export default function PassengerPage() {
                 <Card className="bg-secondary/50 p-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      {rideState.assignedTrider.profilePictureUrl && <AvatarImage src={rideState.assignedTrider.profilePictureUrl} data-ai-hint="driver portrait"/>}
+                      {rideState.assignedTrider.profilePictureUrl && <AvatarImage src={rideState.assignedTrider.profilePictureUrl} data-ai-hint={rideState.assignedTrider.dataAiHint || "driver person"}/>}
                       <AvatarFallback>{rideState.assignedTrider.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -686,13 +686,13 @@ export default function PassengerPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
               {rideState.status === 'confirmingRide' && (
-                <Button onClick={handleRequestRide} className="w-full text-white" style={{ backgroundColor: FIREBASE_ORANGE_HSL }} disabled={!rideState.pickupLocation || !rideState.dropoffLocation || !rideState.pickupTodaZoneId}>Request TriGo Now</Button>
+                <Button onClick={handleRequestRide} className="w-full text-white" style={{ backgroundColor: FIREBASE_ORANGE_HSL_STRING }} disabled={!rideState.pickupLocation || !rideState.dropoffLocation || !rideState.pickupTodaZoneId}>Request TriGo Now</Button>
               )}
               {(rideState.status === 'searching' || rideState.status === 'triderAssigned') && (
                 <Button onClick={handleCancelRide} variant="outline" className="w-full">Cancel Ride</Button>
               )}
                {rideState.status === 'completed' && (
-                <Button onClick={handleNewRide} className="w-full text-white" style={{ backgroundColor: FIREBASE_ORANGE_HSL }}>Book Another Ride</Button>
+                <Button onClick={handleNewRide} className="w-full text-white" style={{ backgroundColor: FIREBASE_ORANGE_HSL_STRING }}>Book Another Ride</Button>
               )}
                {(rideState.status === 'idle' || rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') && rideState.status !== 'completed' && (
                 <Button onClick={handleCancelRide} variant="ghost" className="w-full">Reset / New Ride</Button>
