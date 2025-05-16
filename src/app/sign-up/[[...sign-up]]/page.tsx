@@ -12,10 +12,10 @@ export default function Page() {
        Authentication has been temporarily removed. Please proceed to the dashboard.
       </p>
       <Button asChild className="mb-4">
-        <Link href="/">Go to Dashboard</Link>
+        <Link href="/dispatcher">Go to Dashboard</Link>
       </Button>
        <Button variant="link" asChild>
-        <Link href="/">Back to Sign In (Placeholder)</Link>
+        <Link href="/sign-in">Back to Sign In (Placeholder)</Link>
       </Button>
       {/*
         Old Clerk Sign Up form:

@@ -1,11 +1,10 @@
-
 # TriGo Dispatch Lite - Firebase Studio
 
 This is a Next.js application for TriGo Dispatch Lite, a real-time trider monitoring and dispatching system. Built with Next.js, TypeScript, Tailwind CSS, ShadCN UI components, and Mapbox GL JS.
 
 ## Features
 
-- **Dispatch Dashboard (`/`):**
+- **Dispatch Dashboard (`/dispatcher`):**
   - Live map visualization of triders and ride requests using Mapbox.
   - TODA (Tricycle Operators and Drivers' Association) zone boundaries displayed on the map.
   - Real-time (mocked) updates for trider locations and incoming ride requests.
@@ -14,7 +13,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - Manual dispatch functionality (triders can only serve pickups within their assigned TODA zone).
   - Heatmap overlay for ride request density.
   - AI-driven insights and alerts (currently mocked).
-- **Trider Management (`/triders`):**
+- **Trider Management (`/dispatcher/triders`):**
   - Comprehensive list of all triders with details: name, TODA zone, vehicle type, status.
   - Filtering options: by name, TODA zone, status.
   - Detailed Trider panel:
@@ -23,9 +22,24 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
     - Wallet information: balance, earnings, payout history, recent rides (mocked).
     - Simulated payout functionality.
   - Dispatcher-to-Trider chat functionality (mocked, UI in place).
+- **Passenger Role Simulation (`/passenger`):**
+  - Interface for passengers to request rides.
+  - Map view to select pickup and dropoff locations.
+  - Simulation of trider assignment, movement to pickup, and trip to destination.
+  - Displays trider's live location and ETA on the map.
+- **Trider Role Simulation (`/trider`):**
+  - Dashboard for triders to manage their status (online/offline).
+  - View and accept incoming ride requests within their TODA zone.
+  - Map view showing current location, active ride details (pickup/dropoff), and route.
+  - Simulation of movement to pickup and then to dropoff, following Mapbox routes.
+- **Application Settings (`/dispatcher/settings`):**
+  - Customizable theme (light, dark, system).
+  - Configuration for default map zoom and center coordinates.
+  - Toggle for heatmap visibility on the dispatch map.
+  - Adjustable intervals for mock data simulation (new rides, trider updates, AI insights).
 - **Authentication:** (Currently Removed)
   - Authentication was previously handled by Clerk but has been removed.
-  - Sign-in and Sign-up pages are now placeholders.
+  - Sign-in (`/sign-in`) and Sign-up (`/sign-up`) pages are now placeholders, with a role switcher to access demo pages.
   - Protected routes are currently accessible without login.
 
 ## Getting Started
@@ -69,7 +83,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
     # or
     yarn dev
     ```
-    The application will be available at `http://localhost:9002` by default (or the port you configured).
+    The application will be available at `http://localhost:9002` by default (or the port you configured). Access the dispatcher dashboard at `/dispatcher`.
 
 5.  **(Optional) Run Genkit development server (if using AI features):**
     In a separate terminal:
@@ -85,8 +99,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS, ShadCN UI
 - **Mapping:** Mapbox GL JS, react-map-gl
-- **Authentication:** (Removed - previously Clerk)
-- **State Management:** React Context, React Hooks
+- **State Management:** React Context (for settings), React Hooks (for page-level state)
 - **Linting/Formatting:** ESLint, Prettier (via Next.js defaults)
 - **AI (Optional):** Genkit
 
@@ -96,29 +109,35 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 .
 ├── src/
 │   ├── app/                        # Next.js App Router (pages and layouts)
-│   │   ├── (dispatch)/             # Group for dispatch routes (previously authenticated)
-│   │   │   ├── layout.tsx          # Layout for dispatch section (sidebar, header)
+│   │   ├── dispatcher/             # Dispatcher-specific routes
+│   │   │   ├── layout.tsx          # Layout for dispatcher section (sidebar, header)
 │   │   │   ├── page.tsx            # Main dispatch dashboard page
-│   │   │   └── triders/            # Trider management section
-│   │   │       └── page.tsx        # Trider management dashboard page
-│   │   ├── sign-in/                # Placeholder sign-in page
+│   │   │   ├── triders/            # Trider management section
+│   │   │   │   └── page.tsx        # Trider management dashboard page
+│   │   │   └── settings/           # Application settings page
+│   │   │       └── page.tsx        # Settings page UI
+│   │   ├── passenger/              # Passenger role simulation
+│   │   │   └── page.tsx            # Passenger page UI and logic
+│   │   ├── trider/                 # Trider role simulation
+│   │   │   └── page.tsx            # Trider page UI and logic
+│   │   ├── sign-in/                # Placeholder sign-in page with Role Switcher
 │   │   ├── sign-up/                # Placeholder sign-up page
 │   │   ├── globals.css             # Global styles and Tailwind directives
 │   │   └── layout.tsx              # Root layout
 │   ├── ai/                         # Genkit AI flows and configurations
-│   │   ├── genkit.ts               # Genkit initialization
-│   │   └── dev.ts                  # Genkit development server entry
 │   ├── components/                 # UI components
 │   │   ├── dispatch/               # Components specific to the dispatch dashboard
 │   │   ├── map/                    # Map-related components
 │   │   ├── triders/                # Components for the trider management dashboard
-│   │   └── ui/                     # ShadCN UI components (button, card, etc.)
+│   │   ├── ui/                     # ShadCN UI components (button, card, etc.)
+│   │   └── RoleSwitcher.tsx        # Component for role selection
+│   ├── contexts/                   # React Contexts (e.g., SettingsContext)
 │   ├── data/                       # Static data (e.g., TODA zone definitions)
 │   ├── hooks/                      # Custom React hooks
 │   ├── lib/                        # Utility functions and libraries
 │   │   ├── geoUtils.ts             # Geolocation utility functions
 │   │   └── utils.ts                # General utility functions (e.g., cn for Tailwind)
-│   ├── middleware.ts               # Next.js middleware (Clerk removed, currently minimal)
+│   ├── middleware.ts               # Next.js middleware (currently minimal)
 │   └── types/                      # TypeScript type definitions
 ├── public/                         # Static assets
 ├── .env.local                      # Environment variables (ignored by Git)

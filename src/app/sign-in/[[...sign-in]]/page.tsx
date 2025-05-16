@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { RoleSwitcher } from "@/components/RoleSwitcher"; // Added import
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 
 export default function Page() {
   return (
     <div className="flex justify-center items-center min-h-screen bg-background p-4">
       <div className="flex flex-col items-center space-y-8">
-        <h1 className="text-2xl font-semibold text-center">Sign In (Placeholder)</h1>
+        <h1 className="text-2xl font-semibold text-center">TriGo Beta Release Demo</h1>
         <p className="text-muted-foreground text-center">
           Authentication has been temporarily removed. You can proceed to the dashboard or select a role below.
         </p>
         <Button asChild>
-          <Link href="/">Go to Dispatch Dashboard</Link>
+          <Link href="/dispatcher">Go to Dispatcher Dashboard</Link>
         </Button>
         <RoleSwitcher />
       </div>
