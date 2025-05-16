@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import type { TriderProfile, ChatMessage, TriderExtendedStatus, RoutePath } from '@/types';
+import type { TriderProfile, ChatMessage, TriderExtendedStatus, TodaZoneChangeRequestStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,32 +15,29 @@ import { useToast } from "@/hooks/use-toast";
 import { MessageCircle, Search } from 'lucide-react';
 import { getRandomPointInCircle } from '@/lib/geoUtils'; 
 
-// Use 10 Apostle names for Talon Kuatro Triders
-const apostleNamesTalonKuatro = [
-  "Peter", "Andrew", "James Z.", "John", "Philip", 
-  "Bartholomew", "Thomas", "Matthew", "James A.", "Thaddaeus"
-];
-const talonKuatroZoneId = '2'; // ID for "APHDA" (Talon Kuatro)
+const TALON_KUATRO_ZONE_ID = '2'; // ID for "APHDA" (Talon Kuatro)
+const talonKuatroZone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID);
 
+if (!talonKuatroZone) {
+  throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_ZONE_ID} not found.`);
+}
 
-const initialTridersProfiles: TriderProfile[] = apostleNamesTalonKuatro.map((name, index) => {
-  const todaZone = appTodaZones.find(z => z.id === talonKuatroZoneId);
-  if (!todaZone) throw new Error(`Talon Kuatro zone with ID ${talonKuatroZoneId} not found.`);
-
-  const randomLocationInZone = getRandomPointInCircle(todaZone.center, todaZone.radiusKm * 0.8);
-  
-  const statuses: TriderExtendedStatus[] = ['available', 'en-route', 'offline', 'suspended'];
+const initialTridersProfiles: TriderProfile[] = [
+  "Peter", "Andrew", "James Z.", "John", "Philip" 
+].map((name, index) => {
+  const randomLocationInZone = getRandomPointInCircle(talonKuatroZone!.center, talonKuatroZone!.radiusKm * 0.8);
+  const statuses: TriderExtendedStatus[] = ['available', 'en-route', 'offline', 'suspended', 'assigned'];
   const status = statuses[index % statuses.length];
 
   return {
-    id: `trider-tk-profile-${index + 1}`, // Unique ID prefix
+    id: `trider-tk-profile-${index + 1}`,
     name: name,
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
-    todaZoneId: talonKuatroZoneId,
-    todaZoneName: todaZone.name,
-    contactNumber: `+63917${2000000 + index * 12345}`.slice(0,13), // Different series
+    todaZoneId: TALON_KUATRO_ZONE_ID,
+    todaZoneName: talonKuatroZone!.name,
+    contactNumber: `+63917${2000000 + index * 12345}`.slice(0,13),
     profilePictureUrl: `https://placehold.co/100x100.png?text=${name.charAt(0)}`,
     dataAiHint: "driver person",
     lastSeen: status === 'offline' ? new Date(Date.now() - (index + 1) * 60 * 60 * 1000) : undefined,
@@ -52,10 +49,12 @@ const initialTridersProfiles: TriderProfile[] = apostleNamesTalonKuatro.map((nam
       todayTotalCommission: status === 'offline' || status === 'suspended' ? 0 : (Math.random() * 80 + 8),
       todayNetEarnings: status === 'offline' || status === 'suspended' ? 0 : (Math.random() * 320 + 32),
       paymentLogs: status === 'available' || status === 'en-route' ? [{id: `pay-tk-${index}`, date: new Date(Date.now() - (index+1)*24*60*60*1000), amount: (Math.random()*400+400), status: 'completed', method: 'GCash', referenceId: `GCASHTK${index}`}] : [],
-      recentRides: status === 'available' || status === 'en-route' ? [{id: `ride-tk-${index}`, date: new Date(Date.now() - index*30*60*1000), pickupAddress: `${todaZone.areaOfOperation} Pickup`, dropoffAddress: `Nearby Dropoff TK ${index}`, fare: (Math.random()*40+40), commissionDeducted: (Math.random()*8+8), netEarnings: (Math.random()*32+32)}] : [],
+      recentRides: status === 'available' || status === 'en-route' ? [{id: `ride-tk-${index}`, date: new Date(Date.now() - index*30*60*1000), pickupAddress: `${talonKuatroZone!.areaOfOperation} Pickup`, dropoffAddress: `Nearby Dropoff TK ${index}`, fare: (Math.random()*40+40), commissionDeducted: (Math.random()*8+8), netEarnings: (Math.random()*32+32)}] : [],
     },
     currentPath: null,
     pathIndex: 0,
+    requestedTodaZoneId: undefined,
+    todaZoneChangeRequestStatus: 'none',
   };
 });
 
@@ -66,7 +65,7 @@ export default function TridersPage() {
   const [selectedTrider, setSelectedTrider] = React.useState<TriderProfile | null>(null);
   
   const [nameFilter, setNameFilter] = React.useState('');
-  const [zoneFilter, setZoneFilter] = React.useState<string>(talonKuatroZoneId); // Default to Talon Kuatro
+  const [zoneFilter, setZoneFilter] = React.useState<string>(TALON_KUATRO_ZONE_ID); 
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
 
   const [isChatSheetOpen, setIsChatSheetOpen] = React.useState(false);
@@ -74,7 +73,7 @@ export default function TridersPage() {
   const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([]); 
 
   const { toast } = useToast();
-  const todaZones = appTodaZones; // Full list for filter dropdown, though data is Talon Kuatro
+  const todaZones = appTodaZones;
 
   React.useEffect(() => {
     let currentTriders = [...triders];
@@ -110,7 +109,7 @@ export default function TridersPage() {
                 longitude: trider.currentPath.coordinates[trider.currentPath.coordinates.length -1][0], 
                 latitude: trider.currentPath.coordinates[trider.currentPath.coordinates.length -1][1] 
               };
-              return { ...trider, location: newLocation, currentPath: null, pathIndex: 0 };
+              return { ...trider, location: newLocation, currentPath: null, pathIndex: 0 }; // Arrived
             }
           } else {
             const currentZone = appTodaZones.find(z => z.id === trider.todaZoneId);
@@ -194,6 +193,53 @@ export default function TridersPage() {
     } : prev);
   };
 
+  const handleTodaZoneChangeRequest = (triderId: string, action: 'approve' | 'reject') => {
+    setTriders(prevTriders => prevTriders.map(t => {
+      if (t.id === triderId && t.requestedTodaZoneId && t.todaZoneChangeRequestStatus === 'pending') {
+        if (action === 'approve') {
+          const newZone = appTodaZones.find(z => z.id === t.requestedTodaZoneId);
+          toast({ title: "Zone Change Approved", description: `${t.name} moved to ${newZone?.name || 'new zone'}.` });
+          return {
+            ...t,
+            todaZoneId: t.requestedTodaZoneId,
+            todaZoneName: newZone?.name || 'Unknown Zone',
+            requestedTodaZoneId: undefined,
+            todaZoneChangeRequestStatus: 'approved', // or 'none'
+          };
+        } else { // reject
+          toast({ title: "Zone Change Rejected", description: `Request for ${t.name} to move was rejected.` });
+          return {
+            ...t,
+            requestedTodaZoneId: undefined,
+            todaZoneChangeRequestStatus: 'rejected', // or 'none'
+          };
+        }
+      }
+      return t;
+    }));
+    setSelectedTrider(prev => {
+      if (prev && prev.id === triderId && prev.requestedTodaZoneId && prev.todaZoneChangeRequestStatus === 'pending') {
+        if (action === 'approve') {
+          const newZone = appTodaZones.find(z => z.id === prev.requestedTodaZoneId);
+          return {
+            ...prev,
+            todaZoneId: prev.requestedTodaZoneId,
+            todaZoneName: newZone?.name || 'Unknown Zone',
+            requestedTodaZoneId: undefined,
+            todaZoneChangeRequestStatus: 'approved',
+          };
+        } else {
+          return {
+            ...prev,
+            requestedTodaZoneId: undefined,
+            todaZoneChangeRequestStatus: 'rejected',
+          };
+        }
+      }
+      return prev;
+    });
+  };
+
 
   const statusOptions: { value: TriderExtendedStatus | 'all'; label: string }[] = [
     { value: 'all', label: 'All Statuses' },
@@ -254,6 +300,7 @@ export default function TridersPage() {
              selectedTriderId={selectedTrider?.id || null}
              onSelectTrider={handleSelectTrider}
              onOpenChat={handleOpenChat}
+             todaZones={appTodaZones}
            />
         </div>
         <div className="lg:col-span-1 h-full overflow-y-auto">
@@ -264,6 +311,8 @@ export default function TridersPage() {
               onStatusChange={handleTriderStatusChange}
               onPingTrider={handlePingTrider}
               onSendPayout={handleSendPayout}
+              onTodaZoneChangeRequest={handleTodaZoneChangeRequest}
+              allTodaZones={appTodaZones}
             />
           ) : (
             <Card className="h-full flex items-center justify-center">
@@ -288,5 +337,3 @@ export default function TridersPage() {
     </div>
   );
 }
-
-    

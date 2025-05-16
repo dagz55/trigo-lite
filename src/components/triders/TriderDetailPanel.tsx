@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { TriderProfile, TriderExtendedStatus } from '@/types';
+import type { TriderProfile, TriderExtendedStatus, TodaZone, TodaZoneChangeRequestStatus } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,15 +11,18 @@ import { TriderMapPreview } from './TriderMapPreview';
 import { TriderWalletInfo } from './TriderWalletInfo';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle, CheckCircle, XCircle, Bell, LogOut, Power, PowerOff } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Bell, LogOut, Power, PowerOff, Send, Edit3 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface TriderDetailPanelProps {
   trider: TriderProfile;
+  allTodaZones: TodaZone[];
   onClose: () => void;
   onStatusChange: (triderId: string, newStatus: TriderExtendedStatus) => void;
   onPingTrider: (trider: TriderProfile) => void;
   onSendPayout: (trider: TriderProfile, amount: number) => void;
+  onTodaZoneChangeRequest: (triderId: string, action: 'approve' | 'reject') => void;
 }
 
 const statusConfig: Record<TriderProfile['status'], { color: string; icon: React.ElementType, label: string }> = {
@@ -31,12 +34,23 @@ const statusConfig: Record<TriderProfile['status'], { color: string; icon: React
   suspended: { color: 'bg-red-600 text-white', icon: XCircle, label: 'Suspended' },
 };
 
-export function TriderDetailPanel({ trider, onClose, onStatusChange, onPingTrider, onSendPayout }: TriderDetailPanelProps) {
+export function TriderDetailPanel({ 
+    trider, 
+    allTodaZones,
+    onClose, 
+    onStatusChange, 
+    onPingTrider, 
+    onSendPayout,
+    onTodaZoneChangeRequest
+}: TriderDetailPanelProps) {
   
   const currentStatusInfo = statusConfig[trider.status];
+  const requestedZoneName = trider.requestedTodaZoneId 
+    ? allTodaZones.find(z => z.id === trider.requestedTodaZoneId)?.name 
+    : null;
 
   const handleAvailabilityToggle = (checked: boolean) => {
-    if (trider.status === 'suspended') return; // Cannot change status if suspended
+    if (trider.status === 'suspended') return;
     const newStatus = checked ? 'available' : 'offline';
     onStatusChange(trider.id, newStatus);
   };
@@ -58,7 +72,7 @@ export function TriderDetailPanel({ trider, onClose, onStatusChange, onPingTride
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              {trider.profilePictureUrl && <AvatarImage src={trider.profilePictureUrl} alt={trider.name} data-ai-hint="person face" />}
+              {trider.profilePictureUrl && <AvatarImage src={trider.profilePictureUrl} alt={trider.name} data-ai-hint={trider.dataAiHint || "person face"} />}
               <AvatarFallback className="text-2xl">{trider.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
@@ -75,6 +89,24 @@ export function TriderDetailPanel({ trider, onClose, onStatusChange, onPingTride
           </div>
           
           <Separator />
+
+          {trider.todaZoneChangeRequestStatus === 'pending' && requestedZoneName && (
+            <Alert variant="default" className="border-orange-500">
+              <Edit3 className="h-4 w-4 text-orange-500" />
+              <AlertTitle className="text-orange-600">Pending Zone Change Request</AlertTitle>
+              <AlertDescription>
+                Requested TODA Zone: <strong>{requestedZoneName}</strong>.
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" onClick={() => onTodaZoneChangeRequest(trider.id, 'approve')}>
+                    Approve
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onTodaZoneChangeRequest(trider.id, 'reject')}>
+                    Reject
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div>
             <h4 className="font-semibold mb-2 text-md">Live Location</h4>
@@ -122,7 +154,7 @@ export function TriderDetailPanel({ trider, onClose, onStatusChange, onPingTride
               )}
               {trider.status === 'suspended' && (
                  <Button 
-                  onClick={() => onStatusChange(trider.id, 'offline')} // Or 'available'
+                  onClick={() => onStatusChange(trider.id, 'offline')} 
                   variant="secondary" 
                   className="w-full"
                 >

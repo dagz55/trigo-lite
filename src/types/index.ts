@@ -46,8 +46,9 @@ export interface RideRequest {
   fare?: number;
   requestedAt: Date;
   assignedTriderId?: string | null;
-  pickupTodaZoneId: string | null; // Made non-optional as it's crucial
+  pickupTodaZoneId: string | null;
   passengerId?: string;
+  ticketId?: string; 
 }
 
 export interface AiInsight {
@@ -89,13 +90,17 @@ export interface TriderWallet {
   recentRides: TriderRecentRideSummary[];
 }
 
+export type TodaZoneChangeRequestStatus = 'none' | 'pending' | 'approved' | 'rejected';
+
 export interface TriderProfile extends Trider {
-  status: TriderExtendedStatus;
+  status: TriderExtendedStatus; // More specific status for profile view
   wallet: TriderWallet;
   contactNumber?: string;
   profilePictureUrl?: string;
   dataAiHint?: string; 
   lastSeen?: Date;
+  requestedTodaZoneId?: string;
+  todaZoneChangeRequestStatus?: TodaZoneChangeRequestStatus;
 }
 
 export interface ChatMessage {
@@ -117,6 +122,7 @@ export interface AppSettings {
   rideRequestIntervalMs: number;
   triderUpdateIntervalMs: number;
   aiInsightIntervalMs: number;
+  baseFare: number;
 }
 
 export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings> = {
@@ -128,15 +134,17 @@ export interface PassengerRideState {
   status: 'idle' | 'selectingPickup' | 'selectingDropoff' | 'confirmingRide' | 'searching' | 'triderAssigned' | 'inProgress' | 'completed' | 'cancelled';
   pickupLocation: Coordinates | null;
   dropoffLocation: Coordinates | null;
-  pickupAddress: string | null; 
-  dropoffAddress: string | null; 
+  pickupAddress: string; 
+  dropoffAddress: string; 
   estimatedFare: number | null;
   assignedTrider: TriderProfile | null;
   currentRideId: string | null;
   triderToPickupPath: RoutePath | null; 
   pickupToDropoffPath: RoutePath | null; 
   currentTriderPathIndex?: number; 
-  pickupTodaZoneId: string | null; // Added to track passenger's pickup zone
+  pickupTodaZoneId: string | null;
+  countdownSeconds: number | null;
+  estimatedDurationSeconds: number | null; 
 }
 
 export type TriderRideStatus = 'onlineAvailable' | 'onlineBusyEnRouteToPickup' | 'onlineBusyEnRouteToDropoff' | 'offline';
@@ -149,5 +157,3 @@ export interface TriderSimState {
   currentPath: RoutePath | null; 
   currentPathIndex: number; 
 }
-
-    

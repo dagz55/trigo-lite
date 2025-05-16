@@ -1,33 +1,35 @@
 
 "use client";
 
-import type { TriderProfile } from '@/types';
+import type { TriderProfile, TodaZone } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Eye } from 'lucide-react';
+import { MessageCircle, Eye, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface TridersTableProps {
   triders: TriderProfile[];
   selectedTriderId: string | null;
   onSelectTrider: (trider: TriderProfile) => void;
   onOpenChat: (trider: TriderProfile) => void;
+  todaZones: TodaZone[]; // Pass all TODA zones for resolving names
 }
 
 const statusColors: Record<TriderProfile['status'], string> = {
   available: 'bg-green-500 text-white',
-  busy: 'bg-orange-500 text-white', // Considered 'en-route'
+  busy: 'bg-orange-500 text-white', 
   'en-route': 'bg-orange-500 text-white',
   offline: 'bg-muted text-muted-foreground',
-  assigned: 'bg-blue-500 text-white', // Also 'en-route'
+  assigned: 'bg-blue-500 text-white',
   suspended: 'bg-red-600 text-white',
 };
 
-export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpenChat }: TridersTableProps) {
+export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpenChat, todaZones }: TridersTableProps) {
   if (!triders || triders.length === 0) {
     return (
       <Card className="h-full">
@@ -42,80 +44,113 @@ export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpen
   }
   
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle>Triders List ({triders.length})</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0 flex-grow overflow-hidden">
-        <ScrollArea className="h-full">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background z-10">
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">TODA Zone</TableHead>
-                <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {triders.map((trider) => (
-                <TableRow 
-                  key={trider.id} 
-                  onClick={() => onSelectTrider(trider)}
-                  className={cn(
-                    "cursor-pointer",
-                    selectedTriderId === trider.id && "bg-primary/10"
-                  )}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        {trider.profilePictureUrl && <AvatarImage src={trider.profilePictureUrl} alt={trider.name} data-ai-hint="person portrait" />}
-                        <AvatarFallback>{trider.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{trider.name}</div>
-                        <div className="text-xs text-muted-foreground md:hidden">{trider.todaZoneName || 'N/A'}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{trider.todaZoneName || 'N/A'}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{trider.vehicleType || 'N/A'}</TableCell>
-                  <TableCell>
-                    <Badge className={cn(statusColors[trider.status])}>
-                      {trider.status.charAt(0).toUpperCase() + trider.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={(e) => { e.stopPropagation(); onOpenChat(trider); }}
-                        aria-label={`Chat with ${trider.name}`}
-                        disabled={trider.status === 'offline' || trider.status === 'suspended'}
-                        className="h-8 w-8"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                       <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={(e) => { e.stopPropagation(); onSelectTrider(trider); }}
-                        aria-label={`View details for ${trider.name}`}
-                        className="h-8 w-8"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+    <TooltipProvider>
+      <Card className="h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Triders List ({triders.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 flex-grow overflow-hidden">
+          <ScrollArea className="h-full">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead className="hidden md:table-cell">TODA Zone</TableHead>
+                  <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+              </TableHeader>
+              <TableBody>
+                {triders.map((trider) => {
+                  const requestedZoneName = trider.requestedTodaZoneId 
+                    ? todaZones.find(z => z.id === trider.requestedTodaZoneId)?.name 
+                    : null;
+                  return (
+                    <TableRow 
+                      key={trider.id} 
+                      onClick={() => onSelectTrider(trider)}
+                      className={cn(
+                        "cursor-pointer",
+                        selectedTriderId === trider.id && "bg-primary/10"
+                      )}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            {trider.profilePictureUrl && <AvatarImage src={trider.profilePictureUrl} alt={trider.name} data-ai-hint={trider.dataAiHint || "person portrait"} />}
+                            <AvatarFallback>{trider.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{trider.name}</div>
+                            <div className="text-xs text-muted-foreground md:hidden">
+                              {trider.todaZoneName || 'N/A'}
+                              {trider.todaZoneChangeRequestStatus === 'pending' && requestedZoneName && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertCircle className="h-3 w-3 text-orange-500 inline ml-1" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Pending move to: {requestedZoneName}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {trider.todaZoneName || 'N/A'}
+                        {trider.todaZoneChangeRequestStatus === 'pending' && requestedZoneName && (
+                           <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="ml-1 inline-flex items-center">
+                                  <AlertCircle className="h-4 w-4 text-orange-500" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Pending move to: {requestedZoneName}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">{trider.vehicleType || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge className={cn(statusColors[trider.status])}>
+                          {trider.status.charAt(0).toUpperCase() + trider.status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={(e) => { e.stopPropagation(); onOpenChat(trider); }}
+                            aria-label={`Chat with ${trider.name}`}
+                            disabled={trider.status === 'offline' || trider.status === 'suspended'}
+                            className="h-8 w-8"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                           <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={(e) => { e.stopPropagation(); onSelectTrider(trider); }}
+                            aria-label={`View details for ${trider.name}`}
+                            className="h-8 w-8"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }

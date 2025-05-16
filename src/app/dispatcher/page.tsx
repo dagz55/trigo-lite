@@ -16,79 +16,75 @@ import { isPointInCircle, getRandomPointInCircle, calculateDistance } from '@/li
 import { useSettings } from '@/contexts/SettingsContext'; 
 
 const FALLBACK_LAS_PINAS_CENTER: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
+const TALON_KUATRO_ZONE_ID = '2'; // APHDA (Talon Kuatro)
+const talonKuatroZone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID);
 
-// Use 10 Apostle names for Talon Kuatro Triders
-const apostleNamesTalonKuatro = [
-  "Peter", "Andrew", "James Z.", "John", "Philip", 
-  "Bartholomew", "Thomas", "Matthew", "James A.", "Thaddaeus"
-];
+if (!talonKuatroZone) {
+  throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_ZONE_ID} not found.`);
+}
 
-const talonKuatroZoneId = '2'; // ID for "APHDA" (Talon Kuatro)
-
-const initialTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = apostleNamesTalonKuatro.map((name, index) => {
-  const todaZone = appTodaZones.find(z => z.id === talonKuatroZoneId);
-  if (!todaZone) throw new Error(`Talon Kuatro zone with ID ${talonKuatroZoneId} not found.`);
-  
-  const randomLocationInZone = getRandomPointInCircle(todaZone.center, todaZone.radiusKm * 0.8);
-  
+const initialTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = [
+  "Peter", "Andrew", "James Z.", "John", "Philip"
+].map((name, index) => {
+  const randomLocationInZone = getRandomPointInCircle(talonKuatroZone.center, talonKuatroZone.radiusKm * 0.8);
   const statuses: Trider['status'][] = ['available', 'busy', 'offline', 'assigned'];
   let status = statuses[index % statuses.length];
-  if (index < 3) status = 'available'; // Make first 3 available
+  if (index < 2) status = 'available'; // Make first 2 available
 
   return {
-    id: `trider-tk-${index + 1}`,
+    id: `trider-dispatch-tk-${index + 1}`, // Unique prefix for dispatcher page
     name: name,
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
-    todaZoneId: talonKuatroZoneId,
+    todaZoneId: TALON_KUATRO_ZONE_ID,
   };
 });
 
 const initialTriders: Trider[] = initialTridersData.map(t => {
-  const zone = appTodaZones.find(z => z.id === t.todaZoneId);
-  return { ...t, todaZoneName: zone?.name || 'Unknown Zone', currentPath: null, pathIndex: 0 };
+  return { ...t, todaZoneName: talonKuatroZone.name, currentPath: null, pathIndex: 0 };
 });
 
 
 const initialRideRequests: RideRequest[] = [
   { 
-    id: 'ride-1', 
-    passengerName: 'Maria Makiling', 
-    // Ensure initial ride request is in Talon Kuatro for consistency
-    pickupLocation: getRandomPointInCircle(appTodaZones.find(z=>z.id===talonKuatroZoneId)!.center, appTodaZones.find(z=>z.id===talonKuatroZoneId)!.radiusKm * 0.7),
+    id: 'ride-dispatch-1', 
+    passengerName: 'Juana Dela Cruz', 
+    pickupLocation: getRandomPointInCircle(talonKuatroZone.center, talonKuatroZone.radiusKm * 0.7),
     dropoffLocation: { latitude: FALLBACK_LAS_PINAS_CENTER.latitude - 0.01, longitude: FALLBACK_LAS_PINAS_CENTER.longitude + 0.01 }, 
-    pickupAddress: `${appTodaZones.find(z=>z.id===talonKuatroZoneId)!.areaOfOperation} area`, 
-    dropoffAddress: 'SM Southmall, Las Piñas', 
+    pickupAddress: `${talonKuatroZone.areaOfOperation} area`, 
+    dropoffAddress: 'Alabang Town Center', 
     status: 'pending', 
-    fare: 75.50, 
-    requestedAt: new Date(Date.now() - 5 * 60 * 1000),
-    pickupTodaZoneId: talonKuatroZoneId,
+    fare: 85.00, 
+    requestedAt: new Date(Date.now() - 3 * 60 * 1000),
+    pickupTodaZoneId: TALON_KUATRO_ZONE_ID,
+    ticketId: `TKT-${Date.now() + 1}`
   },
   { 
-    id: 'ride-2', 
-    passengerName: 'Bernardo Carpio', 
-    pickupLocation: getRandomPointInCircle(appTodaZones.find(z=>z.id===talonKuatroZoneId)!.center, appTodaZones.find(z=>z.id===talonKuatroZoneId)!.radiusKm * 0.7),
+    id: 'ride-dispatch-2', 
+    passengerName: 'Pedro Penduko', 
+    pickupLocation: getRandomPointInCircle(talonKuatroZone.center, talonKuatroZone.radiusKm * 0.7),
     dropoffLocation: { latitude: FALLBACK_LAS_PINAS_CENTER.latitude + 0.005, longitude: FALLBACK_LAS_PINAS_CENTER.longitude - 0.005 }, 
-    pickupAddress: `${appTodaZones.find(z=>z.id===talonKuatroZoneId)!.areaOfOperation} area`, 
-    dropoffAddress: 'BF Resort Village, Las Piñas', 
+    pickupAddress: `${talonKuatroZone.areaOfOperation} area`, 
+    dropoffAddress: 'Robinsons Place Las Piñas', 
     status: 'assigned', 
-    assignedTriderId: initialTriders.find(t => t.todaZoneId === talonKuatroZoneId && t.status !== 'offline')?.id || initialTriders[0].id,
-    fare: 60.00, 
-    requestedAt: new Date(Date.now() - 10 * 60 * 1000),
-    pickupTodaZoneId: talonKuatroZoneId,
+    assignedTriderId: initialTriders.find(t => t.todaZoneId === TALON_KUATRO_ZONE_ID && t.status !== 'offline')?.id || initialTriders[0].id,
+    fare: 55.00, 
+    requestedAt: new Date(Date.now() - 8 * 60 * 1000),
+    pickupTodaZoneId: TALON_KUATRO_ZONE_ID,
+    ticketId: `TKT-${Date.now() + 2}`
   },
 ];
 
 const initialAiInsights: AiInsight[] = [
-  { id: 'ai-1', title: 'High Demand Alert', description: `Increased ride requests near ${appTodaZones.find(z=>z.id===talonKuatroZoneId)?.name || 'Talon Kuatro area'}. Consider deploying more triders.`, severity: 'warning', timestamp: new Date(Date.now() - 2 * 60 * 1000), relatedLocation: appTodaZones.find(z=>z.id===talonKuatroZoneId)?.center },
-  { id: 'ai-2', title: 'Route Optimization Available', description: `Trider ${initialTriders[0]?.name} can take a faster route.`, severity: 'info', timestamp: new Date(Date.now() - 15 * 60 * 1000) },
+  { id: 'ai-dispatch-1', title: 'High Demand Alert', description: `Increased ride requests near ${talonKuatroZone.name}. Consider deploying more triders.`, severity: 'warning', timestamp: new Date(Date.now() - 2 * 60 * 1000), relatedLocation: talonKuatroZone.center },
+  { id: 'ai-dispatch-2', title: 'Route Optimization Available', description: `Trider ${initialTriders[0]?.name} can take a faster route.`, severity: 'info', timestamp: new Date(Date.now() - 15 * 60 * 1000) },
 ];
 
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
-export default function DispatcherPage() { // Renamed from DispatchPage
+export default function DispatcherPage() {
   const { 
     defaultMapZoom, 
     defaultMapCenter, 
@@ -96,7 +92,8 @@ export default function DispatcherPage() { // Renamed from DispatchPage
     rideRequestIntervalMs, 
     triderUpdateIntervalMs,
     aiInsightIntervalMs,
-    isLoading: settingsLoading 
+    isLoading: settingsLoading,
+    baseFare
   } = useSettings();
 
   const [triders, setTriders] = React.useState<Trider[]>(initialTriders);
@@ -145,7 +142,7 @@ export default function DispatcherPage() { // Renamed from DispatchPage
           if (trider.status === 'offline') return trider;
 
           let newLocation = { ...trider.location };
-          const triderZone = todaZones.find(z => z.id === trider.todaZoneId);
+          const triderZone = todaZones.find(z => z.id === trider.todaZoneId); // Should be Talon Kuatro
 
           if ((trider.status === 'assigned' || trider.status === 'busy') && trider.currentPath && trider.currentPath.coordinates.length > 0) {
             let nextIndex = trider.pathIndex + 1;
@@ -160,10 +157,7 @@ export default function DispatcherPage() { // Renamed from DispatchPage
                 longitude: trider.currentPath.coordinates[nextIndex][0], 
                 latitude: trider.currentPath.coordinates[nextIndex][1] 
               };
-              const ride = rideRequests.find(r => r.assignedTriderId === trider.id && (r.status === 'assigned' || r.status === 'in-progress'));
-              if (ride) {
-                // Further logic for arrival/completion can be added here
-              }
+              // Ride completion / next step logic would be here if dispatch page handled full ride cycle
             }
             return { ...trider, location: newLocation, pathIndex: nextIndex };
           } else if (trider.status === 'available' && triderZone) {
@@ -184,42 +178,42 @@ export default function DispatcherPage() { // Renamed from DispatchPage
   React.useEffect(() => {
     if (settingsLoading) return; 
     const rideInterval = setInterval(() => {
-      const targetZone = appTodaZones.find(z => z.id === talonKuatroZoneId); // Generate requests in Talon Kuatro
-      if (!targetZone) return;
+      if (!talonKuatroZone) return;
 
-      const pickupLocation = getRandomPointInCircle(targetZone.center, targetZone.radiusKm * 0.9);
+      const pickupLocation = getRandomPointInCircle(talonKuatroZone.center, talonKuatroZone.radiusKm * 0.9);
       
-      // For simplicity, dropoff can be anywhere or in another random zone for variety
       let randomDropoffZone = todaZones[Math.floor(Math.random() * todaZones.length)];
       const dropoffLocation = getRandomPointInCircle(randomDropoffZone.center, randomDropoffZone.radiusKm * 0.9);
 
-      const newRideId = `ride-${Date.now()}`;
+      const newRideId = `ride-dispatch-${Date.now()}`;
+      const fare = baseFare + calculateDistance(pickupLocation, dropoffLocation) * 10; // Example fare calc
       const newRide: RideRequest = {
         id: newRideId,
         passengerName: `Passenger ${Math.floor(Math.random() * 1000)}`,
         pickupLocation,
         dropoffLocation,
-        pickupAddress: `${targetZone.areaOfOperation} vicinity`,
+        pickupAddress: `${talonKuatroZone.areaOfOperation} vicinity`,
         dropoffAddress: `${randomDropoffZone.areaOfOperation} vicinity`,
         status: 'pending',
         requestedAt: new Date(),
-        pickupTodaZoneId: targetZone.id,
-        fare: Math.floor(Math.random() * 100) + 50,
+        pickupTodaZoneId: TALON_KUATRO_ZONE_ID,
+        fare: parseFloat(fare.toFixed(2)),
+        ticketId: `TKT-${Date.now()}`
       };
       setRideRequests(prev => [newRide, ...prev.slice(0,19)]);
-      toast({ title: "New Ride Request (Mock)", description: `${newRide.passengerName} in ${targetZone.name} needs a ride.` });
+      toast({ title: "New Ride Request (Mock)", description: `${newRide.passengerName} in ${talonKuatroZone.name} needs a ride.` });
     }, rideRequestIntervalMs); 
 
     const insightInterval = setInterval(() => {
-      const newInsightId = `ai-${Date.now()}`;
-      const randomZone = todaZones.find(z => z.id === talonKuatroZoneId) || (todaZones.length > 0 ? todaZones[Math.floor(Math.random() * todaZones.length)] : null);
+      const newInsightId = `ai-dispatch-${Date.now()}`;
+      const randomZoneForInsight = talonKuatroZone || (todaZones.length > 0 ? todaZones[Math.floor(Math.random() * todaZones.length)] : null);
       const newInsight: AiInsight = {
         id: newInsightId,
         title: `Dynamic Pricing Update (Mock)`,
-        description: `Demand surge near ${randomZone?.name || 'a busy area'}. Fares increased by 1.2x.`,
+        description: `Demand surge near ${randomZoneForInsight?.name || 'a busy area'}. Fares increased by 1.2x.`,
         severity: 'info',
         timestamp: new Date(),
-        relatedLocation: randomZone?.center
+        relatedLocation: randomZoneForInsight?.center
       };
       setAiInsights(prev => [newInsight, ...prev.slice(0,4)]);
     }, aiInsightIntervalMs); 
@@ -228,7 +222,7 @@ export default function DispatcherPage() { // Renamed from DispatchPage
       clearInterval(rideInterval);
       clearInterval(insightInterval);
     };
-  }, [toast, todaZones, getTodaZoneForLocation, rideRequestIntervalMs, aiInsightIntervalMs, settingsLoading]);
+  }, [toast, todaZones, getTodaZoneForLocation, rideRequestIntervalMs, aiInsightIntervalMs, settingsLoading, baseFare]);
 
   React.useEffect(() => {
     const features = rideRequests.map(req => ({
@@ -266,6 +260,7 @@ export default function DispatcherPage() { // Renamed from DispatchPage
       } else {
         const updatedRequest = { ...request, pickupTodaZoneId: pickupZoneId };
         setSelectedRideRequest(updatedRequest);
+        // Candidate triders must be in the same zone as the request's pickup zone
         const availableTridersInZone = triders.filter(t => t.status === 'available' && t.todaZoneId === pickupZoneId);
         setCandidateTriders(availableTridersInZone);
         
@@ -279,11 +274,12 @@ export default function DispatcherPage() { // Renamed from DispatchPage
           setRouteGeoJson(null);
           if (selectedTrider && pickupZoneId !== selectedTrider.todaZoneId) {
              toast({ title: "Zone Mismatch", description: `Selected trider ${selectedTrider.name} is not in the pickup zone for this request.`, variant: "destructive" });
-             setSelectedTrider(null); // Deselect trider if zone mismatch
+             setSelectedTrider(null);
           }
         }
       }
     } else {
+      // If no ride request is selected, show all available triders
       setCandidateTriders(triders.filter(t => t.status === 'available'));
       setRouteGeoJson(null);
     }
@@ -308,6 +304,7 @@ export default function DispatcherPage() { // Renamed from DispatchPage
           features: [{ type: 'Feature', properties: {}, geometry: routeGeometry }]
         });
         
+        // Path from trider's current location to pickup
         const triderToPickupPath: RoutePath = {
             type: "LineString",
             coordinates: data.routes[0].legs[0].steps.flatMap((step: any) => step.geometry.coordinates)
@@ -352,6 +349,7 @@ export default function DispatcherPage() { // Renamed from DispatchPage
       toast({ title: "Dispatch Error", description: "Ride request pickup location is outside any TODA zone.", variant: "destructive" });
       return;
     }
+    // Crucial: Trider must be in the same zone as the pickup location
     if (selectedTrider.todaZoneId !== ridePickupZoneId) {
       toast({ title: "Dispatch Error", description: `Trider ${selectedTrider.name} (${selectedTrider.todaZoneName}) cannot service rides in ${todaZones.find(z => z.id === ridePickupZoneId)?.name || 'a different zone'}.`, variant: "destructive" });
       return;
@@ -366,10 +364,10 @@ export default function DispatcherPage() { // Renamed from DispatchPage
           
           const updatedCandidateTriders = triders.filter(t => t.status === 'available' && t.todaZoneId === ridePickupZoneId && t.id !== selectedTrider!.id);
           setCandidateTriders(updatedCandidateTriders);
-          // Do not deselect trider or ride request here, keep them for map display
+          // Keep trider & ride selected for map display after dispatch
       })
       .catch(() => {
-          // Error already handled by toast in fetchRouteAndUpdateTrider
+          // Error toast is handled by fetchRouteAndUpdateTrider
       });
   };
 
@@ -402,7 +400,7 @@ export default function DispatcherPage() { // Renamed from DispatchPage
           <Card className="flex-shrink-0">
             <CardHeader>
               <CardTitle className="text-lg">Dispatch Control</CardTitle>
-              <CardDescription>Select a ride and an available trider from the same TODA zone to dispatch. Data is currently mocked.</CardDescription>
+              <CardDescription>Select a ride and an available trider from the same TODA zone to dispatch. All data is mocked.</CardDescription>
             </CardHeader>
             <CardContent>
               {selectedRideRequest && <p className="text-sm mb-1">Ride: <span className="font-medium">{selectedRideRequest.passengerName}</span> (Zone: {todaZones.find(z=>z.id === selectedRideRequest.pickupTodaZoneId)?.name || 'N/A'})</p>}
@@ -430,7 +428,7 @@ export default function DispatcherPage() { // Renamed from DispatchPage
           </div>
           <div className="flex-grow min-h-[200px]">
             <RideRequestList 
-              rideRequests={rideRequests} 
+              rideRequests={rideRequests.filter(r => r.pickupTodaZoneId === TALON_KUATRO_ZONE_ID)} // Show only Talon Kuatro requests
               selectedRideRequestId={selectedRideRequest?.id || null}
               onSelectRideRequest={handleSelectRideRequest}
               todaZones={todaZones}
@@ -460,5 +458,3 @@ export default function DispatcherPage() { // Renamed from DispatchPage
     </div>
   );
 }
-
-    
