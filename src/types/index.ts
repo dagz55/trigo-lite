@@ -5,14 +5,14 @@ export type Coordinates = {
 };
 
 export type TriderStatus = 'available' | 'busy' | 'offline' | 'assigned';
-export type TriderExtendedStatus = TriderStatus | 'en-route' | 'suspended'; // 'en-route' can represent 'busy' or 'assigned'
+export type TriderExtendedStatus = TriderStatus | 'en-route' | 'suspended'; 
 
 export interface TodaZone {
   id: string;
-  name: string; // toda_name
+  name: string; 
   areaOfOperation: string;
   center: Coordinates;
-  radiusKm: number; // estimated_radius
+  radiusKm: number; 
 }
 
 export interface Trider {
@@ -20,12 +20,12 @@ export interface Trider {
   name: string;
   location: Coordinates;
   status: TriderStatus;
-  vehicleType?: string; // e.g., 'Tricycle', 'Motorbike'
+  vehicleType?: string; 
   todaZoneId: string;
   todaZoneName?: string;
 }
 
-export type RideRequestStatus = 'pending' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'searching';
+export type RideRequestStatus = 'pending' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'searching'; // Added 'searching' for passenger page
 
 export interface RideRequest {
   id: string;
@@ -38,8 +38,8 @@ export interface RideRequest {
   fare?: number;
   requestedAt: Date;
   assignedTriderId?: string | null;
-  pickupTodaZoneId?: string | null; // ID of the TODA zone for the pickup location
-  passengerId?: string; // ID of the passenger making the request
+  pickupTodaZoneId?: string | null; 
+  passengerId?: string; 
 }
 
 export interface AiInsight {
@@ -51,7 +51,6 @@ export interface AiInsight {
   relatedLocation?: Coordinates;
 }
 
-// Types for Trider Management Dashboard
 export interface TriderPaymentLog {
   id: string;
   date: Date;
@@ -62,7 +61,7 @@ export interface TriderPaymentLog {
 }
 
 export interface TriderRecentRideSummary {
-  id: string; // ride_request_id
+  id: string; 
   date: Date;
   pickupAddress: string;
   dropoffAddress: string;
@@ -83,23 +82,23 @@ export interface TriderWallet {
 }
 
 export interface TriderProfile extends Trider {
-  status: TriderExtendedStatus; // Overriding with more detailed statuses
+  status: TriderExtendedStatus; 
   wallet: TriderWallet;
-  contactNumber?: string; // For chat/ping identification
-  profilePictureUrl?: string; // For avatar
-  lastSeen?: Date; // For offline status
+  contactNumber?: string; 
+  profilePictureUrl?: string; 
+  lastSeen?: Date; 
+  dataAiHint?: string; // For placeholder images
 }
 
 export interface ChatMessage {
   id: string;
-  senderId: string; // 'dispatcher' or trider.id
+  senderId: string; 
   receiverId: string;
   content: string;
   timestamp: Date;
   isRead?: boolean;
 }
 
-// App Settings
 export type ThemeSetting = 'light' | 'dark' | 'system';
 
 export interface AppSettings {
@@ -112,13 +111,12 @@ export interface AppSettings {
   aiInsightIntervalMs: number;
 }
 
-// For SettingsContext updates
 export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings> = {
   key: K;
   value: AppSettings[K];
 };
 
-// Ride Simulation Specific Types
+// Passenger Page specific state
 export interface PassengerRideState {
   status: 'idle' | 'selectingPickup' | 'selectingDropoff' | 'confirmingRide' | 'searching' | 'triderAssigned' | 'inProgress' | 'completed' | 'cancelled';
   pickupLocation: Coordinates | null;
@@ -126,15 +124,18 @@ export interface PassengerRideState {
   pickupAddress: string | null;
   dropoffAddress: string | null;
   estimatedFare: number | null;
-  assignedTrider: TriderProfile | null; // Using TriderProfile for more details
+  assignedTrider: TriderProfile | null; 
   currentRideId: string | null;
 }
 
+// Trider Page specific state
 export type TriderRideStatus = 'onlineAvailable' | 'onlineBusyEnRouteToPickup' | 'onlineBusyEnRouteToDropoff' | 'offline';
 
 export interface TriderSimState {
   status: TriderRideStatus;
   currentLocation: Coordinates;
-  activeRideRequest: RideRequest | null; // The ride they have accepted
-  availableRideRequests: RideRequest[]; // List of rides they can accept
+  activeRideRequest: RideRequest | null; 
+  availableRideRequests: RideRequest[]; 
 }
+
+    
