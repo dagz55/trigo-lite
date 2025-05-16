@@ -38,7 +38,7 @@ export default function PassengerPage() {
   const [viewState, setViewState] = React.useState({
     longitude: defaultMapCenter.longitude,
     latitude: defaultMapCenter.latitude,
-    zoom: defaultMapZoom + 1, // Zoom in a bit more for passenger view
+    zoom: defaultMapZoom + 1,
     pitch: 30,
   });
 
@@ -54,31 +54,41 @@ export default function PassengerPage() {
   });
 
   const [triderSimLocation, setTriderSimLocation] = React.useState<Coordinates | null>(null);
-  const [mapRouteGeoJson, setMapRouteGeoJson] = React.useState<GeoJSON.FeatureCollection | null>(null);
-  const [estimatedETA, setEstimatedETA] = React.useState<string | null>(null);
+  
+  // Routes for display
+  const [triderToPickupRouteGeoJson, setTriderToPickupRouteGeoJson] = React.useState<GeoJSON.FeatureCollection | null>(null);
+  const [pickupToDropoffRouteGeoJson, setPickupToDropoffRouteGeoJson] = React.useState<GeoJSON.FeatureCollection | null>(null);
+  
+  const [currentTriderPath, setCurrentTriderPath] = React.useState<Coordinates[] | null>(null);
+  const [currentTriderPathIndex, setCurrentTriderPathIndex] = React.useState(0);
+  
+  const [currentSegmentETA, setCurrentSegmentETA] = React.useState<string | null>(null);
+  
   const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(180, 100%, 25.1%)');
+  const [resolvedAccentColor, setResolvedAccentColor] = React.useState<string>('hsl(120, 60.8%, 50%)');
 
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const computedStyles = getComputedStyle(document.documentElement);
-      const primaryColorVar = computedStyles.getPropertyValue('--primary').trim();
-      if (primaryColorVar) {
-        // Ensure HSL string is in the format "hsl(H, S%, L%)"
-        const parts = primaryColorVar.split(' ').map(p => p.trim());
-        if (parts.length === 3 && !primaryColorVar.startsWith('hsl(')) {
+      const parseHslString = (hslString: string): string => {
+        const parts = hslString.split(' ').map(p => p.trim());
+        if (parts.length === 3 && !hslString.startsWith('hsl(')) {
             const h = parts[0];
             const s = parts[1].endsWith('%') ? parts[1] : `${parts[1]}%`;
             const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`;
-            setResolvedPrimaryColor(`hsl(${h}, ${s}, ${l})`);
-        } else {
-            setResolvedPrimaryColor(primaryColorVar);
+            return `hsl(${h}, ${s}, ${l})`;
         }
-      }
+        return hslString;
+      };
+      const primaryColorVar = computedStyles.getPropertyValue('--primary').trim();
+      if (primaryColorVar) setResolvedPrimaryColor(parseHslString(primaryColorVar));
+      
+      const accentColorVar = computedStyles.getPropertyValue('--accent').trim();
+      if (accentColorVar) setResolvedAccentColor(parseHslString(accentColorVar));
     }
   }, []);
 
-  // Update map view when settings load or change
   React.useEffect(() => {
     if (!settingsLoading) {
       setViewState(prev => ({
@@ -92,53 +102,46 @@ export default function PassengerPage() {
 
   // Toasts for ride status changes
   React.useEffect(() => {
-    if (rideState.status === 'inProgress' && rideState.assignedTrider) {
-      toast({ title: "Trider Arrived", description: `${rideState.assignedTrider.name} has arrived at your pickup location.` });
+    if (rideState.status === 'inProgress' && rideState.assignedTrider && rideState.pickupLocation) {
+      // Toast for "Trider Arrived" is handled by simulation effect when status changes
     } else if (rideState.status === 'completed') {
       toast({ title: "Ride Completed", description: `You have arrived at your destination. Thank you for using TriGo!` });
-      setMapRouteGeoJson(null);
-      setEstimatedETA(null);
+      setTriderToPickupRouteGeoJson(null);
+      setPickupToDropoffRouteGeoJson(null);
+      setCurrentSegmentETA(null);
+      setCurrentTriderPath(null);
+      setCurrentTriderPathIndex(0);
     }
-  }, [rideState.status, rideState.assignedTrider, toast]);
+  }, [rideState.status, rideState.assignedTrider, rideState.pickupLocation, toast]);
 
 
-  // Simulate trider movement when assigned
+  // Simulate trider movement along path
   React.useEffect(() => {
     let intervalId: NodeJS.Timeout;
-    if (rideState.status === 'triderAssigned' && rideState.assignedTrider && rideState.pickupLocation) {
+    if ((rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && currentTriderPath && currentTriderPath.length > 0) {
       intervalId = setInterval(() => {
-        setTriderSimLocation(prevLoc => {
-          if (!prevLoc || !rideState.pickupLocation || !rideState.assignedTrider) return prevLoc;
-          if (calculateDistance(prevLoc, rideState.pickupLocation) < 0.05) { // Arrived at pickup
-            setRideState(rs => ({ ...rs, status: 'inProgress' }));
-            if(rideState.dropoffLocation) fetchRoute(rideState.pickupLocation!, rideState.dropoffLocation!);
-            return rideState.pickupLocation;
+        setCurrentTriderPathIndex(prevIndex => {
+          const nextIndex = prevIndex + 1;
+          if (nextIndex < currentTriderPath.length) {
+            setTriderSimLocation(currentTriderPath[nextIndex]);
+            // Optionally, recalculate ETA from currentTriderPath[nextIndex] to target for more dynamic ETA
+            return nextIndex;
+          } else { // Reached end of current path segment
+            setTriderSimLocation(currentTriderPath[currentTriderPath.length - 1]); // Snap to last point
+            if (rideState.status === 'triderAssigned' && rideState.pickupLocation && rideState.dropoffLocation && rideState.assignedTrider) {
+              toast({ title: "Trider Arrived", description: `${rideState.assignedTrider.name} has arrived at your pickup location.` });
+              setRideState(rs => ({ ...rs, status: 'inProgress' }));
+              fetchRouteAndPath(rideState.pickupLocation, rideState.dropoffLocation, 'toDropoff');
+            } else if (rideState.status === 'inProgress') {
+              setRideState(rs => ({ ...rs, status: 'completed' }));
+            }
+            return prevIndex; // Stop incrementing
           }
-          const newLat = prevLoc.latitude + (rideState.pickupLocation.latitude - prevLoc.latitude) * 0.2;
-          const newLng = prevLoc.longitude + (rideState.pickupLocation.longitude - prevLoc.longitude) * 0.2;
-          const newTriderLocation = { latitude: newLat, longitude: newLng };
-          fetchRoute(newTriderLocation, rideState.pickupLocation);
-          return newTriderLocation;
         });
-      }, 2000);
-    } else if (rideState.status === 'inProgress' && triderSimLocation && rideState.dropoffLocation) {
-        intervalId = setInterval(() => {
-        setTriderSimLocation(prevLoc => {
-          if (!prevLoc || !rideState.dropoffLocation) return prevLoc;
-          if (calculateDistance(prevLoc, rideState.dropoffLocation) < 0.05) { // Arrived at dropoff
-            setRideState(rs => ({ ...rs, status: 'completed' }));
-            return rideState.dropoffLocation;
-          }
-          const newLat = prevLoc.latitude + (rideState.dropoffLocation.latitude - prevLoc.latitude) * 0.2;
-          const newLng = prevLoc.longitude + (rideState.dropoffLocation.longitude - prevLoc.longitude) * 0.2;
-          const newTriderLocation = {latitude: newLat, longitude: newLng};
-          fetchRoute(newTriderLocation, rideState.dropoffLocation);
-          return newTriderLocation;
-        });
-      }, 2000);
+      }, 2000); // Adjust speed of simulation
     }
     return () => clearInterval(intervalId);
-  }, [rideState.status, rideState.assignedTrider, rideState.pickupLocation, rideState.dropoffLocation, triderSimLocation]);
+  }, [rideState.status, currentTriderPath, toast, rideState.pickupLocation, rideState.dropoffLocation, rideState.assignedTrider]);
 
 
   const handleMapClick = (event: mapboxgl.MapLayerMouseEvent) => {
@@ -148,15 +151,15 @@ export default function PassengerPage() {
     if (rideState.status === 'idle' || rideState.status === 'selectingPickup') {
       setRideState(prev => ({ ...prev, status: 'selectingDropoff', pickupLocation: newLocation, pickupAddress: `Selected Pin (${newLocation.latitude.toFixed(4)}, ${newLocation.longitude.toFixed(4)})` }));
       toast({ title: "Pickup Set", description: "Now select your dropoff location." });
-    } else if (rideState.status === 'selectingDropoff') {
-      const estimatedFare = calculateDistance(rideState.pickupLocation!, newLocation) * 20 + 30; // Mock fare calculation
+    } else if (rideState.status === 'selectingDropoff' && rideState.pickupLocation) {
+      const estimatedFare = calculateDistance(rideState.pickupLocation, newLocation) * 20 + 30;
       setRideState(prev => ({ ...prev, status: 'confirmingRide', dropoffLocation: newLocation, dropoffAddress: `Selected Pin (${newLocation.latitude.toFixed(4)}, ${newLocation.longitude.toFixed(4)})`, estimatedFare }));
-      if(rideState.pickupLocation) fetchRoute(rideState.pickupLocation, newLocation);
+      fetchRouteAndPath(rideState.pickupLocation, newLocation, 'toDropoff'); // Show route from pickup to dropoff for confirmation
       toast({ title: "Dropoff Set", description: "Confirm your ride details." });
     }
   };
 
-  const fetchRoute = async (start: Coordinates, end: Coordinates) => {
+  const fetchRouteAndPath = async (start: Coordinates, end: Coordinates, routeType: 'toPickup' | 'toDropoff') => {
     if (!MAPBOX_TOKEN) return;
     const coordinatesString = `${start.longitude},${start.latitude};${end.longitude},${end.latitude}`;
     const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?steps=true&geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
@@ -164,17 +167,44 @@ export default function PassengerPage() {
       const response = await fetch(url);
       const data = await response.json();
       if (data.routes && data.routes.length > 0) {
-        setMapRouteGeoJson({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: data.routes[0].geometry }] });
+        const routeGeometry = data.routes[0].geometry;
+        const routeFeatureCollection = { type: 'FeatureCollection' as const, features: [{ type: 'Feature' as const, properties: {}, geometry: routeGeometry }] };
+        const pathCoordinates = routeGeometry.coordinates.map((coord: [number, number]) => ({ longitude: coord[0], latitude: coord[1] }));
+
+        if (routeType === 'toPickup') {
+          setTriderToPickupRouteGeoJson(routeFeatureCollection);
+          setPickupToDropoffRouteGeoJson(null); // Clear other route
+          setCurrentTriderPath(pathCoordinates);
+          setCurrentTriderPathIndex(0);
+           if (pathCoordinates.length > 0) setTriderSimLocation(pathCoordinates[0]); // Set trider start location for this path
+        } else { // toDropoff
+          setPickupToDropoffRouteGeoJson(routeFeatureCollection);
+          // If switching from 'toPickup' route, triderToPickupRouteGeoJson might still be shown or cleared based on preference
+          // For now, let's clear it once the passenger is picked up.
+          if (rideState.status === 'inProgress' || rideState.status === 'confirmingRide') {
+            setTriderToPickupRouteGeoJson(null); 
+          }
+          setCurrentTriderPath(pathCoordinates);
+          setCurrentTriderPathIndex(0);
+          if (pathCoordinates.length > 0 && rideState.status === 'inProgress') setTriderSimLocation(pathCoordinates[0]);
+        }
+        
         const durationMinutes = Math.round(data.routes[0].duration / 60);
-        setEstimatedETA(`${durationMinutes} min`);
+        setCurrentSegmentETA(`${durationMinutes} min`);
       } else {
-        setEstimatedETA(null);
-        setMapRouteGeoJson(null); // Clear route if not found
+        setCurrentSegmentETA(null);
+        if (routeType === 'toPickup') setTriderToPickupRouteGeoJson(null);
+        else setPickupToDropoffRouteGeoJson(null);
+        setCurrentTriderPath(null);
+        setCurrentTriderPathIndex(0);
       }
     } catch (error) {
       console.error("Error fetching route for passenger map:", error);
-      setEstimatedETA(null);
-      setMapRouteGeoJson(null);
+      setCurrentSegmentETA(null);
+      if (routeType === 'toPickup') setTriderToPickupRouteGeoJson(null);
+      else setPickupToDropoffRouteGeoJson(null);
+      setCurrentTriderPath(null);
+      setCurrentTriderPathIndex(0);
     }
   };
 
@@ -185,13 +215,15 @@ export default function PassengerPage() {
       return;
     }
     setRideState(prev => ({ ...prev, status: 'searching', currentRideId: `ride-sim-${Date.now()}` }));
+    setPickupToDropoffRouteGeoJson(null); // Clear confirmation route
+    setCurrentSegmentETA(null);
     toast({ title: "Searching for Trider...", description: "We're finding a TriGo for you." });
 
     setTimeout(() => {
       const randomTrider = mockTriders[Math.floor(Math.random() * mockTriders.length)];
       setRideState(prev => ({ ...prev, status: 'triderAssigned', assignedTrider: randomTrider }));
       setTriderSimLocation(randomTrider.location); 
-      if(rideState.pickupLocation) fetchRoute(randomTrider.location, rideState.pickupLocation); 
+      fetchRouteAndPath(randomTrider.location, rideState.pickupLocation!, 'toPickup'); 
       toast({ title: "Trider Found!", description: `${randomTrider.name} is on the way.` });
     }, 3000);
   };
@@ -208,8 +240,11 @@ export default function PassengerPage() {
       currentRideId: null,
     });
     setTriderSimLocation(null);
-    setMapRouteGeoJson(null);
-    setEstimatedETA(null);
+    setTriderToPickupRouteGeoJson(null);
+    setPickupToDropoffRouteGeoJson(null);
+    setCurrentSegmentETA(null);
+    setCurrentTriderPath(null);
+    setCurrentTriderPathIndex(0);
     toast({ title: "Ride Cancelled" });
   };
   
@@ -217,12 +252,20 @@ export default function PassengerPage() {
     handleCancelRide(); 
   }
 
-  const routeLayer: any = React.useMemo(() => ({
-    id: 'route-passenger',
+  const triderToPickupRouteLayer: any = React.useMemo(() => ({
+    id: 'route-trider-to-pickup',
     type: 'line',
-    source: 'route-passenger',
+    source: 'route-trider-to-pickup-source',
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': resolvedPrimaryColor, 'line-width': 5, 'line-opacity': 0.8 },
+    paint: { 'line-color': resolvedAccentColor, 'line-width': 6, 'line-opacity': 0.75 },
+  }), [resolvedAccentColor]);
+  
+  const pickupToDropoffRouteLayer: any = React.useMemo(() => ({
+    id: 'route-pickup-to-dropoff',
+    type: 'line',
+    source: 'route-pickup-to-dropoff-source',
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: { 'line-color': resolvedPrimaryColor, 'line-width': 7, 'line-opacity': 0.9 },
   }), [resolvedPrimaryColor]);
 
   if (settingsLoading || !MAPBOX_TOKEN) {
@@ -257,7 +300,7 @@ export default function PassengerPage() {
                 {rideState.status === 'selectingDropoff' && "Tap on the map to set your dropoff point."}
                 {rideState.status === 'confirmingRide' && "Review details and request your ride."}
                 {rideState.status === 'searching' && "Please wait while we connect you with a nearby trider."}
-                {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.assignedTrider && `Your trider ${rideState.assignedTrider.name} is on the way.`}
+                {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.assignedTrider && `Your trider ${rideState.assignedTrider.name} is ${rideState.status === 'triderAssigned' ? 'coming to pick you up.' : 'taking you to your destination.'}`}
                 {rideState.status === 'completed' && "Hope you enjoyed your ride!"}
               </CardDescription>
             </CardHeader>
@@ -283,6 +326,7 @@ export default function PassengerPage() {
                   <AlertTitle>Estimated Fare</AlertTitle>
                   <AlertDescription>
                     Around ₱{rideState.estimatedFare.toFixed(2)}. Actual fare may vary.
+                    {currentSegmentETA && ` Estimated trip time: ${currentSegmentETA}.`}
                   </AlertDescription>
                 </Alert>
               )}
@@ -307,10 +351,13 @@ export default function PassengerPage() {
                       <p className="text-xs font-medium mt-0.5">Status: {rideState.status === 'triderAssigned' ? 'En Route to Pickup' : 'On Trip to Destination'}</p>
                     </div>
                   </div>
-                  {estimatedETA && (
+                  {currentSegmentETA && (
                     <div className="mt-2 pt-2 border-t border-muted flex items-center">
                         <Clock className="h-4 w-4 mr-2 text-primary"/>
-                        <p className="text-sm font-semibold">Estimated Arrival: {estimatedETA}</p>
+                        <p className="text-sm font-semibold">
+                           {rideState.status === 'triderAssigned' ? 'Trider ETA to pickup: ' : 'ETA to destination: '}
+                           {currentSegmentETA}
+                        </p>
                     </div>
                   )}
                 </Card>
@@ -320,7 +367,7 @@ export default function PassengerPage() {
               {rideState.status === 'confirmingRide' && (
                 <Button onClick={handleRequestRide} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">Request TriGo Now</Button>
               )}
-              {(rideState.status === 'searching' || rideState.status === 'triderAssigned') && (
+              {(rideState.status === 'searching' || rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && (
                 <Button onClick={handleCancelRide} variant="outline" className="w-full">Cancel Ride</Button>
               )}
                {rideState.status === 'completed' && (
@@ -364,9 +411,15 @@ export default function PassengerPage() {
                   </div>
               </Marker>
             )}
-            {mapRouteGeoJson && (
-              <Source id="route-passenger" type="geojson" data={mapRouteGeoJson}>
-                <Layer {...routeLayer} />
+            
+            {triderToPickupRouteGeoJson && (rideState.status === 'triderAssigned') && (
+              <Source id="route-trider-to-pickup-source" type="geojson" data={triderToPickupRouteGeoJson}>
+                <Layer {...triderToPickupRouteLayer} />
+              </Source>
+            )}
+            {pickupToDropoffRouteGeoJson && (rideState.status === 'inProgress' || rideState.status === 'confirmingRide') && (
+              <Source id="route-pickup-to-dropoff-source" type="geojson" data={pickupToDropoffRouteGeoJson}>
+                <Layer {...pickupToDropoffRouteLayer} />
               </Source>
             )}
           </Map>
@@ -375,3 +428,4 @@ export default function PassengerPage() {
     </div>
   );
 }
+
