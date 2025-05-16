@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label'; // Added import
 import Map, { Marker, Popup, Source, Layer, NavigationControl } from 'react-map-gl';
 import type { Coordinates, PassengerRideState, TriderProfile, RideRequest, RideRequestStatus, RoutePath } from '@/types';
 import { todaZones as appTodaZones } from '@/data/todaZones';
@@ -53,8 +54,8 @@ export default function PassengerPage() {
     status: 'idle',
     pickupLocation: null,
     dropoffLocation: null,
-    pickupAddress: '', // Changed to string for input binding
-    dropoffAddress: '', // Changed to string for input binding
+    pickupAddress: '', 
+    dropoffAddress: '', 
     estimatedFare: null,
     assignedTrider: null,
     currentRideId: null,
@@ -66,6 +67,7 @@ export default function PassengerPage() {
   const [triderSimLocation, setTriderSimLocation] = React.useState<Coordinates | null>(null);
   const [estimatedETA, setEstimatedETA] = React.useState<string | null>(null);
   const [isGeolocating, setIsGeolocating] = React.useState(false);
+  const [isSearchingAddress, setIsSearchingAddress] = React.useState(false);
 
   const [pickupInput, setPickupInput] = React.useState('');
   const [dropoffInput, setDropoffInput] = React.useState('');
@@ -78,7 +80,6 @@ export default function PassengerPage() {
 
   const mapRef = React.useRef<mapboxgl.Map | null>(null);
 
-  // Resolve theme colors for map layers
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const computedStyles = getComputedStyle(document.documentElement);
@@ -100,7 +101,10 @@ export default function PassengerPage() {
     }
   }, []);
 
-  // Initial Geolocation for Pickup
+  const handleStatusToast = React.useCallback((title: string, description: string) => {
+    toast({ title, description });
+  }, [toast]);
+
   React.useEffect(() => {
     if (rideState.status === 'idle' && navigator.geolocation && MAPBOX_TOKEN) {
       setIsGeolocating(true);
@@ -110,35 +114,31 @@ export default function PassengerPage() {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           };
-          setRideState(prev => ({ ...prev, pickupLocation: coords, status: 'selectingDropoff' }));
-          setViewState(prev => ({ ...prev, ...coords, zoom: 15 }));
           
-          // Reverse geocode to get address for prefill
           try {
             const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.longitude},${coords.latitude}.json?access_token=${MAPBOX_TOKEN}&types=address,poi&limit=1`);
             const data = await response.json();
+            let address = `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`;
             if (data.features && data.features.length > 0) {
-              const address = data.features[0].place_name;
-              setRideState(prev => ({ ...prev, pickupAddress: address }));
-              setPickupInput(address);
-              toast({ title: "Pickup Location Set", description: `Current location: ${address.substring(0,30)}... Now select dropoff.` });
-            } else {
-              setRideState(prev => ({ ...prev, pickupAddress: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}` }));
-              setPickupInput(`${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`);
-               toast({ title: "Pickup Location Set", description: "Using current coordinates. Now select dropoff." });
+              address = data.features[0].place_name;
             }
+            setRideState(prev => ({ ...prev, pickupLocation: coords, pickupAddress: address, status: 'selectingDropoff' }));
+            setPickupInput(address);
+            toast({ title: "Pickup Location Set", description: `Current location: ${address.substring(0,30)}... Now select dropoff.` });
           } catch (error) {
             console.error("Error reverse geocoding:", error);
-            setRideState(prev => ({ ...prev, pickupAddress: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}` }));
+            setRideState(prev => ({ ...prev, pickupLocation: coords, pickupAddress: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`, status: 'selectingDropoff' }));
             setPickupInput(`${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`);
             toast({ title: "Pickup Location Set", description: "Using current coordinates. Now select dropoff." });
+          } finally {
+             setViewState(prev => ({ ...prev, ...coords, zoom: 15 }));
+             setIsGeolocating(false);
           }
-          setIsGeolocating(false);
         },
         (error) => {
           console.warn("Error getting geolocation:", error.message);
           toast({ title: "Geolocation Failed", description: "Could not get current location. Please set pickup manually.", variant: "destructive" });
-          setRideState(prev => ({ ...prev, status: 'selectingPickup' })); // Allow manual selection
+          setRideState(prev => ({ ...prev, status: 'selectingPickup' })); 
           setIsGeolocating(false);
         },
         { timeout: 10000, enableHighAccuracy: true }
@@ -155,10 +155,6 @@ export default function PassengerPage() {
       zoom: defaultMapZoom + 1,
     }));
   }, [defaultMapCenter, defaultMapZoom, settingsLoading]);
-
-  const handleStatusToast = React.useCallback((title: string, description: string) => {
-    toast({ title, description });
-  }, [toast]);
 
   React.useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -177,12 +173,12 @@ export default function PassengerPage() {
               latitude: currentPath.coordinates[nextIndex][1],
             };
             setRideState(rs => ({ ...rs, currentTriderPathIndex: nextIndex }));
-            if(rideState.status === 'triderAssigned' && rideState.pickupLocation) fetchRoute(newCoords, rideState.pickupLocation, 'triderToPickup');
-            if(rideState.status === 'inProgress' && rideState.dropoffLocation) fetchRoute(newCoords, rideState.dropoffLocation, 'pickupToDropoff');
+            if(rideState.status === 'triderAssigned' && rideState.pickupLocation) fetchRoute(newCoords, rideState.pickupLocation, 'triderToPickup', false); // Don't show toast for intermediate updates
+            if(rideState.status === 'inProgress' && rideState.dropoffLocation) fetchRoute(newCoords, rideState.dropoffLocation, 'pickupToDropoff', false); // Don't show toast
             return newCoords;
-          } else { // Reached end of current path segment
+          } else { 
             if (rideState.status === 'triderAssigned') {
-              setRideState(rs => ({ ...rs, status: 'inProgress', currentTriderPathIndex: 0 })); // Reset index for next segment
+              setRideState(rs => ({ ...rs, status: 'inProgress', currentTriderPathIndex: 0 })); 
               if (rideState.pickupLocation && rideState.dropoffLocation) {
                 fetchRoute(rideState.pickupLocation, rideState.dropoffLocation, 'pickupToDropoff');
               }
@@ -190,10 +186,10 @@ export default function PassengerPage() {
               setRideState(rs => ({ ...rs, status: 'completed' }));
               setEstimatedETA(null);
             }
-            return targetLocation; // Snap to target
+            return targetLocation; 
           }
         });
-      }, 2000); // Simulation interval
+      }, 2000); 
     }
     return () => clearInterval(intervalId);
   }, [rideState.status, rideState.triderToPickupPath, rideState.pickupToDropoffPath, rideState.pickupLocation, rideState.dropoffLocation, rideState.currentTriderPathIndex, triderSimLocation]);
@@ -208,7 +204,7 @@ export default function PassengerPage() {
   }, [rideState.status, rideState.assignedTrider?.name, handleStatusToast]);
 
 
-  const fetchRoute = async (start: Coordinates, end: Coordinates, routeType: 'triderToPickup' | 'pickupToDropoff' | 'confirmation') => {
+  const fetchRoute = async (start: Coordinates, end: Coordinates, routeType: 'triderToPickup' | 'pickupToDropoff' | 'confirmation', showToastFeedback: boolean = true) => {
     if (!MAPBOX_TOKEN) return;
     const coordinatesString = `${start.longitude},${start.latitude};${end.longitude},${end.latitude}`;
     const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?steps=true&geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
@@ -230,11 +226,13 @@ export default function PassengerPage() {
       } else {
         setEstimatedETA(null);
         if (routeType !== 'confirmation') setRideState(prev => ({ ...prev, triderToPickupPath: null, pickupToDropoffPath: null }));
+        if (showToastFeedback) toast({title: "Route Not Found", description: "Could not calculate route for the selected points.", variant: "destructive"});
       }
     } catch (error) {
       console.error("Error fetching route for passenger map:", error);
       setEstimatedETA(null);
       if (routeType !== 'confirmation') setRideState(prev => ({ ...prev, triderToPickupPath: null, pickupToDropoffPath: null }));
+      if (showToastFeedback) toast({title: "Route Error", description: "Failed to fetch route information.", variant: "destructive"});
     }
   };
 
@@ -244,8 +242,8 @@ export default function PassengerPage() {
       else setDropoffSuggestions([]);
       return;
     }
+    setIsSearchingAddress(true);
     try {
-      // Limiting to PH, can be made configurable
       const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchText)}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&country=PH&limit=5`);
       const data = await response.json();
       if (type === 'pickup') {
@@ -258,6 +256,8 @@ export default function PassengerPage() {
     } catch (error) {
       console.error("Error fetching geocoding suggestions:", error);
       toast({ title: "Address Search Error", description: "Could not fetch address suggestions.", variant: "destructive" });
+    } finally {
+      setIsSearchingAddress(false);
     }
   };
 
@@ -267,27 +267,35 @@ export default function PassengerPage() {
       setRideState(prev => ({ ...prev, pickupLocation: location, pickupAddress: suggestion.place_name, status: prev.dropoffLocation ? 'confirmingRide' : 'selectingDropoff' }));
       setPickupInput(suggestion.place_name);
       setPickupSuggestions([]);
-      if (rideState.dropoffLocation) fetchRoute(location, rideState.dropoffLocation, 'confirmation');
+      if (rideState.dropoffLocation) {
+        fetchRoute(location, rideState.dropoffLocation, 'confirmation');
+        const fare = calculateDistance(location, rideState.dropoffLocation) * 20 + 30; // Recalculate fare
+        setRideState(prev => ({...prev, estimatedFare: fare}));
+      }
     } else {
-      setRideState(prev => ({ ...prev, dropoffLocation: location, dropoffAddress: suggestion.place_name, status: prev.pickupLocation ? 'confirmingRide' : 'selectingDropoff' /* Should be confirming if pickup is also set */ }));
+      setRideState(prev => ({ ...prev, dropoffLocation: location, dropoffAddress: suggestion.place_name, status: prev.pickupLocation ? 'confirmingRide' : 'selectingDropoff' }));
       setDropoffInput(suggestion.place_name);
       setDropoffSuggestions([]);
-      if (rideState.pickupLocation) fetchRoute(rideState.pickupLocation, location, 'confirmation');
+      if (rideState.pickupLocation) {
+        fetchRoute(rideState.pickupLocation, location, 'confirmation');
+        const fare = calculateDistance(rideState.pickupLocation, location) * 20 + 30;
+        setRideState(prev => ({...prev, estimatedFare: fare}));
+      }
     }
     setViewState(prev => ({ ...prev, ...location, zoom: 15 }));
     setActiveSuggestionBox(null);
+    
     if (type === 'pickup' && !rideState.dropoffLocation) {
         toast({title: "Pickup Set", description: "Now select or search for your dropoff location."})
     } else if (type === 'dropoff' && !rideState.pickupLocation) {
          toast({title: "Dropoff Set", description: "Now select or search for your pickup location."})
-    } else if (rideState.pickupLocation && rideState.dropoffLocation) {
-        const fare = calculateDistance(rideState.pickupLocation, location) * 20 + 30;
-        setRideState(prev => ({...prev, estimatedFare: fare}));
+    } else if (rideState.pickupLocation && rideState.dropoffLocation) { // This condition will be met when the second location is set
         toast({title: "Locations Set", description: "Confirm your ride details."})
     }
   };
   
   const handleMapClick = (event: mapboxgl.MapLayerMouseEvent) => {
+    if (isSearchingAddress) return; // Prevent map click while searching
     const { lngLat } = event;
     const newLocation = { longitude: lngLat.lng, latitude: lngLat.lat };
     const newAddress = `Pin (${newLocation.latitude.toFixed(4)}, ${newLocation.longitude.toFixed(4)})`;
@@ -297,9 +305,13 @@ export default function PassengerPage() {
       setPickupInput(newAddress);
       setPickupSuggestions([]);
       toast({ title: "Pickup Set", description: "Now select your dropoff location." });
-       if (rideState.dropoffLocation) fetchRoute(newLocation, rideState.dropoffLocation, 'confirmation');
+       if (rideState.dropoffLocation) {
+         fetchRoute(newLocation, rideState.dropoffLocation, 'confirmation');
+         const fare = calculateDistance(newLocation, rideState.dropoffLocation) * 20 + 30;
+         setRideState(prev => ({...prev, estimatedFare: fare}));
+       }
     } else if (!rideState.dropoffLocation || rideState.status === 'selectingDropoff') {
-      const estimatedFare = calculateDistance(rideState.pickupLocation!, newLocation) * 20 + 30; // Mock fare calculation
+      const estimatedFare = calculateDistance(rideState.pickupLocation!, newLocation) * 20 + 30; 
       setRideState(prev => ({ ...prev, status: 'confirmingRide', dropoffLocation: newLocation, dropoffAddress: newAddress, estimatedFare }));
       setDropoffInput(newAddress);
       setDropoffSuggestions([]);
@@ -340,6 +352,10 @@ export default function PassengerPage() {
     setDropoffSuggestions([]);
     setActiveSuggestionBox(null);
     toast({ title: "Ride Cancelled" });
+    // Attempt to re-trigger initial geolocation for pickup
+    if (navigator.geolocation && MAPBOX_TOKEN) { // Explicitly set status to idle to re-trigger
+      setRideState(prev => ({ ...prev, status: 'idle' }));
+    }
   };
   
   const handleNewRide = () => handleCancelRide();
@@ -394,14 +410,17 @@ export default function PassengerPage() {
             <CardContent className="space-y-3">
               <div className="relative">
                 <Label htmlFor="pickup-input">Pickup Location</Label>
-                <Input
-                  id="pickup-input"
-                  placeholder="Enter pickup address"
-                  value={pickupInput}
-                  onChange={(e) => { setPickupInput(e.target.value); handleGeocodeSearch(e.target.value, 'pickup'); }}
-                  onFocus={() => setActiveSuggestionBox('pickup')}
-                  disabled={rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff'}
-                />
+                <div className="relative">
+                    <Input
+                    id="pickup-input"
+                    placeholder="Enter pickup address"
+                    value={pickupInput}
+                    onChange={(e) => { setPickupInput(e.target.value); handleGeocodeSearch(e.target.value, 'pickup'); }}
+                    onFocus={() => setActiveSuggestionBox('pickup')}
+                    disabled={isGeolocating || (rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff')}
+                    />
+                    {(isGeolocating || (isSearchingAddress && activeSuggestionBox === 'pickup')) && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground"/>}
+                </div>
                 {activeSuggestionBox === 'pickup' && pickupSuggestions.length > 0 && (
                   <ul className="absolute z-10 w-full bg-card border border-border rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
                     {pickupSuggestions.map(s => (
@@ -415,14 +434,17 @@ export default function PassengerPage() {
               </div>
               <div className="relative">
                 <Label htmlFor="dropoff-input">Dropoff Location</Label>
-                <Input
-                  id="dropoff-input"
-                  placeholder="Enter dropoff address"
-                  value={dropoffInput}
-                  onChange={(e) => { setDropoffInput(e.target.value); handleGeocodeSearch(e.target.value, 'dropoff'); }}
-                  onFocus={() => setActiveSuggestionBox('dropoff')}
-                  disabled={rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff'}
-                />
+                 <div className="relative">
+                    <Input
+                    id="dropoff-input"
+                    placeholder="Enter dropoff address"
+                    value={dropoffInput}
+                    onChange={(e) => { setDropoffInput(e.target.value); handleGeocodeSearch(e.target.value, 'dropoff'); }}
+                    onFocus={() => setActiveSuggestionBox('dropoff')}
+                    disabled={(rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff')}
+                    />
+                     {(isSearchingAddress && activeSuggestionBox === 'dropoff') && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground"/>}
+                </div>
                  {activeSuggestionBox === 'dropoff' && dropoffSuggestions.length > 0 && (
                   <ul className="absolute z-10 w-full bg-card border border-border rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
                     {dropoffSuggestions.map(s => (
@@ -498,7 +520,7 @@ export default function PassengerPage() {
             onMove={evt => setViewState(evt.viewState)}
             onClick={handleMapClick}
             style={{ width: '100%', height: '100%' }}
-            mapStyle="mapbox://styles/mapbox/streets-v12" // Using a default Mapbox style
+            mapStyle="mapbox://styles/mapbox/streets-v12" 
             mapboxAccessToken={MAPBOX_TOKEN}
           >
             <NavigationControl position="top-right" />
