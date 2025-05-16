@@ -22,4 +22,6 @@ export const todaZones: TodaZone[] = [
   { id: '18', name: 'TSTODA', areaOfOperation: 'Talon Singko (Barangay Talon 5 area)', center: { latitude: 14.405000, longitude: 121.000000 }, radiusKm: 1.5 },
   { id: '19', name: 'NUVTODA', areaOfOperation: 'Urbanville Village, Talon Tres', center: { latitude: 14.439000, longitude: 120.998000 }, radiusKm: 0.2 },
   { id: '20', name: 'ZOLIVIMATODA', areaOfOperation: 'DBP Village, Almanza Uno', center: { latitude: 14.430000, longitude: 121.000000 }, radiusKm: 0.4 },
+  { id: '21', name: 'P1TODA', areaOfOperation: 'Pamplona Uno', center: { latitude: 14.4550, longitude: 120.9800 }, radiusKm: 0.7 },
 ];
+

@@ -39,5 +39,20 @@ export const mockPassengerProfiles: MockPassengerProfile[] = [
     todaZoneId: '1', // ACAPODA
     todaZoneName: getZoneName('1'),
     settings: { mapStyle: 'streets' },
+  },
+  {
+    id: 'pass-p1-1',
+    name: 'Jose Rizal (Pamplona Uno)',
+    todaZoneId: '21', // P1TODA
+    todaZoneName: getZoneName('21'),
+    settings: { mapStyle: 'streets' },
+  },
+  {
+    id: 'pass-p1-2',
+    name: 'Andres Bonifacio (Pamplona Uno)',
+    todaZoneId: '21', // P1TODA
+    todaZoneName: getZoneName('21'),
+    settings: { mapStyle: 'dark' },
   }
 ];
+

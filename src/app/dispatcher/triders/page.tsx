@@ -17,12 +17,15 @@ import { getRandomPointInCircle } from '@/lib/geoUtils';
 
 const TALON_KUATRO_ZONE_ID = '2'; // ID for "APHDA" (Talon Kuatro)
 const TEPTODA_ZONE_ID = '7'; // ID for "TEPTODA" (Talon Equitable)
+const P1TODA_ZONE_ID = '21'; // ID for "P1TODA" (Pamplona Uno)
 
 const talonKuatroZone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID);
 const teptodaZone = appTodaZones.find(z => z.id === TEPTODA_ZONE_ID);
+const p1TodaZone = appTodaZones.find(z => z.id === P1TODA_ZONE_ID);
 
 if (!talonKuatroZone) throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_ZONE_ID} not found.`);
 if (!teptodaZone) throw new Error(`TEPTODA zone with ID ${TEPTODA_ZONE_ID} not found.`);
+if (!p1TodaZone) throw new Error(`P1TODA zone with ID ${P1TODA_ZONE_ID} not found.`);
 
 const initialTalonKuatroTriders: TriderProfile[] = [
   "Peter", "Andrew", "James Z.", "John", "Philip" 
@@ -96,8 +99,44 @@ const initialTeptodaTriders: TriderProfile[] = [
   };
 });
 
+const initialP1TodaTriders: TriderProfile[] = [
+  "Simon Z.", "Matthias", "Paul"
+].map((name, index) => {
+  const randomLocationInZone = getRandomPointInCircle(p1TodaZone!.center, p1TodaZone!.radiusKm * 0.8);
+  const statuses: TriderExtendedStatus[] = ['available', 'en-route', 'offline'];
+  const status = statuses[index % statuses.length];
 
-const initialTridersProfiles: TriderProfile[] = [...initialTalonKuatroTriders, ...initialTeptodaTriders];
+  return {
+    id: `trider-p1-profile-${index + 1}`,
+    name: `${name} (P1)`,
+    location: randomLocationInZone,
+    status: status,
+    vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
+    todaZoneId: P1TODA_ZONE_ID,
+    todaZoneName: p1TodaZone!.name,
+    contactNumber: `+63922${4000000 + index * 67890}`.slice(0,13),
+    profilePictureUrl: `https://placehold.co/100x100.png?text=${name.charAt(0)}1`,
+    dataAiHint: "driver pinoy",
+    lastSeen: status === 'offline' ? new Date(Date.now() - (index + 3) * 30 * 60 * 1000) : undefined,
+    wallet: {
+      totalEarnedAllTime: parseFloat((Math.random() * 12000 + 2000).toFixed(2)),
+      currentBalance: parseFloat((Math.random() * 1500 + 50).toFixed(2)),
+      todayTotalRides: status === 'offline' || status === 'suspended' ? 0 : Math.floor(Math.random() * 6),
+      todayTotalFareCollected: parseFloat((status === 'offline' || status === 'suspended' ? 0 : (Math.random() * 300 + 25)).toFixed(2)),
+      todayTotalCommission: parseFloat((status === 'offline' || status === 'suspended' ? 0 : (Math.random() * 60 + 5)).toFixed(2)),
+      todayNetEarnings: parseFloat((status === 'offline' || status === 'suspended' ? 0 : (Math.random() * 240 + 20)).toFixed(2)),
+      paymentLogs: status === 'available' || status === 'en-route' ? [{id: `pay-p1-${index}`, date: new Date(Date.now() - (index+3)*24*60*60*1000), amount: parseFloat((Math.random()*200+200).toFixed(2)), status: 'completed', method: 'GCash', referenceId: `GCASHP1${index}`}] : [],
+      recentRides: status === 'available' || status === 'en-route' ? [{id: `ride-p1-${index}`, date: new Date(Date.now() - index*50*60*1000), pickupAddress: `${p1TodaZone!.areaOfOperation} Locale`, dropoffAddress: `Other Side ${index+10}`, fare: parseFloat((Math.random()*30+30).toFixed(2)), commissionDeducted: parseFloat((Math.random()*6+6).toFixed(2)), netEarnings: parseFloat((Math.random()*24+24).toFixed(2))}] : [],
+    },
+    currentPath: null,
+    pathIndex: 0,
+    requestedTodaZoneId: undefined,
+    todaZoneChangeRequestStatus: 'none',
+  };
+});
+
+
+const initialTridersProfiles: TriderProfile[] = [...initialTalonKuatroTriders, ...initialTeptodaTriders, ...initialP1TodaTriders];
 
 
 export default function TridersPage() {
@@ -381,3 +420,4 @@ export default function TridersPage() {
     </div>
   );
 }
+

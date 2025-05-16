@@ -18,12 +18,16 @@ import { useSettings } from '@/contexts/SettingsContext';
 const FALLBACK_LAS_PINAS_CENTER: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
 const TALON_KUATRO_ZONE_ID = '2'; // APHDA (Talon Kuatro)
 const TEPTODA_ZONE_ID = '7'; // TEPTODA (Talon Equitable)
+const P1TODA_ZONE_ID = '21'; // P1TODA (Pamplona Uno)
 
 const talonKuatroZone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID);
 const teptodaZone = appTodaZones.find(z => z.id === TEPTODA_ZONE_ID);
+const p1TodaZone = appTodaZones.find(z => z.id === P1TODA_ZONE_ID);
+
 
 if (!talonKuatroZone) throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_ZONE_ID} not found.`);
 if (!teptodaZone) throw new Error(`TEPTODA zone with ID ${TEPTODA_ZONE_ID} not found.`);
+if (!p1TodaZone) throw new Error(`P1TODA zone with ID ${P1TODA_ZONE_ID} not found.`);
 
 const initialTalonKuatroTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = [
   "Peter", "Andrew", "James Z.", "John", "Philip"
@@ -61,10 +65,29 @@ const initialTeptodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | '
   };
 });
 
+const initialP1TodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = [
+  "Simon Z.", "Matthias", "Paul"
+].map((name, index) => {
+  const randomLocationInZone = getRandomPointInCircle(p1TodaZone.center, p1TodaZone.radiusKm * 0.8);
+  const statuses: Trider['status'][] = ['available', 'offline', 'busy'];
+  let status = statuses[index % statuses.length];
+  if (index < 1) status = 'available';
+
+  return {
+    id: `trider-dispatch-p1-${index + 1}`,
+    name: `${name} (P1)`,
+    location: randomLocationInZone,
+    status: status,
+    vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
+    todaZoneId: P1TODA_ZONE_ID,
+  };
+});
+
 
 const initialTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = [
   ...initialTalonKuatroTridersData,
-  ...initialTeptodaTridersData
+  ...initialTeptodaTridersData,
+  ...initialP1TodaTridersData
 ];
 
 
@@ -496,3 +519,4 @@ export default function DispatcherPage() {
     </div>
   );
 }
+

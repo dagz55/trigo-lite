@@ -21,8 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2'; // Default for trider assignment simulation if not passenger-specific
 
-const NEON_ORANGE_HSL = 'hsl(33, 100%, 50%)';
-const NEON_ORANGE_BORDER_HSL = 'hsl(33, 100%, 60%)'; // Slightly lighter for border
+const FIREBASE_ORANGE_HSL = 'hsl(33, 100%, 50%)'; 
+const FIREBASE_ORANGE_BORDER_HSL = 'hsl(33, 100%, 60%)'; // Slightly lighter for border
+const NEON_GREEN_TEXT_HSL = 'hsl(120, 100%, 60%)'; // For timer text
+const NEON_GREEN_FINAL_COUNTDOWN_HSL = 'hsl(120, 100%, 75%)'; // Brighter for final seconds
+
 const DEFAULT_PASSENGER_MAP_STYLE: PassengerMapStyle = 'streets';
 
 const mockTridersForDemo: TriderProfile[] = ['Simon', 'Judas Isc.', 'Mary M.', 'Lazarus', 'Martha'].map((name, index) => {
@@ -94,8 +97,8 @@ export default function PassengerPage() {
   const [dropoffSuggestions, setDropoffSuggestions] = React.useState<MapboxGeocodingFeature[]>([]);
   const [activeSuggestionBox, setActiveSuggestionBox] = React.useState<'pickup' | 'dropoff' | null>(null);
   
-  const [pickupRouteColor, setPickupRouteColor] = React.useState('hsl(var(--accent))'); // Keep this accent for trider to pickup
-  const [dropoffRouteColor, setDropoffRouteColor] = React.useState(NEON_ORANGE_HSL); // Passenger's route is Neon Orange
+  const [triderToPickupRouteColor, setTriderToPickupRouteColor] = React.useState('hsl(var(--accent))'); 
+  const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(FIREBASE_ORANGE_HSL);
 
   const mapRef = React.useRef<MapRef | null>(null);
 
@@ -109,7 +112,6 @@ export default function PassengerPage() {
   }, []);
 
   React.useEffect(() => {
-    // Load passenger profile and their settings from localStorage
     try {
       const storedProfile = localStorage.getItem('selectedPassengerProfile');
       if (storedProfile) {
@@ -117,7 +119,6 @@ export default function PassengerPage() {
         setLoadedPassengerProfile(passenger);
         setRideState(prev => ({ ...prev, passengerName: passenger.name }));
 
-        // Load passenger-specific settings
         const storedPassengerSettings = localStorage.getItem(`passengerSettings_${passenger.id}`);
         let pSettings: PassengerSettings = passenger.settings || { mapStyle: DEFAULT_PASSENGER_MAP_STYLE };
         if (storedPassengerSettings) {
@@ -151,7 +152,7 @@ export default function PassengerPage() {
         performGeolocation();
       }
     }
-  }, [MAPBOX_TOKEN]); // Only run once on mount, was: [MAPBOX_TOKEN, getTodaZoneForLocation, toast]
+  }, [MAPBOX_TOKEN]); 
 
 
   React.useEffect(() => {
@@ -240,8 +241,7 @@ export default function PassengerPage() {
           }
           return hslString;
       };
-      setPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'lime');
-      // dropoffRouteColor is already set to NEON_ORANGE_HSL via state initializer
+      setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'lime');
     }
   }, []);
 
@@ -507,12 +507,12 @@ export default function PassengerPage() {
   const triderToPickupRouteLayer: any = {
     id: 'trider-to-pickup-route', type: 'line', source: 'trider-to-pickup-route',
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': pickupRouteColor, 'line-width': 6, 'line-opacity': 0.8 },
+    paint: { 'line-color': triderToPickupRouteColor, 'line-width': 6, 'line-opacity': 0.8 },
   };
   const pickupToDropoffRouteLayer: any = {
     id: 'pickup-to-dropoff-route', type: 'line', source: 'pickup-to-dropoff-route',
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': dropoffRouteColor, 'line-width': 6, 'line-opacity': 0.8 },
+    paint: { 'line-color': pickupToDropoffRouteColor, 'line-width': 6, 'line-opacity': 0.8 },
   };
 
 
@@ -520,7 +520,7 @@ export default function PassengerPage() {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary mr-2" /> <p>Loading Passenger Experience...</p></div>;
   }
 
-  const countdownColorClass = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 ? "text-lime-300 font-bold animate-pulse" : "text-lime-400";
+  const countdownColorStyle = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 ? { color: NEON_GREEN_FINAL_COUNTDOWN_HSL } : { color: NEON_GREEN_TEXT_HSL };
   if (rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 && rideState.countdownSeconds > 0) {
     console.log(`Playing countdown sound: ${rideState.countdownSeconds}`); 
   }
@@ -529,7 +529,7 @@ export default function PassengerPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       <header className="p-4 border-b shadow-sm">
-        <h1 className="text-2xl font-semibold text-primary flex items-center">
+        <h1 className="text-2xl font-semibold flex items-center" style={{ color: FIREBASE_ORANGE_HSL }}>
           <User className="mr-2" /> TriGo Passenger ({rideState.passengerName})
         </h1>
       </header>
@@ -559,12 +559,12 @@ export default function PassengerPage() {
             </CardHeader>
             <CardContent className="space-y-3">
             {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.currentRideId && (
-                <Alert variant="default" style={{ borderColor: NEON_ORANGE_BORDER_HSL }}>
-                    <Ticket className="h-5 w-5" style={{ color: NEON_ORANGE_HSL }} />
-                    <AlertTitle className="font-semibold" style={{ color: NEON_ORANGE_HSL }}>Ride Ticket #: {rideState.currentRideId}</AlertTitle>
+                <Alert variant="default" style={{ borderColor: FIREBASE_ORANGE_BORDER_HSL }}>
+                    <Ticket className="h-5 w-5" style={{ color: FIREBASE_ORANGE_HSL }} />
+                    <AlertTitle className="font-semibold" style={{ color: FIREBASE_ORANGE_HSL }}>Ride Ticket #: {rideState.currentRideId}</AlertTitle>
                     {rideState.countdownSeconds !== null && rideState.estimatedDurationSeconds !== null && (
                          <div className="mt-2 p-3 rounded-lg bg-black/70 backdrop-blur-sm border border-lime-500/50 shadow-lg">
-                            <p className={`text-3xl font-mono text-center ${countdownColorClass}`}>
+                            <p className={`text-3xl font-mono text-center ${rideState.countdownSeconds <= 10 ? 'animate-pulse' : ''}`} style={countdownColorStyle}>
                                 {formatCountdown(rideState.countdownSeconds)}
                             </p>
                             <p className="text-xs text-lime-200/80 text-center mt-1">
@@ -686,13 +686,13 @@ export default function PassengerPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
               {rideState.status === 'confirmingRide' && (
-                <Button onClick={handleRequestRide} className="w-full text-white" style={{ backgroundColor: NEON_ORANGE_HSL }} disabled={!rideState.pickupLocation || !rideState.dropoffLocation || !rideState.pickupTodaZoneId}>Request TriGo Now</Button>
+                <Button onClick={handleRequestRide} className="w-full text-white" style={{ backgroundColor: FIREBASE_ORANGE_HSL }} disabled={!rideState.pickupLocation || !rideState.dropoffLocation || !rideState.pickupTodaZoneId}>Request TriGo Now</Button>
               )}
               {(rideState.status === 'searching' || rideState.status === 'triderAssigned') && (
                 <Button onClick={handleCancelRide} variant="outline" className="w-full">Cancel Ride</Button>
               )}
                {rideState.status === 'completed' && (
-                <Button onClick={handleNewRide} className="w-full" style={{ backgroundColor: NEON_ORANGE_HSL, color: 'white' }}>Book Another Ride</Button>
+                <Button onClick={handleNewRide} className="w-full text-white" style={{ backgroundColor: FIREBASE_ORANGE_HSL }}>Book Another Ride</Button>
               )}
                {(rideState.status === 'idle' || rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') && rideState.status !== 'completed' && (
                 <Button onClick={handleCancelRide} variant="ghost" className="w-full">Reset / New Ride</Button>
@@ -749,3 +749,4 @@ export default function PassengerPage() {
     </div>
   );
 }
+
