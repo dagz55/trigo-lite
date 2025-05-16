@@ -132,7 +132,7 @@ export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings
 
 export interface PassengerRideState {
   status: 'idle' | 'selectingPickup' | 'selectingDropoff' | 'confirmingRide' | 'searching' | 'triderAssigned' | 'inProgress' | 'completed' | 'cancelled';
-  passengerName: string; // Added to store selected passenger name
+  passengerName: string; 
   pickupLocation: Coordinates | null;
   dropoffLocation: Coordinates | null;
   pickupAddress: string; 
@@ -159,9 +159,17 @@ export interface TriderSimState {
   currentPathIndex: number; 
 }
 
+export type PassengerMapStyle = 'streets' | 'satellite' | 'dark';
+
+export interface PassengerSettings {
+  mapStyle: PassengerMapStyle;
+  // Add other passenger-specific settings here in the future
+  // e.g., notificationPreferences: boolean;
+}
 export interface MockPassengerProfile {
   id: string;
   name: string;
   todaZoneId: string; // The TODA zone this passenger typically uses
   todaZoneName: string;
+  settings?: PassengerSettings;
 }
