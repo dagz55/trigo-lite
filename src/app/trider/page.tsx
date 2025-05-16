@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import Map, { Marker, Popup, Source, Layer, NavigationControl } from 'react-map-gl';
+import Map, { Marker, Popup, Source, Layer, NavigationControl, MapRef } from 'react-map-gl';
 import type { Coordinates, RideRequest, TriderSimState, TriderProfile, RoutePath } from '@/types';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { getRandomPointInCircle, calculateDistance } from '@/lib/geoUtils';
@@ -18,16 +18,17 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+const TALON_KUATRO_ZONE_ID = '2'; // APHDA
 
 const selfTriderProfileInitial: TriderProfile = {
-  id: 'trider-self-sim',
-  name: 'Juan Dela Cruz (You)',
-  location: getRandomPointInCircle(appTodaZones[0].center, appTodaZones[0].radiusKm * 0.3),
+  id: 'trider-self-sim-tk',
+  name: 'Juan Dela Cruz (You - Talon Kuatro)',
+  location: getRandomPointInCircle(appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID)!.center, appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID)!.radiusKm * 0.3),
   status: 'offline',
   vehicleType: 'E-Bike',
-  todaZoneId: appTodaZones[0].id,
-  todaZoneName: appTodaZones[0].name,
-  profilePictureUrl: `https://placehold.co/100x100.png?text=You`,
+  todaZoneId: TALON_KUATRO_ZONE_ID,
+  todaZoneName: appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID)!.name,
+  profilePictureUrl: `https://placehold.co/100x100.png?text=JDC`,
   dataAiHint: "driver person",
   wallet: { currentBalance: 250.75, totalEarnedAllTime: 1250.50, todayTotalRides: 0, todayTotalFareCollected: 0, todayNetEarnings: 0, todayTotalCommission: 0, paymentLogs: [], recentRides: [] },
   currentPath: null,
@@ -59,6 +60,7 @@ export default function TriderPage() {
   
   const [isGeolocating, setIsGeolocating] = React.useState(false);
   const [routeColor, setRouteColor] = React.useState('hsl(var(--accent))');
+  const mapRefTrider = React.useRef<MapRef | null>(null);
 
 
   React.useEffect(() => {
@@ -100,10 +102,13 @@ export default function TriderPage() {
     let requestIntervalId: NodeJS.Timeout;
     if (triderState.status === 'onlineAvailable') {
       requestIntervalId = setInterval(() => {
-        const triderZone = appTodaZones.find(z => z.id === triderProfile.todaZoneId);
+        const triderZone = appTodaZones.find(z => z.id === triderProfile.todaZoneId); // Should be Talon Kuatro
         if (!triderZone) return;
 
+        // Generate requests ONLY within the trider's zone (Talon Kuatro)
         const pickupLocation = getRandomPointInCircle(triderZone.center, triderZone.radiusKm * 0.8);
+        
+        // Dropoff can be outside for realism, but pickup MUST be in trider's zone
         const randomDropoffZone = appTodaZones[Math.floor(Math.random() * appTodaZones.length)];
         const dropoffLocation = getRandomPointInCircle(randomDropoffZone.center, randomDropoffZone.radiusKm * 0.8);
         
@@ -113,13 +118,12 @@ export default function TriderPage() {
           pickupLocation, dropoffLocation,
           pickupAddress: `Near ${triderZone.name}`, dropoffAddress: `Near ${randomDropoffZone.name}`,
           status: 'pending', fare: calculateDistance(pickupLocation, dropoffLocation) * 20 + 30,
-          requestedAt: new Date(), pickupTodaZoneId: triderZone.id,
+          requestedAt: new Date(), pickupTodaZoneId: triderZone.id, // Crucially, set pickupTodaZoneId
         };
         setTriderState(prev => ({
           ...prev,
           availableRideRequests: [newRide, ...prev.availableRideRequests.slice(0, 4)]
         }));
-        // Toast moved to a separate useEffect to avoid setstate in render issues
       }, 15000);
     }
     return () => clearInterval(requestIntervalId);
@@ -128,9 +132,11 @@ export default function TriderPage() {
   React.useEffect(() => {
     if(triderState.status === 'onlineAvailable' && triderState.availableRideRequests.length > 0) {
         const latestRequest = triderState.availableRideRequests[0];
-        handleStatusToast("New Ride Request!", `From ${latestRequest.pickupAddress} to ${latestRequest.dropoffAddress}`);
+        if (latestRequest.pickupTodaZoneId === triderProfile.todaZoneId) { // Only toast if it's in our zone
+          handleStatusToast("New Ride Request!", `From ${latestRequest.pickupAddress} to ${latestRequest.dropoffAddress}`);
+        }
     }
-  }, [triderState.availableRideRequests, triderState.status, handleStatusToast]);
+  }, [triderState.availableRideRequests, triderState.status, handleStatusToast, triderProfile.todaZoneId]);
 
 
   React.useEffect(() => {
@@ -149,28 +155,28 @@ export default function TriderPage() {
               latitude: prev.currentPath.coordinates[nextIdx][1],
             };
             return { ...prev, currentLocation: newLocation, currentPathIndex: nextIdx };
-          } else { // Reached end of path
-            if (prev.status === 'onlineBusyEnRouteToPickup') {
-              // Toast moved to status change effect
-            } else if (prev.status === 'onlineBusyEnRouteToDropoff') {
-              // Toast moved to status change effect
-            }
-            return { ...prev, currentLocation: targetLocation, currentPathIndex: prev.currentPath.coordinates.length -1 }; // Stay at end
+          } else { 
+            // Reached end of current path segment
+             let newStatus = prev.status;
+             if (prev.status === 'onlineBusyEnRouteToPickup') {
+                // toast for arrival will be handled by button press
+             } else if (prev.status === 'onlineBusyEnRouteToDropoff') {
+                // toast for completion will be handled by button press
+             }
+            return { ...prev, currentLocation: targetLocation, currentPathIndex: prev.currentPath.coordinates.length -1, status: newStatus };
           }
         });
-      }, 2000); // Simulation interval
+      }, 2000); 
     }
     return () => clearInterval(moveIntervalId);
   }, [triderState.status, triderState.activeRideRequest, triderState.currentPath]);
 
 
   React.useEffect(() => {
+    // This effect is now mainly for reacting to state changes for UI, actual state transition happens in button handlers or path end.
     if (triderState.activeRideRequest) {
-        if (triderState.status === 'onlineBusyEnRouteToPickup' && calculateDistance(triderState.currentLocation, triderState.activeRideRequest.pickupLocation) < 0.05) {
-             // This logic is now handled by checking path end. Toast for arrival will be triggered by button click.
-        } else if (triderState.status === 'onlineBusyEnRouteToDropoff' && calculateDistance(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation) < 0.05) {
-            // Logic handled by path end. Toast for completion by button.
-        }
+        // Check if at pickup for button enablement
+        // Check if at dropoff for button enablement
     }
   }, [triderState.currentLocation, triderState.status, triderState.activeRideRequest, handleStatusToast]);
 
@@ -188,17 +194,16 @@ export default function TriderPage() {
           setTriderProfile(prev => ({ ...prev, location: coords }));
           setViewState(prev => ({ ...prev, ...coords, zoom: 16 }));
           setIsGeolocating(false);
-          handleStatusToast("You are Online!", "Waiting for ride requests.");
+          handleStatusToast("You are Online!", "Waiting for ride requests in Talon Kuatro.");
         },
         (error) => {
           console.warn("Error getting geolocation for trider:", error.message);
-          // Fallback to TODA zone center if geolocation fails
           const currentTodaZone = appTodaZones.find(z => z.id === triderProfile.todaZoneId) || appTodaZones[0];
           setTriderState(prev => ({ ...prev, status: 'onlineAvailable', currentLocation: currentTodaZone.center }));
           setTriderProfile(prev => ({ ...prev, location: currentTodaZone.center }));
           setViewState(prev => ({ ...prev, ...currentTodaZone.center, zoom: 15 }));
           setIsGeolocating(false);
-          handleStatusToast("You are Online!", "Using default zone location. Waiting for ride requests.");
+          handleStatusToast("You are Online!", "Using default Talon Kuatro location. Waiting for ride requests.");
         },
         { timeout: 10000, enableHighAccuracy: true }
       );
@@ -236,8 +241,12 @@ export default function TriderPage() {
       handleStatusToast("Cannot Accept Ride", "You must be online and available.", "destructive");
       return;
     }
-    if (request.pickupTodaZoneId !== triderProfile.todaZoneId) {
-        handleStatusToast("Out of Zone", "This ride request is outside your assigned TODA zone.", "destructive");
+    if (request.pickupTodaZoneId !== triderProfile.todaZoneId) { // Double check zone
+        handleStatusToast("Out of Zone", "This ride request is outside your assigned TODA zone (Talon Kuatro).", "destructive");
+        setTriderState(prev => ({
+          ...prev,
+          availableRideRequests: prev.availableRideRequests.filter(r => r.id !== request.id) // Remove invalid request
+        }));
         return;
     }
 
@@ -255,25 +264,30 @@ export default function TriderPage() {
   
   const handlePickedUp = async () => {
     if (!triderState.activeRideRequest || triderState.status !== 'onlineBusyEnRouteToPickup') return;
-    if (calculateDistance(triderState.currentLocation, triderState.activeRideRequest.pickupLocation) > 0.1) { // More lenient check
-        handleStatusToast("Not at Pickup Yet", "Please proceed closer to the pickup location.", "destructive");
+    // Check if trider is at the end of the current path (which should be the pickup location)
+    const atPickup = triderState.currentPath && triderState.currentPathIndex >= triderState.currentPath.coordinates.length - 1;
+
+    if (!atPickup && calculateDistance(triderState.currentLocation, triderState.activeRideRequest.pickupLocation) > 0.05) {
+        handleStatusToast("Not at Pickup Yet", "Please proceed closer to the pickup location or ensure path is complete.", "destructive");
         return;
     }
     const path = await fetchAndSetRoute(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation);
     if (path) {
-        setTriderState(prev => ({...prev, status: 'onlineBusyEnRouteToDropoff'}));
+        setTriderState(prev => ({...prev, status: 'onlineBusyEnRouteToDropoff', currentPathIndex: 0})); // Reset pathIndex for new route
         handleStatusToast("Passenger Picked Up", `Proceed to ${triderState.activeRideRequest.dropoffAddress}.`);
     }
   };
 
   const handleCompleteRide = () => {
     if (!triderState.activeRideRequest || triderState.status !== 'onlineBusyEnRouteToDropoff') return;
-     if (calculateDistance(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation) > 0.1) { // More lenient check
-        handleStatusToast("Not at Dropoff Yet", "Please proceed closer to the destination.", "destructive");
+    const atDropoff = triderState.currentPath && triderState.currentPathIndex >= triderState.currentPath.coordinates.length - 1;
+
+     if (!atDropoff && calculateDistance(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation) > 0.05) {
+        handleStatusToast("Not at Dropoff Yet", "Please proceed closer to the destination or ensure path is complete.", "destructive");
         return;
     }
     const fare = triderState.activeRideRequest.fare || 0;
-    const earnings = fare * 0.8; // Assume 20% commission
+    const earnings = fare * 0.8; 
     
     setTriderProfile(prev => ({
         ...prev,
@@ -308,7 +322,7 @@ export default function TriderPage() {
     <div className="flex flex-col h-screen bg-background">
       <header className="p-4 border-b shadow-sm flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-primary flex items-center">
-          <Bike className="mr-2" /> TriGo Trider Dashboard
+          <Bike className="mr-2" /> TriGo Trider (Talon Kuatro)
         </h1>
         <div className="flex items-center space-x-2">
           <Label htmlFor="online-toggle" className={triderState.status !== 'offline' ? "text-accent" : "text-muted-foreground"}>
@@ -342,14 +356,22 @@ export default function TriderPage() {
                   <p className="text-sm"><strong>To:</strong> {triderState.activeRideRequest.dropoffAddress}</p>
                   <p className="text-sm"><strong>Est. Fare:</strong> ₱{triderState.activeRideRequest.fare?.toFixed(2)}</p>
                   {triderState.status === 'onlineBusyEnRouteToPickup' && 
-                    <Button onClick={handlePickedUp} className="w-full mt-2" disabled={calculateDistance(triderState.currentLocation, triderState.activeRideRequest.pickupLocation) > 0.1}>Mark as Picked Up</Button>}
+                    <Button 
+                        onClick={handlePickedUp} 
+                        className="w-full mt-2" 
+                        disabled={!(triderState.currentPath && triderState.currentPathIndex >= triderState.currentPath.coordinates.length - 1 || calculateDistance(triderState.currentLocation, triderState.activeRideRequest.pickupLocation) < 0.05)}
+                    >Mark as Picked Up</Button>}
                   {triderState.status === 'onlineBusyEnRouteToDropoff' && 
-                    <Button onClick={handleCompleteRide} className="w-full mt-2 bg-accent hover:bg-accent/90 text-accent-foreground" disabled={calculateDistance(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation) > 0.1}>Complete Ride</Button>}
+                    <Button 
+                        onClick={handleCompleteRide} 
+                        className="w-full mt-2 bg-accent hover:bg-accent/90 text-accent-foreground" 
+                        disabled={!(triderState.currentPath && triderState.currentPathIndex >= triderState.currentPath.coordinates.length - 1 || calculateDistance(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation) < 0.05)}
+                    >Complete Ride</Button>}
                 </div>
-              ) : triderState.availableRideRequests.length > 0 ? (
+              ) : triderState.availableRideRequests.filter(req => req.pickupTodaZoneId === triderProfile.todaZoneId).length > 0 ? (
                  <ScrollArea className="h-[200px] pr-3">
                     <ul className="space-y-3">
-                    {triderState.availableRideRequests.map(req => (
+                    {triderState.availableRideRequests.filter(req => req.pickupTodaZoneId === triderProfile.todaZoneId).map(req => (
                         <li key={req.id} className="p-3 rounded-lg border bg-card hover:border-primary/50 transition-colors">
                             <div className="flex justify-between items-start">
                                 <div>
@@ -357,7 +379,7 @@ export default function TriderPage() {
                                     <p className="text-xs text-muted-foreground">To: {req.dropoffAddress}</p>
                                     <p className="text-xs text-muted-foreground">Fare: ~₱{req.fare?.toFixed(2)}</p>
                                 </div>
-                                <Button size="sm" onClick={() => handleAcceptRide(req)} disabled={req.pickupTodaZoneId !== triderProfile.todaZoneId}>
+                                <Button size="sm" onClick={() => handleAcceptRide(req)}>
                                     Accept
                                 </Button>
                             </div>
@@ -367,14 +389,13 @@ export default function TriderPage() {
                              <p className="text-xs text-muted-foreground mt-1">
                                 {formatDistanceToNow(req.requestedAt, { addSuffix: true })}
                             </p>
-                             {req.pickupTodaZoneId !== triderProfile.todaZoneId && <Badge variant="destructive" className="mt-1 text-xs">Out of Zone</Badge>}
                         </li>
                     ))}
                     </ul>
                  </ScrollArea>
               ) : (
                 <p className="text-muted-foreground text-center py-4">
-                  {triderState.status === 'onlineAvailable' ? "No ride requests currently. Waiting..." : "Go online to see ride requests."}
+                  {triderState.status === 'onlineAvailable' ? "No ride requests in Talon Kuatro currently. Waiting..." : "Go online to see ride requests."}
                 </p>
               )}
             </CardContent>
@@ -395,6 +416,7 @@ export default function TriderPage() {
         <div className="md:col-span-2 h-[300px] md:h-full min-h-[300px] rounded-lg overflow-hidden shadow-lg border">
           <Map
             {...viewState}
+            ref={mapRefTrider}
             onMove={evt => setViewState(evt.viewState)}
             style={{ width: '100%', height: '100%' }}
             mapStyle="mapbox://styles/mapbox/streets-v12"
@@ -431,7 +453,6 @@ export default function TriderPage() {
 
             {triderState.currentPath && (
               <Source id="route-trider" type="geojson" data={{ type: 'Feature', geometry: triderState.currentPath, properties:{} }}>
-                {/* @ts-ignore */}
                 <Layer {...routeLayerConfig} />
               </Source>
             )}
@@ -442,3 +463,4 @@ export default function TriderPage() {
   );
 }
 
+    

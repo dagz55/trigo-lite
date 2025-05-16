@@ -7,31 +7,36 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label'; // Added import
-import Map, { Marker, Popup, Source, Layer, NavigationControl } from 'react-map-gl';
-import type { Coordinates, PassengerRideState, TriderProfile, RideRequest, RideRequestStatus, RoutePath } from '@/types';
+import { Label } from '@/components/ui/label';
+import Map, { Marker, Popup, Source, Layer, NavigationControl, MapRef } from 'react-map-gl';
+import type { Coordinates, PassengerRideState, TriderProfile, RideRequest, RideRequestStatus, RoutePath, TodaZone } from '@/types';
 import { todaZones as appTodaZones } from '@/data/todaZones';
-import { getRandomPointInCircle, calculateDistance } from '@/lib/geoUtils';
+import { getRandomPointInCircle, calculateDistance, isPointInCircle } from '@/lib/geoUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+const TALON_KUATRO_ZONE_ID = '2';
 
-const mockTriders: TriderProfile[] = appTodaZones.slice(0, 5).map((zone, index) => ({
-  id: `trider-sim-${index + 1}`,
-  name: `Trider ${String.fromCharCode(65 + index)}`,
-  location: getRandomPointInCircle(zone.center, zone.radiusKm * 0.5),
-  status: 'available',
-  vehicleType: 'Tricycle',
-  todaZoneId: zone.id,
-  todaZoneName: zone.name,
-  profilePictureUrl: `https://placehold.co/100x100.png?text=T${String.fromCharCode(65 + index)}`,
-  dataAiHint: "driver portrait",
-  wallet: { currentBalance: 100, totalEarnedAllTime: 500, todayTotalRides: 0, todayTotalFareCollected: 0, todayNetEarnings: 0, todayTotalCommission: 0, paymentLogs: [], recentRides: [] },
-  currentPath: null,
-  pathIndex: 0,
-}));
+const mockTridersTalonKuatro: TriderProfile[] = ['Simon', 'Judas Isc.', 'Mary M.', 'Lazarus', 'Martha'].map((name, index) => {
+  const zone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID);
+  if (!zone) throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_ZONE_ID} not found.`);
+  return {
+    id: `trider-sim-tk-${index + 1}`,
+    name: `${name} (TK)`,
+    location: getRandomPointInCircle(zone.center, zone.radiusKm * 0.5),
+    status: 'available',
+    vehicleType: 'Tricycle',
+    todaZoneId: zone.id,
+    todaZoneName: zone.name,
+    profilePictureUrl: `https://placehold.co/100x100.png?text=${name.charAt(0)}`,
+    dataAiHint: "driver portrait",
+    wallet: { currentBalance: 100, totalEarnedAllTime: 500, todayTotalRides: 0, todayTotalFareCollected: 0, todayNetEarnings: 0, todayTotalCommission: 0, paymentLogs: [], recentRides: [] },
+    currentPath: null,
+    pathIndex: 0,
+  };
+});
 
 interface MapboxGeocodingFeature {
   id: string;
@@ -47,7 +52,7 @@ export default function PassengerPage() {
     longitude: defaultMapCenter.longitude,
     latitude: defaultMapCenter.latitude,
     zoom: defaultMapZoom + 1,
-    pitch: 45, // Keep 3D perspective
+    pitch: 45, 
   });
 
   const [rideState, setRideState] = React.useState<PassengerRideState>({
@@ -62,6 +67,7 @@ export default function PassengerPage() {
     triderToPickupPath: null,
     pickupToDropoffPath: null,
     currentTriderPathIndex: 0,
+    pickupTodaZoneId: null,
   });
 
   const [triderSimLocation, setTriderSimLocation] = React.useState<Coordinates | null>(null);
@@ -78,7 +84,16 @@ export default function PassengerPage() {
   const [pickupRouteColor, setPickupRouteColor] = React.useState('hsl(var(--accent))');
   const [dropoffRouteColor, setDropoffRouteColor] = React.useState('hsl(var(--primary))');
 
-  const mapRef = React.useRef<mapboxgl.Map | null>(null);
+  const mapRef = React.useRef<MapRef | null>(null);
+
+  const getTodaZoneForLocation = React.useCallback((location: Coordinates): TodaZone | null => {
+    for (const zone of appTodaZones) {
+      if (isPointInCircle(location, zone.center, zone.radiusKm)) {
+        return zone;
+      }
+    }
+    return null;
+  }, []);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -114,6 +129,7 @@ export default function PassengerPage() {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           };
+          const pickupZone = getTodaZoneForLocation(coords);
           
           try {
             const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.longitude},${coords.latitude}.json?access_token=${MAPBOX_TOKEN}&types=address,poi&limit=1`);
@@ -122,14 +138,14 @@ export default function PassengerPage() {
             if (data.features && data.features.length > 0) {
               address = data.features[0].place_name;
             }
-            setRideState(prev => ({ ...prev, pickupLocation: coords, pickupAddress: address, status: 'selectingDropoff' }));
+            setRideState(prev => ({ ...prev, pickupLocation: coords, pickupAddress: address, status: 'selectingDropoff', pickupTodaZoneId: pickupZone?.id || null }));
             setPickupInput(address);
-            toast({ title: "Pickup Location Set", description: `Current location: ${address.substring(0,30)}... Now select dropoff.` });
+            toast({ title: "Pickup Location Set", description: `Current location: ${address.substring(0,30)}... (Zone: ${pickupZone?.name || 'N/A'}). Now select dropoff.` });
           } catch (error) {
             console.error("Error reverse geocoding:", error);
-            setRideState(prev => ({ ...prev, pickupLocation: coords, pickupAddress: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`, status: 'selectingDropoff' }));
+            setRideState(prev => ({ ...prev, pickupLocation: coords, pickupAddress: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`, status: 'selectingDropoff', pickupTodaZoneId: pickupZone?.id || null }));
             setPickupInput(`${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`);
-            toast({ title: "Pickup Location Set", description: "Using current coordinates. Now select dropoff." });
+            toast({ title: "Pickup Location Set", description: `Using current coordinates (Zone: ${pickupZone?.name || 'N/A'}). Now select dropoff.` });
           } finally {
              setViewState(prev => ({ ...prev, ...coords, zoom: 15 }));
              setIsGeolocating(false);
@@ -144,7 +160,7 @@ export default function PassengerPage() {
         { timeout: 10000, enableHighAccuracy: true }
       );
     }
-  }, [MAPBOX_TOKEN, rideState.status, toast]); 
+  }, [MAPBOX_TOKEN, rideState.status, toast, getTodaZoneForLocation]); 
 
   React.useEffect(() => {
     if (settingsLoading) return;
@@ -173,8 +189,8 @@ export default function PassengerPage() {
               latitude: currentPath.coordinates[nextIndex][1],
             };
             setRideState(rs => ({ ...rs, currentTriderPathIndex: nextIndex }));
-            if(rideState.status === 'triderAssigned' && rideState.pickupLocation) fetchRoute(newCoords, rideState.pickupLocation, 'triderToPickup', false); // Don't show toast for intermediate updates
-            if(rideState.status === 'inProgress' && rideState.dropoffLocation) fetchRoute(newCoords, rideState.dropoffLocation, 'pickupToDropoff', false); // Don't show toast
+            if(rideState.status === 'triderAssigned' && rideState.pickupLocation) fetchRoute(newCoords, rideState.pickupLocation, 'triderToPickup', false);
+            if(rideState.status === 'inProgress' && rideState.dropoffLocation) fetchRoute(newCoords, rideState.dropoffLocation, 'pickupToDropoff', false);
             return newCoords;
           } else { 
             if (rideState.status === 'triderAssigned') {
@@ -192,7 +208,7 @@ export default function PassengerPage() {
       }, 2000); 
     }
     return () => clearInterval(intervalId);
-  }, [rideState.status, rideState.triderToPickupPath, rideState.pickupToDropoffPath, rideState.pickupLocation, rideState.dropoffLocation, rideState.currentTriderPathIndex, triderSimLocation]);
+  }, [rideState, triderSimLocation]);
 
 
   React.useEffect(() => {
@@ -263,19 +279,23 @@ export default function PassengerPage() {
 
   const handleSuggestionSelect = (suggestion: MapboxGeocodingFeature, type: 'pickup' | 'dropoff') => {
     const location: Coordinates = { longitude: suggestion.center[0], latitude: suggestion.center[1] };
+    const selectedZone = getTodaZoneForLocation(location);
+
     if (type === 'pickup') {
-      setRideState(prev => ({ ...prev, pickupLocation: location, pickupAddress: suggestion.place_name, status: prev.dropoffLocation ? 'confirmingRide' : 'selectingDropoff' }));
+      setRideState(prev => ({ ...prev, pickupLocation: location, pickupAddress: suggestion.place_name, status: prev.dropoffLocation ? 'confirmingRide' : 'selectingDropoff', pickupTodaZoneId: selectedZone?.id || null }));
       setPickupInput(suggestion.place_name);
       setPickupSuggestions([]);
+      toast({title: "Pickup Set", description: `Zone: ${selectedZone?.name || 'N/A'}. Now select dropoff.`});
       if (rideState.dropoffLocation) {
         fetchRoute(location, rideState.dropoffLocation, 'confirmation');
-        const fare = calculateDistance(location, rideState.dropoffLocation) * 20 + 30; // Recalculate fare
+        const fare = calculateDistance(location, rideState.dropoffLocation) * 20 + 30; 
         setRideState(prev => ({...prev, estimatedFare: fare}));
       }
     } else {
       setRideState(prev => ({ ...prev, dropoffLocation: location, dropoffAddress: suggestion.place_name, status: prev.pickupLocation ? 'confirmingRide' : 'selectingDropoff' }));
       setDropoffInput(suggestion.place_name);
       setDropoffSuggestions([]);
+      toast({title: "Dropoff Set", description: "Review details and confirm."});
       if (rideState.pickupLocation) {
         fetchRoute(rideState.pickupLocation, location, 'confirmation');
         const fare = calculateDistance(rideState.pickupLocation, location) * 20 + 30;
@@ -284,27 +304,20 @@ export default function PassengerPage() {
     }
     setViewState(prev => ({ ...prev, ...location, zoom: 15 }));
     setActiveSuggestionBox(null);
-    
-    if (type === 'pickup' && !rideState.dropoffLocation) {
-        toast({title: "Pickup Set", description: "Now select or search for your dropoff location."})
-    } else if (type === 'dropoff' && !rideState.pickupLocation) {
-         toast({title: "Dropoff Set", description: "Now select or search for your pickup location."})
-    } else if (rideState.pickupLocation && rideState.dropoffLocation) { // This condition will be met when the second location is set
-        toast({title: "Locations Set", description: "Confirm your ride details."})
-    }
   };
   
   const handleMapClick = (event: mapboxgl.MapLayerMouseEvent) => {
-    if (isSearchingAddress) return; // Prevent map click while searching
+    if (isSearchingAddress) return; 
     const { lngLat } = event;
     const newLocation = { longitude: lngLat.lng, latitude: lngLat.lat };
     const newAddress = `Pin (${newLocation.latitude.toFixed(4)}, ${newLocation.longitude.toFixed(4)})`;
+    const clickedZone = getTodaZoneForLocation(newLocation);
 
     if (!rideState.pickupLocation || rideState.status === 'selectingPickup' ) {
-      setRideState(prev => ({ ...prev, status: 'selectingDropoff', pickupLocation: newLocation, pickupAddress: newAddress }));
+      setRideState(prev => ({ ...prev, status: 'selectingDropoff', pickupLocation: newLocation, pickupAddress: newAddress, pickupTodaZoneId: clickedZone?.id || null }));
       setPickupInput(newAddress);
       setPickupSuggestions([]);
-      toast({ title: "Pickup Set", description: "Now select your dropoff location." });
+      toast({ title: "Pickup Set", description: `Zone: ${clickedZone?.name || 'N/A'}. Now select your dropoff location.` });
        if (rideState.dropoffLocation) {
          fetchRoute(newLocation, rideState.dropoffLocation, 'confirmation');
          const fare = calculateDistance(newLocation, rideState.dropoffLocation) * 20 + 30;
@@ -326,11 +339,29 @@ export default function PassengerPage() {
       toast({ title: "Missing Locations", description: "Please select pickup and dropoff points.", variant: "destructive" });
       return;
     }
+    if (!rideState.pickupTodaZoneId) {
+      toast({ title: "Pickup Outside Zone", description: "Your selected pickup location is not within a serviceable TODA zone.", variant: "destructive" });
+      return;
+    }
+    // For demo, we ensure pickup is in Talon Kuatro for trider availability
+    if (rideState.pickupTodaZoneId !== TALON_KUATRO_ZONE_ID) {
+        toast({ title: "Service Area Limited", description: `For this demo, please select a pickup in ${appTodaZones.find(z=>z.id === TALON_KUATRO_ZONE_ID)?.name || 'Talon Kuatro'}.`, variant: "destructive" });
+        return;
+    }
+
     setRideState(prev => ({ ...prev, status: 'searching', currentRideId: `ride-sim-${Date.now()}`, currentTriderPathIndex: 0 }));
-    toast({ title: "Searching for Trider...", description: "We're finding a TriGo for you." });
+    toast({ title: "Searching for Trider...", description: "We're finding a TriGo for you in Talon Kuatro." });
 
     setTimeout(() => {
-      const randomTrider = mockTriders[Math.floor(Math.random() * mockTriders.length)];
+      // Filter mock triders to only those in Talon Kuatro (already done by mockTridersTalonKuatro definition)
+      const availableTridersInZone = mockTridersTalonKuatro;
+      if(availableTridersInZone.length === 0){
+        setRideState(prev => ({ ...prev, status: 'idle' })); // Reset or specific no_trider_state
+        toast({ title: "No Triders Available", description: `Sorry, no triders currently available in ${appTodaZones.find(z=>z.id === TALON_KUATRO_ZONE_ID)?.name || 'Talon Kuatro'}. Please try again later.`, variant: "destructive"});
+        return;
+      }
+      const randomTrider = availableTridersInZone[Math.floor(Math.random() * availableTridersInZone.length)];
+      
       setRideState(prev => ({ ...prev, status: 'triderAssigned', assignedTrider: randomTrider }));
       setTriderSimLocation(randomTrider.location);
       if(rideState.pickupLocation) fetchRoute(randomTrider.location, rideState.pickupLocation, 'triderToPickup');
@@ -342,7 +373,7 @@ export default function PassengerPage() {
     setRideState({
       status: 'idle', pickupLocation: null, dropoffLocation: null, pickupAddress: '', dropoffAddress: '',
       estimatedFare: null, assignedTrider: null, currentRideId: null,
-      triderToPickupPath: null, pickupToDropoffPath: null, currentTriderPathIndex: 0,
+      triderToPickupPath: null, pickupToDropoffPath: null, currentTriderPathIndex: 0, pickupTodaZoneId: null,
     });
     setTriderSimLocation(null);
     setEstimatedETA(null);
@@ -352,8 +383,7 @@ export default function PassengerPage() {
     setDropoffSuggestions([]);
     setActiveSuggestionBox(null);
     toast({ title: "Ride Cancelled" });
-    // Attempt to re-trigger initial geolocation for pickup
-    if (navigator.geolocation && MAPBOX_TOKEN) { // Explicitly set status to idle to re-trigger
+    if (navigator.geolocation && MAPBOX_TOKEN) { 
       setRideState(prev => ({ ...prev, status: 'idle' }));
     }
   };
@@ -380,7 +410,7 @@ export default function PassengerPage() {
     <div className="flex flex-col h-screen bg-background">
       <header className="p-4 border-b shadow-sm">
         <h1 className="text-2xl font-semibold text-primary flex items-center">
-          <User className="mr-2" /> TriGo Passenger
+          <User className="mr-2" /> TriGo Passenger (Talon Kuatro Demo)
         </h1>
       </header>
 
@@ -399,9 +429,9 @@ export default function PassengerPage() {
               </CardTitle>
               <CardDescription>
                 {isGeolocating && "Getting your current location for pickup..."}
-                {!isGeolocating && rideState.status === 'idle' && "Enter pickup address or click map."}
+                {!isGeolocating && rideState.status === 'idle' && "Enter pickup address or click map (Talon Kuatro only for demo)."}
                 {!isGeolocating && (rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff') && "Enter addresses or click map to set points."}
-                {rideState.status === 'confirmingRide' && "Review details and request your ride."}
+                {rideState.status === 'confirmingRide' && `Pickup Zone: ${appTodaZones.find(z=>z.id === rideState.pickupTodaZoneId)?.name || 'N/A'}. Review details.`}
                 {rideState.status === 'searching' && "Please wait while we connect you."}
                 {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && `Your trider ${rideState.assignedTrider?.name} is on the way.`}
                 {rideState.status === 'completed' && "Hope you enjoyed your ride!"}
@@ -498,7 +528,7 @@ export default function PassengerPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
               {rideState.status === 'confirmingRide' && (
-                <Button onClick={handleRequestRide} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!rideState.pickupLocation || !rideState.dropoffLocation}>Request TriGo Now</Button>
+                <Button onClick={handleRequestRide} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={!rideState.pickupLocation || !rideState.dropoffLocation || rideState.pickupTodaZoneId !== TALON_KUATRO_ZONE_ID}>Request TriGo Now</Button>
               )}
               {(rideState.status === 'searching' || rideState.status === 'triderAssigned') && (
                 <Button onClick={handleCancelRide} variant="outline" className="w-full">Cancel Ride</Button>
@@ -547,13 +577,11 @@ export default function PassengerPage() {
             )}
             {rideState.triderToPickupPath && rideState.status === 'triderAssigned' && (
               <Source id="trider-to-pickup-route" type="geojson" data={{ type: 'Feature', geometry: rideState.triderToPickupPath, properties: {} }}>
-                {/* @ts-ignore */}
                 <Layer {...triderToPickupRouteLayer} />
               </Source>
             )}
             {rideState.pickupToDropoffPath && (rideState.status === 'inProgress' || rideState.status === 'confirmingRide') && (
               <Source id="pickup-to-dropoff-route" type="geojson" data={{ type: 'Feature', geometry: rideState.pickupToDropoffPath, properties: {} }}>
-                {/* @ts-ignore */}
                 <Layer {...pickupToDropoffRouteLayer} />
               </Source>
             )}
@@ -563,4 +591,5 @@ export default function PassengerPage() {
     </div>
   );
 }
+
     

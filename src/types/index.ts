@@ -29,8 +29,8 @@ export interface Trider {
   vehicleType?: string;
   todaZoneId: string;
   todaZoneName?: string;
-  currentPath: RoutePath | null; // For following a calculated route
-  pathIndex: number; // Current step/index in the currentPath
+  currentPath: RoutePath | null; 
+  pathIndex: number; 
 }
 
 export type RideRequestStatus = 'pending' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'searching';
@@ -46,7 +46,7 @@ export interface RideRequest {
   fare?: number;
   requestedAt: Date;
   assignedTriderId?: string | null;
-  pickupTodaZoneId?: string | null;
+  pickupTodaZoneId: string | null; // Made non-optional as it's crucial
   passengerId?: string;
 }
 
@@ -94,7 +94,7 @@ export interface TriderProfile extends Trider {
   wallet: TriderWallet;
   contactNumber?: string;
   profilePictureUrl?: string;
-  dataAiHint?: string; // For AI image generation hint
+  dataAiHint?: string; 
   lastSeen?: Date;
 }
 
@@ -128,14 +128,15 @@ export interface PassengerRideState {
   status: 'idle' | 'selectingPickup' | 'selectingDropoff' | 'confirmingRide' | 'searching' | 'triderAssigned' | 'inProgress' | 'completed' | 'cancelled';
   pickupLocation: Coordinates | null;
   dropoffLocation: Coordinates | null;
-  pickupAddress: string | null; // Now string for input binding
-  dropoffAddress: string | null; // Now string for input binding
+  pickupAddress: string | null; 
+  dropoffAddress: string | null; 
   estimatedFare: number | null;
   assignedTrider: TriderProfile | null;
   currentRideId: string | null;
-  triderToPickupPath: RoutePath | null; // Route for trider to pickup
-  pickupToDropoffPath: RoutePath | null; // Route for pickup to dropoff
-  currentTriderPathIndex?: number; // Current step in the trider's path
+  triderToPickupPath: RoutePath | null; 
+  pickupToDropoffPath: RoutePath | null; 
+  currentTriderPathIndex?: number; 
+  pickupTodaZoneId: string | null; // Added to track passenger's pickup zone
 }
 
 export type TriderRideStatus = 'onlineAvailable' | 'onlineBusyEnRouteToPickup' | 'onlineBusyEnRouteToDropoff' | 'offline';
@@ -145,6 +146,8 @@ export interface TriderSimState {
   currentLocation: Coordinates;
   activeRideRequest: RideRequest | null;
   availableRideRequests: RideRequest[];
-  currentPath: RoutePath | null; // For trider's own navigation
-  currentPathIndex: number; // Current step in their path
+  currentPath: RoutePath | null; 
+  currentPathIndex: number; 
 }
+
+    
