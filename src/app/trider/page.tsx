@@ -52,6 +52,26 @@ export default function TriderPage() {
   });
   
   const [mapRouteGeoJson, setMapRouteGeoJson] = React.useState<GeoJSON.FeatureCollection | null>(null);
+  const [resolvedAccentColor, setResolvedAccentColor] = React.useState<string>('hsl(120, 60.8%, 50%)');
+
+   React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const computedStyles = getComputedStyle(document.documentElement);
+      const accentColorVar = computedStyles.getPropertyValue('--accent').trim();
+      if (accentColorVar) {
+        const parts = accentColorVar.split(' ').map(p => p.trim());
+        if (parts.length === 3 && !accentColorVar.startsWith('hsl(')) {
+            const h = parts[0];
+            const s = parts[1].endsWith('%') ? parts[1] : `${parts[1]}%`;
+            const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`;
+            setResolvedAccentColor(`hsl(${h}, ${s}, ${l})`);
+        } else {
+            setResolvedAccentColor(accentColorVar);
+        }
+      }
+    }
+  }, []);
+
 
   // Update map view when settings load or change, or trider location changes
   React.useEffect(() => {
@@ -60,46 +80,47 @@ export default function TriderPage() {
         ...prev,
         longitude: triderState.currentLocation.longitude,
         latitude: triderState.currentLocation.latitude,
-        zoom: defaultMapZoom + 2, // Zoom in more for trider
+        zoom: defaultMapZoom + 2, 
       }));
     }
   }, [triderState.currentLocation, defaultMapZoom, settingsLoading]);
+
+  // Toasts for trider status changes / events
+  React.useEffect(() => {
+    if (triderState.status === 'onlineBusyEnRouteToPickup' && triderState.activeRideRequest) {
+        // This toast is triggered by handlePickedUp action or arrival
+    } else if (triderState.status === 'onlineBusyEnRouteToDropoff' && triderState.activeRideRequest) {
+        // This toast is triggered by handleCompleteRide action or arrival
+    }
+  }, [triderState.status, triderState.activeRideRequest, toast]);
+
 
   // Simulate receiving new ride requests when online and available
   React.useEffect(() => {
     let requestIntervalId: NodeJS.Timeout;
     if (triderState.status === 'onlineAvailable') {
       requestIntervalId = setInterval(() => {
-        // Only generate requests within the trider's TODA zone
         const triderZone = appTodaZones.find(z => z.id === selfTriderProfile.todaZoneId);
         if (!triderZone) return;
 
         const pickupLocation = getRandomPointInCircle(triderZone.center, triderZone.radiusKm * 0.8);
-        // For simplicity, dropoff can be anywhere for now, or constrain to nearby zones
         const randomDropoffZone = appTodaZones[Math.floor(Math.random() * appTodaZones.length)];
         const dropoffLocation = getRandomPointInCircle(randomDropoffZone.center, randomDropoffZone.radiusKm * 0.8);
         
         const newRide: RideRequest = {
           id: `ride-req-sim-${Date.now()}`,
           passengerName: `Passenger ${Math.floor(Math.random() * 100)}`,
-          pickupLocation,
-          dropoffLocation,
-          pickupAddress: `Near ${triderZone.name}`,
-          dropoffAddress: `Near ${randomDropoffZone.name}`,
-          status: 'pending',
-          fare: calculateDistance(pickupLocation, dropoffLocation) * 20 + 30, // Mock fare
-          requestedAt: new Date(),
-          pickupTodaZoneId: triderZone.id,
+          pickupLocation, dropoffLocation,
+          pickupAddress: `Near ${triderZone.name}`, dropoffAddress: `Near ${randomDropoffZone.name}`,
+          status: 'pending', fare: calculateDistance(pickupLocation, dropoffLocation) * 20 + 30,
+          requestedAt: new Date(), pickupTodaZoneId: triderZone.id,
         };
-        setTriderState(prev => ({
-          ...prev,
-          availableRideRequests: [newRide, ...prev.availableRideRequests.slice(0, 4)] // Keep last 5
-        }));
+        setTriderState(prev => ({ ...prev, availableRideRequests: [newRide, ...prev.availableRideRequests.slice(0, 4)] }));
         toast({ title: "New Ride Request!", description: `From ${newRide.pickupAddress} to ${newRide.dropoffAddress}`});
-      }, 15000); // New request every 15s
+      }, 15000); 
     }
     return () => clearInterval(requestIntervalId);
-  }, [triderState.status]);
+  }, [triderState.status, toast]); // Added toast
 
   // Simulate trider movement for active ride
   React.useEffect(() => {
@@ -110,29 +131,26 @@ export default function TriderPage() {
       moveIntervalId = setInterval(() => {
         setTriderState(prev => {
           if (!prev.activeRideRequest || !targetLocation) return prev;
-          if (calculateDistance(prev.currentLocation, targetLocation) < 0.05) { // Arrived
+          if (calculateDistance(prev.currentLocation, targetLocation) < 0.05) { 
             if (prev.status === 'onlineBusyEnRouteToPickup') {
               toast({ title: "Arrived at Pickup", description: `Inform ${prev.activeRideRequest.passengerName}.`});
-              // Now route to dropoff
-               if(prev.activeRideRequest.dropoffLocation) fetchRoute(prev.currentLocation, prev.activeRideRequest.dropoffLocation);
-              return { ...prev, currentLocation: targetLocation }; // Wait for "Picked Up" action
-            } else { // Arrived at dropoff
+              if(prev.activeRideRequest.dropoffLocation) fetchRoute(prev.currentLocation, prev.activeRideRequest.dropoffLocation);
+            } else { 
               toast({ title: "Arrived at Destination", description: "Complete the ride." });
-              // Wait for "Complete Ride" action
-               setMapRouteGeoJson(null);
-              return { ...prev, currentLocation: targetLocation };
+              setMapRouteGeoJson(null);
             }
+            return { ...prev, currentLocation: targetLocation }; 
           }
           const newLat = prev.currentLocation.latitude + (targetLocation.latitude - prev.currentLocation.latitude) * 0.3;
           const newLng = prev.currentLocation.longitude + (targetLocation.longitude - prev.currentLocation.longitude) * 0.3;
           const newLocation = {latitude: newLat, longitude: newLng};
-          fetchRoute(newLocation, targetLocation); // Update route as trider moves
+          fetchRoute(newLocation, targetLocation); 
           return { ...prev, currentLocation: newLocation };
         });
       }, 2000);
     }
     return () => clearInterval(moveIntervalId);
-  }, [triderState.status, triderState.activeRideRequest]);
+  }, [triderState.status, triderState.activeRideRequest, toast]); // Added toast
 
 
   const handleToggleOnline = (isOnline: boolean) => {
@@ -155,7 +173,6 @@ export default function TriderPage() {
       toast({ title: "Cannot Accept Ride", description: "You must be online and available.", variant: "destructive" });
       return;
     }
-    // Check if pickup is within trider's TODA zone
     if (request.pickupTodaZoneId !== selfTriderProfile.todaZoneId) {
         toast({ title: "Out of Zone", description: "This ride request is outside your assigned TODA zone.", variant: "destructive" });
         return;
@@ -180,15 +197,17 @@ export default function TriderPage() {
       const data = await response.json();
       if (data.routes && data.routes.length > 0) {
         setMapRouteGeoJson({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: data.routes[0].geometry }] });
+      } else {
+        setMapRouteGeoJson(null);
       }
     } catch (error) {
       console.error("Error fetching route for trider map:", error);
+      setMapRouteGeoJson(null);
     }
   };
 
   const handlePickedUp = () => {
     if (!triderState.activeRideRequest || triderState.status !== 'onlineBusyEnRouteToPickup') return;
-     // Ensure trider is at pickup or very close
     if (calculateDistance(triderState.currentLocation, triderState.activeRideRequest.pickupLocation) > 0.1) {
         toast({title: "Not at Pickup Yet", description: "Please proceed closer to the pickup location.", variant: "destructive"});
         return;
@@ -200,36 +219,29 @@ export default function TriderPage() {
 
   const handleCompleteRide = () => {
     if (!triderState.activeRideRequest || triderState.status !== 'onlineBusyEnRouteToDropoff') return;
-    // Ensure trider is at dropoff or very close
     if (calculateDistance(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation) > 0.1) {
         toast({title: "Not at Dropoff Yet", description: "Please proceed closer to the destination.", variant: "destructive"});
         return;
     }
     const fare = triderState.activeRideRequest.fare || 0;
-    // Update mock wallet
-    selfTriderProfile.wallet.currentBalance += fare * 0.8; // Assume 20% commission
+    selfTriderProfile.wallet.currentBalance += fare * 0.8; 
     selfTriderProfile.wallet.totalEarnedAllTime += fare * 0.8;
     selfTriderProfile.wallet.todayTotalRides += 1;
     selfTriderProfile.wallet.todayTotalFareCollected += fare;
     selfTriderProfile.wallet.todayNetEarnings += fare * 0.8;
 
-
-    setTriderState(prev => ({
-        ...prev,
-        status: 'onlineAvailable',
-        activeRideRequest: null,
-    }));
+    setTriderState(prev => ({ ...prev, status: 'onlineAvailable', activeRideRequest: null }));
     setMapRouteGeoJson(null);
     toast({ title: "Ride Completed!", description: `Earned ₱${(fare * 0.8).toFixed(2)}. Waiting for next ride.` });
   };
   
-  const routeLayer: any = {
+  const routeLayer: any = React.useMemo(() => ({
     id: 'route-trider',
     type: 'line',
     source: 'route-trider',
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': 'hsl(var(--accent))', 'line-width': 5, 'line-opacity': 0.8 },
-  };
+    paint: { 'line-color': resolvedAccentColor, 'line-width': 5, 'line-opacity': 0.8 },
+  }), [resolvedAccentColor]);
 
 
   if (settingsLoading || !MAPBOX_TOKEN) {
@@ -256,7 +268,6 @@ export default function TriderPage() {
       </header>
 
       <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 md:p-4 overflow-hidden">
-        {/* Ride Info & Actions Panel */}
         <div className="md:col-span-1 flex flex-col gap-4 p-4 md:p-0 h-full">
           <Card className="shadow-lg flex-shrink-0">
             <CardHeader>
@@ -325,7 +336,6 @@ export default function TriderPage() {
           </Card>
         </div>
 
-        {/* Map View */}
         <div className="md:col-span-2 h-[300px] md:h-full min-h-[300px] rounded-lg overflow-hidden shadow-lg border">
           <Map
             {...viewState}
@@ -335,14 +345,12 @@ export default function TriderPage() {
             mapboxAccessToken={MAPBOX_TOKEN}
           >
             <NavigationControl position="top-right" />
-            {/* Trider Marker */}
             <Marker longitude={triderState.currentLocation.longitude} latitude={triderState.currentLocation.latitude}>
               <div className={`p-1.5 rounded-full shadow-md ${triderState.status === 'offline' ? 'bg-muted' : 'bg-primary text-primary-foreground animate-pulse'}`}>
                 <Bike size={20} data-ai-hint="motorcycle rider"/>
               </div>
             </Marker>
 
-            {/* Active Ride Markers */}
             {triderState.activeRideRequest && (
               <>
                 <Marker longitude={triderState.activeRideRequest.pickupLocation.longitude} latitude={triderState.activeRideRequest.pickupLocation.latitude} color="green">
@@ -354,9 +362,8 @@ export default function TriderPage() {
               </>
             )}
             
-            {/* Available Ride Request Markers (Pickup Points) */}
             {triderState.status === 'onlineAvailable' && triderState.availableRideRequests.map(req => (
-                req.pickupTodaZoneId === selfTriderProfile.todaZoneId && // Only show requests in trider's zone
+                req.pickupTodaZoneId === selfTriderProfile.todaZoneId && 
                 <Marker key={`req-${req.id}`} longitude={req.pickupLocation.longitude} latitude={req.pickupLocation.latitude}>
                      <button onClick={() => handleAcceptRide(req)} title={`Accept ride for ${req.passengerName}`} className="cursor-pointer">
                         <div className="p-1.5 rounded-full bg-yellow-400 text-yellow-900 shadow-md hover:scale-110 transition-transform">
@@ -368,7 +375,6 @@ export default function TriderPage() {
 
             {mapRouteGeoJson && (
               <Source id="route-trider" type="geojson" data={mapRouteGeoJson}>
-                {/* @ts-ignore */}
                 <Layer {...routeLayer} />
               </Source>
             )}
