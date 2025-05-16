@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import { MapPin, Dot, Search, Bike, User, ArrowRight, CircleDollarSign } from 'lucide-react';
+import { MapPin, Dot, Search, Bike, User, ArrowRight, CircleDollarSign, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +55,7 @@ export default function PassengerPage() {
 
   const [triderSimLocation, setTriderSimLocation] = React.useState<Coordinates | null>(null);
   const [mapRouteGeoJson, setMapRouteGeoJson] = React.useState<GeoJSON.FeatureCollection | null>(null);
+  const [estimatedETA, setEstimatedETA] = React.useState<string | null>(null);
 
 
   // Update map view when settings load or change
@@ -73,25 +74,27 @@ export default function PassengerPage() {
   React.useEffect(() => {
     let intervalId: NodeJS.Timeout;
     if (rideState.status === 'triderAssigned' && rideState.assignedTrider && rideState.pickupLocation) {
-      setTriderSimLocation(rideState.assignedTrider.location);
-      // Simulate trider moving towards pickup
+      // Trider is moving to pickup. `triderSimLocation` is already set. Route is fetched in `handleRequestRide`.
       intervalId = setInterval(() => {
         setTriderSimLocation(prevLoc => {
-          if (!prevLoc || !rideState.pickupLocation) return prevLoc;
+          if (!prevLoc || !rideState.pickupLocation || !rideState.assignedTrider) return prevLoc;
           if (calculateDistance(prevLoc, rideState.pickupLocation) < 0.05) { // Arrived at pickup
             setRideState(rs => ({ ...rs, status: 'inProgress' }));
             toast({ title: "Trider Arrived", description: `${rideState.assignedTrider?.name} has arrived at your pickup location.` });
-            // Now simulate moving to dropoff
+            // Now simulate moving to dropoff & fetch route
             if(rideState.dropoffLocation) fetchRoute(rideState.pickupLocation!, rideState.dropoffLocation!);
             return rideState.pickupLocation;
           }
           const newLat = prevLoc.latitude + (rideState.pickupLocation.latitude - prevLoc.latitude) * 0.2;
           const newLng = prevLoc.longitude + (rideState.pickupLocation.longitude - prevLoc.longitude) * 0.2;
-          return { latitude: newLat, longitude: newLng };
+          const newTriderLocation = { latitude: newLat, longitude: newLng };
+          // Update route from new triderSimLocation to pickup
+          fetchRoute(newTriderLocation, rideState.pickupLocation);
+          return newTriderLocation;
         });
       }, 2000);
     } else if (rideState.status === 'inProgress' && triderSimLocation && rideState.dropoffLocation) {
-        // Simulate trider moving towards dropoff
+        // Trider is moving towards dropoff
         intervalId = setInterval(() => {
         setTriderSimLocation(prevLoc => {
           if (!prevLoc || !rideState.dropoffLocation) return prevLoc;
@@ -99,13 +102,15 @@ export default function PassengerPage() {
             setRideState(rs => ({ ...rs, status: 'completed' }));
             toast({ title: "Ride Completed", description: `You have arrived at your destination. Thank you for using TriGo!` });
             setMapRouteGeoJson(null);
+            setEstimatedETA(null);
             return rideState.dropoffLocation;
           }
           const newLat = prevLoc.latitude + (rideState.dropoffLocation.latitude - prevLoc.latitude) * 0.2;
           const newLng = prevLoc.longitude + (rideState.dropoffLocation.longitude - prevLoc.longitude) * 0.2;
+          const newTriderLocation = {latitude: newLat, longitude: newLng};
           // Update route from new triderSimLocation to dropoff
-          if(rideState.dropoffLocation) fetchRoute({latitude: newLat, longitude: newLng}, rideState.dropoffLocation!);
-          return { latitude: newLat, longitude: newLng };
+          fetchRoute(newTriderLocation, rideState.dropoffLocation);
+          return newTriderLocation;
         });
       }, 2000);
     }
@@ -137,9 +142,14 @@ export default function PassengerPage() {
       const data = await response.json();
       if (data.routes && data.routes.length > 0) {
         setMapRouteGeoJson({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: data.routes[0].geometry }] });
+        const durationMinutes = Math.round(data.routes[0].duration / 60);
+        setEstimatedETA(`${durationMinutes} min`);
+      } else {
+        setEstimatedETA(null);
       }
     } catch (error) {
       console.error("Error fetching route for passenger map:", error);
+      setEstimatedETA(null);
     }
   };
 
@@ -157,7 +167,7 @@ export default function PassengerPage() {
       const randomTrider = mockTriders[Math.floor(Math.random() * mockTriders.length)];
       setRideState(prev => ({ ...prev, status: 'triderAssigned', assignedTrider: randomTrider }));
       setTriderSimLocation(randomTrider.location); // Set initial trider location for simulation
-      if(rideState.pickupLocation) fetchRoute(randomTrider.location, rideState.pickupLocation);
+      if(rideState.pickupLocation) fetchRoute(randomTrider.location, rideState.pickupLocation); // Fetch route from trider to pickup
       toast({ title: "Trider Found!", description: `${randomTrider.name} is on the way.` });
     }, 3000);
   };
@@ -175,6 +185,7 @@ export default function PassengerPage() {
     });
     setTriderSimLocation(null);
     setMapRouteGeoJson(null);
+    setEstimatedETA(null);
     toast({ title: "Ride Cancelled" });
   };
   
@@ -273,6 +284,12 @@ export default function PassengerPage() {
                       <p className="text-xs font-medium mt-0.5">Status: {rideState.status === 'triderAssigned' ? 'En Route to Pickup' : 'On Trip to Destination'}</p>
                     </div>
                   </div>
+                  {estimatedETA && (
+                    <div className="mt-2 pt-2 border-t border-muted flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-primary"/>
+                        <p className="text-sm font-semibold">Estimated Arrival: {estimatedETA}</p>
+                    </div>
+                  )}
                 </Card>
               )}
             </CardContent>
@@ -305,15 +322,23 @@ export default function PassengerPage() {
           >
             <NavigationControl position="top-right" />
             {rideState.pickupLocation && (
-              <Marker longitude={rideState.pickupLocation.longitude} latitude={rideState.pickupLocation.latitude} color="green" />
+              <Marker longitude={rideState.pickupLocation.longitude} latitude={rideState.pickupLocation.latitude} color="green">
+                 <div title="Pickup" className="p-1 rounded-full bg-green-500 text-white shadow-md flex items-center justify-center">
+                    <User size={18} />
+                 </div>
+              </Marker>
             )}
             {rideState.dropoffLocation && (
-              <Marker longitude={rideState.dropoffLocation.longitude} latitude={rideState.dropoffLocation.latitude} color="red" />
+              <Marker longitude={rideState.dropoffLocation.longitude} latitude={rideState.dropoffLocation.latitude} color="red">
+                 <div title="Dropoff" className="p-1 rounded-full bg-red-500 text-white shadow-md flex items-center justify-center">
+                    <MapPin size={18} />
+                 </div>
+              </Marker>
             )}
             {triderSimLocation && (rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && (
               <Marker longitude={triderSimLocation.longitude} latitude={triderSimLocation.latitude}>
-                 <div className="p-1.5 rounded-full shadow-md bg-primary text-primary-foreground animate-pulse">
-                    <Bike size={20} data-ai-hint="tricycle icon" />
+                 <div className="p-1.5 rounded-full shadow-md bg-primary text-primary-foreground animate-pulse" title="Your Trider" data-ai-hint="tricycle rider">
+                    <Bike size={20} />
                   </div>
               </Marker>
             )}
@@ -329,3 +354,5 @@ export default function PassengerPage() {
     </div>
   );
 }
+
+    
