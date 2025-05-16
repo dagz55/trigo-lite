@@ -1,7 +1,7 @@
 
 "use client";
 
-import *a React from 'react';
+import * as React from 'react';
 import { MapPin, Dot, Search, Bike, User, ArrowRight, CircleDollarSign, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -144,7 +144,7 @@ export default function PassengerPage() {
         { timeout: 10000, enableHighAccuracy: true }
       );
     }
-  }, [MAPBOX_TOKEN, rideState.status]); // Removed toast dependency
+  }, [MAPBOX_TOKEN, rideState.status, toast]); 
 
   React.useEffect(() => {
     if (settingsLoading) return;
