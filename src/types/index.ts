@@ -25,7 +25,7 @@ export interface Trider {
   todaZoneName?: string;
 }
 
-export type RideRequestStatus = 'pending' | 'assigned' | 'in-progress' | 'completed' | 'cancelled';
+export type RideRequestStatus = 'pending' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'searching';
 
 export interface RideRequest {
   id: string;
@@ -39,6 +39,7 @@ export interface RideRequest {
   requestedAt: Date;
   assignedTriderId?: string | null;
   pickupTodaZoneId?: string | null; // ID of the TODA zone for the pickup location
+  passengerId?: string; // ID of the passenger making the request
 }
 
 export interface AiInsight {
@@ -56,7 +57,7 @@ export interface TriderPaymentLog {
   date: Date;
   amount: number;
   status: 'completed' | 'pending' | 'failed';
-  method: string; 
+  method: string;
   referenceId?: string;
 }
 
@@ -116,3 +117,24 @@ export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings
   key: K;
   value: AppSettings[K];
 };
+
+// Ride Simulation Specific Types
+export interface PassengerRideState {
+  status: 'idle' | 'selectingPickup' | 'selectingDropoff' | 'confirmingRide' | 'searching' | 'triderAssigned' | 'inProgress' | 'completed' | 'cancelled';
+  pickupLocation: Coordinates | null;
+  dropoffLocation: Coordinates | null;
+  pickupAddress: string | null;
+  dropoffAddress: string | null;
+  estimatedFare: number | null;
+  assignedTrider: TriderProfile | null; // Using TriderProfile for more details
+  currentRideId: string | null;
+}
+
+export type TriderRideStatus = 'onlineAvailable' | 'onlineBusyEnRouteToPickup' | 'onlineBusyEnRouteToDropoff' | 'offline';
+
+export interface TriderSimState {
+  status: TriderRideStatus;
+  currentLocation: Coordinates;
+  activeRideRequest: RideRequest | null; // The ride they have accepted
+  availableRideRequests: RideRequest[]; // List of rides they can accept
+}
