@@ -1,22 +1,23 @@
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:2810930958.
 
 "use client";
 
 import * as React from 'react';
 import { MapPin, Dot, Search, Bike, User, ArrowRight, CircleDollarSign, Clock, Loader2, Ticket, SettingsIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Map, { Marker, Popup, Source, Layer, NavigationControl, MapRef } from 'react-map-gl';
-import type { Coordinates, PassengerRideState, TriderProfile, RideRequest, RoutePath, TodaZone, MockPassengerProfile, PassengerSettings, PassengerMapStyle } from '@/types';
-import { todaZones as appTodaZones } from '@/data/todaZones';
-import { getRandomPointInCircle, calculateDistance, isPointInCircle } from '@/lib/geoUtils';
-import { useSettings as useGeneralSettings, DEFAULT_TODA_BASE_FARE } from '@/contexts/SettingsContext'; 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Coordinates, PassengerRideState, TriderProfile, RideRequest, RoutePath, TodaZone, MockPassengerProfile, PassengerSettings, PassengerMapStyle } from "@/types";
+import { todaZones as appTodaZones } from "@/data/todaZones";
+import { getRandomPointInCircle, calculateDistance, isPointInCircle } from "@/lib/geoUtils";
+import { useSettings as useGeneralSettings, DEFAULT_TODA_BASE_FARE } from "@/contexts/SettingsContext"; 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2'; 
@@ -821,7 +822,7 @@ export default function PassengerPage() {
                {rideState.status === 'completed' && (
                 <Button onClick={handleNewRide} className="w-full text-white" style={{ backgroundColor: FIREBASE_ORANGE_HSL_STRING }}>Book Another Ride</Button>
               )}
-               {(rideState.status === 'idle' || rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') && rideState.status !== 'completed' && (
+               {(rideState.status === 'idle' || rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') && rideState.status !== 'completed' && ( 
                 <Button onClick={handleCancelRide} variant="ghost" className="w-full">Reset / New Ride</Button>
               )}
             </CardFooter>
@@ -876,5 +877,3 @@ export default function PassengerPage() {
     </div>
   );
 }
-
-    
