@@ -2,17 +2,29 @@
 "use client";
 
 import * as React from 'react';
-import { MapPin, Dot, Search, Bike, User, ArrowRight, CircleDollarSign, Clock, Loader2, Ticket, SettingsIcon } from 'lucide-react';
+import {
+  MapPin, Dot, Search, Bike, User, ArrowRight, CircleDollarSign, Clock, Loader2, Ticket, SettingsIcon
+} from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Map, { Marker, Popup, Source, Layer, NavigationControl, MapRef } from 'react-map-gl';
-import type { Coordinates, PassengerRideState, TriderProfile, RideRequest, RoutePath, TodaZone, MockPassengerProfile, PassengerSettings, PassengerMapStyle } from "@/types";
+import type {
+  Coordinates,
+  PassengerRideState,
+  TriderProfile,
+  RideRequest,
+  RoutePath,
+  TodaZone,
+  MockPassengerProfile,
+  PassengerSettings,
+  PassengerMapStyle
+} from "@/types";
 import { todaZones as appTodaZones } from "@/data/todaZones";
 import { getRandomPointInCircle, calculateDistance, isPointInCircle } from "@/lib/geoUtils";
-import { useSettings as useGeneralSettings } from "@/contexts/SettingsContext"; 
+import { useSettings as useGeneralSettings } from "@/contexts/SettingsContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -28,7 +40,9 @@ const NEON_GREEN_FINAL_COUNTDOWN_HSL_STRING = 'hsl(120, 100%, 75%)';
 
 const DEFAULT_PASSENGER_MAP_STYLE: PassengerMapStyle = 'streets';
 
-const mockTridersForDemo: TriderProfile[] = ['Simon TK', 'Judas Isc. TK', 'Mary M. TK', 'Lazarus TK', 'Martha TK'].map((name, index) => {
+const mockTridersForDemo: TriderProfile[] = [
+  'Simon TK', 'Judas Isc. TK', 'Mary M. TK', 'Lazarus TK', 'Martha TK'
+].map((name, index) => {
   const zone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID); 
   if (!zone) throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_ZONE_ID} not found for mock triders.`);
   return {
@@ -41,7 +55,16 @@ const mockTridersForDemo: TriderProfile[] = ['Simon TK', 'Judas Isc. TK', 'Mary 
     todaZoneName: zone.name,
     profilePictureUrl: `https://placehold.co/100x100.png?text=${name.split(' ')[0].charAt(0)}`,
     dataAiHint: "driver portrait",
-    wallet: { currentBalance: 100, totalEarnedAllTime: 500, todayTotalRides: 0, todayTotalFareCollected: 0, todayNetEarnings: 0, todayTotalCommission: 0, paymentLogs: [], recentRides: [] },
+    wallet: {
+      currentBalance: 100,
+      totalEarnedAllTime: 500,
+      todayTotalRides: 0,
+      todayTotalFareCollected: 0,
+      todayNetEarnings: 0,
+      todayTotalCommission: 0,
+      paymentLogs: [],
+      recentRides: []
+    },
     currentPath: null,
     pathIndex: 0,
   };
@@ -458,11 +481,29 @@ export default function PassengerPage() {
         const durationSeconds = Math.round(chosenRoute.duration);
         
         if (routeType === 'triderToPickup') {
-          setRideState(prev => ({ ...prev, triderToPickupPath: routeGeometry, pickupToDropoffPath: null, estimatedDurationSeconds: durationSeconds, countdownSeconds: durationSeconds }));
+          setRideState(prev => ({
+            ...prev,
+            triderToPickupPath: routeGeometry,
+            pickupToDropoffPath: null,
+            estimatedDurationSeconds: durationSeconds,
+            countdownSeconds: durationSeconds
+          }));
         } else if (routeType === 'pickupToDropoff') {
-          setRideState(prev => ({ ...prev, pickupToDropoffPath: routeGeometry, triderToPickupPath: null, estimatedDurationSeconds: durationSeconds, countdownSeconds: durationSeconds }));
+          setRideState(prev => ({
+            ...prev,
+            pickupToDropoffPath: routeGeometry,
+            triderToPickupPath: null,
+            estimatedDurationSeconds: durationSeconds,
+            countdownSeconds: durationSeconds
+          }));
         } else if (routeType === 'confirmation') {
-           setRideState(prev => ({ ...prev, pickupToDropoffPath: routeGeometry, triderToPickupPath: null, estimatedDurationSeconds: durationSeconds, countdownSeconds: null }));
+           setRideState(prev => ({
+             ...prev,
+             pickupToDropoffPath: routeGeometry,
+             triderToPickupPath: null,
+             estimatedDurationSeconds: durationSeconds,
+             countdownSeconds: null
+           }));
         }
         if (showToastFeedback && routeType !== 'confirmation') {
           toast({ title: "Route Updated", description: `Using shortest distance route.` });
@@ -821,9 +862,9 @@ export default function PassengerPage() {
                {rideState.status === 'completed' && (
                 <Button onClick={handleNewRide} className="w-full text-white" style={{ backgroundColor: FIREBASE_ORANGE_HSL_STRING }}>Book Another Ride</Button>
               )}
-               {(rideState.status === 'idle' || rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') && rideState.status !== 'completed' && ( 
+               {(rideState.status === 'idle' || rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') ? (
                 <Button onClick={handleCancelRide} variant="ghost" className="w-full">Reset / New Ride</Button>
-              )}
+              ) : null}
             </CardFooter>
           </Card>
         </div>
