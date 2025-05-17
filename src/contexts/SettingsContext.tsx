@@ -10,7 +10,9 @@ const DEFAULT_RIDE_REQUEST_INTERVAL = 30000; // 30 seconds
 const DEFAULT_TRIDER_UPDATE_INTERVAL = 5000;  // 5 seconds
 const DEFAULT_AI_INSIGHT_INTERVAL = 60000; // 60 seconds
 const DEFAULT_CONVENIENCE_FEE = 1.00; // Default ₱1.00
-export const DEFAULT_TODA_BASE_FARE = 20.00; // Default ₱20.00
+export const DEFAULT_TODA_BASE_FARE_FALLBACK = 20.00; // Fallback if specific TODA or defaultBaseFare setting is not set
+const DEFAULT_GLOBAL_BASE_FARE = 20.00; // Default ₱20.00 for the new setting
+const DEFAULT_PER_KM_CHARGE = 5.00; // Default ₱5.00 per KM
 
 const defaultSettings: AppSettings = {
   theme: 'system',
@@ -22,6 +24,8 @@ const defaultSettings: AppSettings = {
   aiInsightIntervalMs: DEFAULT_AI_INSIGHT_INTERVAL,
   convenienceFee: DEFAULT_CONVENIENCE_FEE,
   todaBaseFares: {}, // Will be populated or use default on access
+  defaultBaseFare: DEFAULT_GLOBAL_BASE_FARE,
+  perKmCharge: DEFAULT_PER_KM_CHARGE,
 };
 
 interface SettingsContextType extends AppSettings {
@@ -43,15 +47,18 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
       if (storedSettings) {
         const parsedSettings = JSON.parse(storedSettings) as Partial<AppSettings>;
         setSettings(prev => ({ 
+          ...defaultSettings, // Start with defaults to ensure all keys are present
           ...prev, 
           ...parsedSettings,
-          todaBaseFares: parsedSettings.todaBaseFares || {}, // Ensure todaBaseFares is an object
+          todaBaseFares: parsedSettings.todaBaseFares || {},
           convenienceFee: parsedSettings.convenienceFee ?? DEFAULT_CONVENIENCE_FEE,
+          defaultBaseFare: parsedSettings.defaultBaseFare ?? DEFAULT_GLOBAL_BASE_FARE,
+          perKmCharge: parsedSettings.perKmCharge ?? DEFAULT_PER_KM_CHARGE,
         }));
       }
     } catch (error) {
       console.error("Failed to load settings from localStorage:", error);
-      setSettings(defaultSettings);
+      setSettings(defaultSettings); // Fallback to hardcoded defaults on error
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +115,8 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   const getTodaBaseFare = (todaZoneId: string): number => {
-    return settings.todaBaseFares[todaZoneId] ?? DEFAULT_TODA_BASE_FARE;
+    // Prefer specific TODA base fare, then global default base fare, then hardcoded fallback
+    return settings.todaBaseFares[todaZoneId] ?? settings.defaultBaseFare ?? DEFAULT_TODA_BASE_FARE_FALLBACK;
   };
 
   const contextValue = React.useMemo(() => ({

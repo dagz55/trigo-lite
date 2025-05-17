@@ -19,7 +19,6 @@ export interface TodaZone {
   areaOfOperation: string;
   center: Coordinates;
   radiusKm: number;
-  // baseFare will be managed in AppSettings.todaBaseFares
 }
 
 export interface Trider {
@@ -123,8 +122,10 @@ export interface AppSettings {
   rideRequestIntervalMs: number;
   triderUpdateIntervalMs: number;
   aiInsightIntervalMs: number;
-  convenienceFee: number; // New global convenience fee
+  convenienceFee: number;
   todaBaseFares: Record<string, number>; // Stores baseFare per TODA zone ID
+  defaultBaseFare: number; // New global default base fare
+  perKmCharge: number; // New global charge per KM
 }
 
 export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings> = {

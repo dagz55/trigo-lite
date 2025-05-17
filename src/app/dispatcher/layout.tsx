@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Settings, LayoutDashboard, MapIcon, Users, Siren, CarTaxiFront, LogIn, UserPlus } from 'lucide-react';
+import { Settings, LayoutDashboard, Landmark, Users, Siren, CarTaxiFront, LogIn, UserPlus } from 'lucide-react'; // Changed MapIcon to Landmark
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -77,11 +77,11 @@ export default function DispatcherLayout({ // Renamed from DispatchLayout
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === "/dispatcher/live-map"}>
-                <Link href="#"> {/* Update href when live map page exists */}
+              <SidebarMenuButton asChild isActive={pathname === "/dispatcher/toda-management"}>
+                <Link href="/dispatcher/toda-management"> 
                   <span style={{ display: "contents" }}>
-                    <MapIcon />
-                    <span className="group-data-[collapsible=icon]:hidden">Live Map</span>
+                    <Landmark />
+                    <span className="group-data-[collapsible=icon]:hidden">TODA Zones</span>
                   </span>
                 </Link>
               </SidebarMenuButton>

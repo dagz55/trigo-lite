@@ -13,13 +13,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { isPointInCircle, getRandomPointInCircle, calculateDistance } from '@/lib/geoUtils';
-import { useSettings, DEFAULT_TODA_BASE_FARE } from '@/contexts/SettingsContext'; 
+import { useSettings } from '@/contexts/SettingsContext'; 
 
 const FALLBACK_LAS_PINAS_CENTER: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
-const TALON_KUATRO_ZONE_ID = '2'; // APHDA (Talon Kuatro)
-const TEPTODA_ZONE_ID = '7'; // TEPTODA (Talon Equitable)
-const P1TODA_ZONE_ID = '21'; // P1TODA (Pamplona Uno)
-const FARE_PER_KM = 10;
+const TALON_KUATRO_ZONE_ID = '2'; 
+const TEPTODA_ZONE_ID = '7'; 
+const P1TODA_ZONE_ID = '21'; 
+
 
 const talonKuatroZone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID);
 const teptodaZone = appTodaZones.find(z => z.id === TEPTODA_ZONE_ID);
@@ -107,7 +107,7 @@ const initialRideRequests: RideRequest[] = [
     pickupAddress: `${talonKuatroZone.areaOfOperation} area`, 
     dropoffAddress: 'Alabang Town Center', 
     status: 'pending', 
-    fare: 85.00, // Will be recalculated if settings are used
+    fare: 85.00, 
     requestedAt: new Date(Date.now() - 3 * 60 * 1000),
     pickupTodaZoneId: TALON_KUATRO_ZONE_ID,
     ticketId: `TKT-${Date.now() + 1}`
@@ -120,7 +120,7 @@ const initialRideRequests: RideRequest[] = [
     pickupAddress: `${teptodaZone.areaOfOperation} area`, 
     dropoffAddress: 'Perpetual Help Medical Center', 
     status: 'pending', 
-    fare: 70.00, // Will be recalculated
+    fare: 70.00, 
     requestedAt: new Date(Date.now() - 5 * 60 * 1000),
     pickupTodaZoneId: TEPTODA_ZONE_ID,
     ticketId: `TKT-${Date.now() + 3}`
@@ -134,7 +134,7 @@ const initialRideRequests: RideRequest[] = [
     dropoffAddress: 'Robinsons Place Las Piñas', 
     status: 'assigned', 
     assignedTriderId: initialTriders.find(t => t.todaZoneId === TALON_KUATRO_ZONE_ID && t.status !== 'offline')?.id || initialTriders[0].id,
-    fare: 55.00, // Will be recalculated
+    fare: 55.00, 
     requestedAt: new Date(Date.now() - 8 * 60 * 1000),
     pickupTodaZoneId: TALON_KUATRO_ZONE_ID,
     ticketId: `TKT-${Date.now() + 2}`
@@ -159,8 +159,9 @@ export default function DispatcherPage() {
     triderUpdateIntervalMs,
     aiInsightIntervalMs,
     isLoading: settingsLoading,
-    getTodaBaseFare,
-    convenienceFee
+    getTodaBaseFare, // For TODA-specific base fare or default
+    perKmCharge,     // Global per KM charge
+    convenienceFee   // Global convenience fee
   } = useSettings();
 
   const [triders, setTriders] = React.useState<Trider[]>(initialTriders);
@@ -191,13 +192,13 @@ export default function DispatcherPage() {
   const calculateMockFare = React.useCallback((pickupLoc: Coordinates, dropoffLoc: Coordinates, pickupZoneId: string | null): number => {
     if (!pickupLoc || !dropoffLoc || !pickupZoneId) return 0;
     const distance = calculateDistance(pickupLoc, dropoffLoc);
-    const todaBase = getTodaBaseFare(pickupZoneId);
-    const fare = todaBase + (distance * FARE_PER_KM) + convenienceFee;
+    const todaBase = getTodaBaseFare(pickupZoneId); // Uses SettingsContext: specific TODA fare or defaultBaseFare
+    const fare = todaBase + (distance * perKmCharge) + convenienceFee; // Uses SettingsContext for perKmCharge and convenienceFee
     return parseFloat(fare.toFixed(2));
-  }, [getTodaBaseFare, convenienceFee]);
+  }, [getTodaBaseFare, perKmCharge, convenienceFee]);
 
   React.useEffect(() => {
-    if (settingsLoading) return; // Ensure settings are loaded before recalculating fares
+    if (settingsLoading) return; 
     setRideRequests(prevRequests => 
       prevRequests.map(req => {
         const updatedReq = { ...req };
@@ -382,7 +383,6 @@ export default function DispatcherPage() {
       let chosenRoute = null;
       if (data.routes && data.routes.length > 0) {
         if (data.routes.length > 1) {
-          // Find the route with the shortest distance
           chosenRoute = data.routes.reduce((shortest: any, current: any) => {
             return current.distance < shortest.distance ? current : shortest;
           });
@@ -454,7 +454,7 @@ export default function DispatcherPage() {
           
           const updatedCandidateTriders = triders.filter(t => t.status === 'available' && t.todaZoneId === ridePickupZoneId && t.id !== selectedTrider!.id);
           setCandidateTriders(updatedCandidateTriders);
-          setSelectedTrider(null); // Deselect trider after dispatch
+          setSelectedTrider(null); 
       })
       .catch(() => {
         // Error toast is handled by fetchRouteAndUpdateTrider
@@ -548,4 +548,3 @@ export default function DispatcherPage() {
     </div>
   );
 }
-
