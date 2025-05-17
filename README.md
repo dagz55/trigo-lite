@@ -1,3 +1,4 @@
+
 # TriGo Dispatch Lite - Firebase Studio
 
 This is a Next.js application for TriGo Dispatch Lite, a real-time trider monitoring and dispatching system. Built with Next.js, TypeScript, Tailwind CSS, ShadCN UI components, and Mapbox GL JS.
@@ -9,7 +10,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - TODA (Tricycle Operators and Drivers' Association) zone boundaries displayed on the map.
   - Real-time (mocked) updates for trider locations and incoming ride requests.
   - Selection of triders and ride requests for dispatch.
-  - Route calculation and ETA preview using Mapbox Directions API.
+  - Route calculation (shortest distance among alternatives) and ETA preview using Mapbox Directions API.
   - Manual dispatch functionality (triders can only serve pickups within their assigned TODA zone).
   - Heatmap overlay for ride request density.
   - AI-driven insights and alerts (currently mocked).
@@ -21,25 +22,42 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
     - Status controls (force online/offline, ping trider, suspend/unsuspend).
     - Wallet information: balance, earnings, payout history, recent rides (mocked).
     - Simulated payout functionality.
+    - TODA Zone change request approval/rejection.
   - Dispatcher-to-Trider chat functionality (mocked, UI in place).
 - **Passenger Role Simulation (`/passenger`):**
   - Interface for passengers to request rides.
   - Map view to select pickup and dropoff locations.
-  - Simulation of trider assignment, movement to pickup, and trip to destination.
-  - Displays trider's live location and ETA on the map.
+  - Initial pickup suggestion via geolocation.
+  - "Locate Me" button in pickup input for easy geolocation.
+  - Address input with autocomplete/suggestions using Mapbox Geocoding API.
+  - Simulation of trider assignment, movement to pickup (following Mapbox route), and trip to destination (following Mapbox route).
+  - Displays trider's live location and ETA on the map, with distinct route colors.
+  - Firebase Orange theme accents.
+  - Glassmorphism countdown timer for ETA with visual cues.
+  - Ride Ticket ID display.
+  - Customizable map style (streets, satellite, dark) per passenger, saved in `localStorage`.
 - **Trider Role Simulation (`/trider`):**
   - Dashboard for triders to manage their status (online/offline).
+  - Geolocation on going online to set initial position.
   - View and accept incoming ride requests within their TODA zone.
   - Map view showing current location, active ride details (pickup/dropoff), and route.
   - Simulation of movement to pickup and then to dropoff, following Mapbox routes.
+  - Ability to request a change to a different TODA zone.
 - **Application Settings (`/dispatcher/settings`):**
   - Customizable theme (light, dark, system).
   - Configuration for default map zoom and center coordinates.
   - Toggle for heatmap visibility on the dispatch map.
   - Adjustable intervals for mock data simulation (new rides, trider updates, AI insights).
+  - Configuration for global convenience fee (PIN-protected for demo) and per-TODA base fares.
+- **TODA Zones Management (`/dispatcher/toda-management`):**
+  - Dedicated page to configure the fare matrix.
+  - Set global default base fare and per KM charge.
+  - Override base fares for specific TODA zones.
+  - Placeholders for future TODA/Trider/Passenger CRUD operations.
 - **Authentication:** (Currently Removed)
-  - Authentication was previously handled by Clerk but has been removed.
+  - Authentication was previously handled by Clerk but has been removed for streamlined testing.
   - Sign-in (`/sign-in`) and Sign-up (`/sign-up`) pages are now placeholders, with a role switcher to access demo pages.
+  - The sign-in page also allows selecting a specific TODA zone and passenger profile to launch a tailored demo.
   - Protected routes are currently accessible without login.
 
 ## Getting Started
@@ -114,13 +132,15 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 │   │   │   ├── page.tsx            # Main dispatch dashboard page
 │   │   │   ├── triders/            # Trider management section
 │   │   │   │   └── page.tsx        # Trider management dashboard page
-│   │   │   └── settings/           # Application settings page
-│   │   │       └── page.tsx        # Settings page UI
+│   │   │   ├── settings/           # Application settings page
+│   │   │   │   └── page.tsx        # Settings page UI
+│   │   │   └── toda-management/    # TODA Zone and fare management page
+│   │   │       └── page.tsx        # TODA management UI
 │   │   ├── passenger/              # Passenger role simulation
 │   │   │   └── page.tsx            # Passenger page UI and logic
 │   │   ├── trider/                 # Trider role simulation
 │   │   │   └── page.tsx            # Trider page UI and logic
-│   │   ├── sign-in/                # Placeholder sign-in page with Role Switcher
+│   │   ├── sign-in/                # Placeholder sign-in page with Role Switcher & profile selection
 │   │   ├── sign-up/                # Placeholder sign-up page
 │   │   ├── globals.css             # Global styles and Tailwind directives
 │   │   └── layout.tsx              # Root layout
@@ -132,7 +152,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 │   │   ├── ui/                     # ShadCN UI components (button, card, etc.)
 │   │   └── RoleSwitcher.tsx        # Component for role selection
 │   ├── contexts/                   # React Contexts (e.g., SettingsContext)
-│   ├── data/                       # Static data (e.g., TODA zone definitions)
+│   ├── data/                       # Static data (e.g., TODA zone definitions, mock passenger profiles)
 │   ├── hooks/                      # Custom React hooks
 │   ├── lib/                        # Utility functions and libraries
 │   │   ├── geoUtils.ts             # Geolocation utility functions
@@ -163,3 +183,5 @@ Please refer to contributing guidelines if available. For now, ensure code quali
 ## License
 
 This project is licensed under [Specify License Here - e.g., MIT License].
+
+```

@@ -1,3 +1,4 @@
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -17,11 +18,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Map display of assigned trider's live location (simulated) and ETA.
     - Trider follows Mapbox-calculated route to pickup and dropoff.
     - Distinct route colors for trider-to-pickup and pickup-to-dropoff segments.
+    - Geolocation for initial pickup suggestion.
+    - Address input fields with Mapbox Geocoding API for autocomplete/suggestions.
+    - Neon orange theme accents.
+    - Glassmorphism countdown timer for ETA, with visual cues for final 10 seconds.
+    - Ride Ticket ID display.
+    - Per-passenger map style settings (streets, satellite, dark) saved to localStorage.
+    - "Locate Me" button inside pickup input field to trigger geolocation.
 - **Trider Role Simulation (`/trider`):**
     - UI for trider to go online/offline.
+    - Geolocation on going online to set initial position.
     - View and accept mock ride requests within their TODA zone.
     - Map display of current location, active ride details, and route.
     - Simulation of trider movement along Mapbox-calculated routes.
+    - TODA Zone Change Request feature.
 - **Functional Application Settings Page (`/dispatcher/settings`):**
     - UI for theme selection (light, dark, system).
     - Configuration for default map zoom and center.
@@ -29,15 +39,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Inputs to adjust mock data simulation intervals (new rides, trider updates, AI insights).
     - Settings are saved to and loaded from `localStorage`.
     - Reset to default settings functionality.
+    - Configuration for global convenience fee (PIN-protected for demo) and per-TODA base fares.
+- **TODA Zones Management Page (`/dispatcher/toda-management`):**
+    - New page for managing fare matrix.
+    - Inputs for global default base fare, per KM charge, and convenience fee.
+    - Inputs for overriding base fares for each specific TODA zone.
+    - Placeholder sections for future TODA, Trider-in-TODA, and Passenger CRUD.
 - **Settings Context (`SettingsContext.tsx`):**
     - Manages application settings state.
     - Applies theme changes dynamically.
+    - Manages fare settings (convenience fee, per-TODA base fares, global default base fare, per KM charge).
 - **Role Switcher Component (`RoleSwitcher.tsx`):**
     - Card UI on `/sign-in` page to launch Passenger or Trider roles in new windows.
     - Includes icons and responsive design.
-- **Type Definitions:** Added `PassengerRideState`, `TriderSimState`, `RoutePath` and `AppSettings` to `types/index.ts`.
+    - Dropdowns to select a specific TODA zone and then a specific passenger profile from that zone to launch a tailored demo.
+- **Type Definitions:** Added `PassengerRideState`, `TriderSimState`, `RoutePath`, `AppSettings`, `MockPassengerProfile`, `PassengerSettings` to `types/index.ts`.
 - Updated Mapbox map to default to a 3D perspective (pitch).
 - Updated `next.config.js` to include `placehold.co` in image remote patterns.
+- Added P1TODA (Pamplona Uno) zone and 3 triders for it.
+- Added 5 TEPTODA triders.
+- Refined trider data to focus more on Talon Kuatro, TEPTODA, and P1TODA.
 
 ### Changed
 - Dispatch Dashboard main page is now `/dispatcher`.
@@ -48,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refined trider movement simulation to follow Mapbox route paths more accurately on both Passenger and Trider demo pages.
 - Updated `triders/page.tsx` (Dispatcher view) and `page.tsx` (Dispatcher dashboard) to initialize `currentPath` and `pathIndex` for Trider objects.
 - Toast notifications in Passenger and Trider demo pages are now triggered more safely within `useEffect` hooks dependent on state changes.
+- Mapbox route fetching logic updated to request alternatives and select the route with the shortest distance.
 - `README.md` and `CHANGELOG.md` updated to reflect recent major changes.
 
 ### Fixed
@@ -56,6 +78,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Corrected `TriderList.tsx` `status` check to include all relevant statuses.
 - Minimal middleware function added to `middleware.ts` to resolve Next.js export error after Clerk removal.
 - Explicitly set `reactStrictMode: true` in `next.config.ts`.
+- Fixed `React.Children.only` error in `SidebarMenuButton` by wrapping `Link` children.
+- Resolved `ReferenceError: rs is not defined` in Passenger page countdown logic.
+- Fixed `TypeError: Cannot read properties of undefined (reading 'id')` in Trider page ride request generation.
+- Added accessible `SheetTitle` to mobile sidebar to fix Radix UI warning.
 
 ### Removed
 - **Clerk Authentication:**
@@ -97,3 +123,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ensured map layers (route, TODA zones, labels, heatmap) use correctly resolved color values from CSS variables.
 - Placeholder middleware (prior to Clerk removal).
 
+```
