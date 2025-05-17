@@ -81,9 +81,10 @@ export default function PassengerPage() {
     defaultMapCenter, 
     defaultMapZoom, 
     isLoading: settingsLoading, 
-    getTodaBaseFare, 
+    defaultBaseFare,
     convenienceFee,
-    perKmCharge 
+    perKmCharge,
+    getTodaBaseFare
   } = useGeneralSettings();
   const { toast } = useToast();
 
@@ -131,6 +132,8 @@ export default function PassengerPage() {
   const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(FIREBASE_ORANGE_HSL_STRING);
 
   const mapRef = React.useRef<MapRef | null>(null);
+  const hasShownArrivedAtPickupToast = React.useRef(false);
+  const hasShownRideCompletedToast = React.useRef(false);
 
   const getTodaZoneForLocation = React.useCallback((location: Coordinates): TodaZone | null => {
     for (const zone of appTodaZones) {
@@ -168,12 +171,12 @@ export default function PassengerPage() {
           }
           setRideState(prev => ({ ...prev, pickupLocation: coords, pickupAddress: address, status: 'selectingDropoff', pickupTodaZoneId: pickupZone?.id || null }));
           setPickupInput(address);
-          handleStatusToast("Current Location Set as Pickup", `Zone: ${pickupZone?.name || 'N/A'}. Now select dropoff.`);
+          toast({ title: "Current Location Set as Pickup", description: `Zone: ${pickupZone?.name || 'N/A'}. Now select dropoff.` });
         } catch (error) {
           console.error("Error reverse geocoding:", error);
           setRideState(prev => ({ ...prev, pickupLocation: coords, pickupAddress: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`, status: 'selectingDropoff', pickupTodaZoneId: pickupZone?.id || null }));
           setPickupInput(`${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`);
-          handleStatusToast("Current Location Set as Pickup", `Using coordinates (Zone: ${pickupZone?.name || 'N/A'}). Now select dropoff.`);
+          toast({ title: "Current Location Set as Pickup", description: `Using coordinates (Zone: ${pickupZone?.name || 'N/A'}). Now select dropoff.` });
         } finally {
            setViewState(prev => ({ ...prev, ...coords, zoom: 15 }));
            setIsGeolocating(false);
@@ -187,7 +190,7 @@ export default function PassengerPage() {
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
-  }, [getTodaZoneForLocation, handleStatusToast, toast]);
+  }, [getTodaZoneForLocation, toast]);
 
   React.useEffect(() => {
     try {
@@ -235,10 +238,10 @@ export default function PassengerPage() {
     if (loadedPassengerProfile && !settingsLoading) { 
         const passengerZone = appTodaZones.find(z => z.id === loadedPassengerProfile.todaZoneId);
         if (passengerZone) {
-             handleStatusToast(`Welcome, ${loadedPassengerProfile.name}!`, `Starting in ${passengerZone.name}. Select your dropoff.`);
+             toast({ title: `Welcome, ${loadedPassengerProfile.name}!`, description: `Starting in ${passengerZone.name}. Select your dropoff.` });
         }
     }
-  }, [loadedPassengerProfile, settingsLoading, handleStatusToast]);
+  }, [loadedPassengerProfile, settingsLoading, toast]);
 
 
   React.useEffect(() => {
@@ -260,7 +263,7 @@ export default function PassengerPage() {
     if (loadedPassengerProfile) {
       try {
         localStorage.setItem(`passengerSettings_${loadedPassengerProfile.id}`, JSON.stringify(currentPassengerSettings));
-        handleStatusToast("Settings Saved (Simulation)", "Your preferences have been saved for this demo session.");
+        toast({ title: "Settings Saved (Simulation)", description: "Your preferences have been saved for this demo session." });
       } catch (error) {
         console.error("Error saving passenger settings to localStorage:", error);
         toast({ title: "Save Error", description: "Could not save settings.", variant: "destructive" });
@@ -273,10 +276,10 @@ export default function PassengerPage() {
   const calculateEstimatedFare = React.useCallback((pickupLoc: Coordinates, dropoffLoc: Coordinates, pickupZoneId: string | null): number => {
     if (!pickupLoc || !dropoffLoc || !pickupZoneId) return 0;
     const distance = calculateDistance(pickupLoc, dropoffLoc);
-    const todaSpecificBaseFare = getTodaBaseFare(pickupZoneId); 
-    const fare = todaSpecificBaseFare + (distance * perKmCharge) + convenienceFee;
+    const base = getTodaBaseFare(pickupZoneId) || defaultBaseFare; 
+    const fare = base + (distance * perKmCharge) + convenienceFee;
     return parseFloat(fare.toFixed(2));
-  }, [getTodaBaseFare, perKmCharge, convenienceFee]);
+  }, [getTodaBaseFare, defaultBaseFare, perKmCharge, convenienceFee]);
 
 
   React.useEffect(() => {
@@ -348,8 +351,8 @@ export default function PassengerPage() {
              countdownSeconds: null // No active countdown yet
            }));
         }
-        if (showToastFeedback && routeType !== 'confirmation') {
-          // Toast for route update can be added here if needed
+        if (showToastFeedback && routeType !== 'confirmation' && chosenRoute) {
+           toast({ title: `Route Updated (${routeType === 'triderToPickup' ? 'To Pickup' : 'To Dropoff'})`, description: `ETA: ${formatCountdown(durationSeconds)}`});
         }
         return routeGeometry;
       } else {
@@ -364,7 +367,7 @@ export default function PassengerPage() {
     return null;
   }, [MAPBOX_TOKEN, toast]);
 
-
+  // Trider Movement Simulation
   React.useEffect(() => {
     let moveIntervalId: NodeJS.Timeout;
     if (
@@ -390,11 +393,9 @@ export default function PassengerPage() {
             setRideState(prev => ({ ...prev, countdownSeconds: 0 })); 
 
             if (rideState.status === 'triderAssigned' && rideState.pickupLocation && rideState.dropoffLocation) {
-              handleStatusToast("Trider Arrived for Pickup!", `${rideState.assignedTrider?.name} is here. Heading to destination.`);
               setRideState(prev => ({ ...prev, status: 'inProgress', currentTriderPathIndex: 0, triderToPickupPath: null }));
               fetchRoute(rideState.pickupLocation, rideState.dropoffLocation, 'pickupToDropoff', true);
             } else if (rideState.status === 'inProgress') {
-              handleStatusToast("Ride Completed!", `You've arrived. Thank you for using TriGo, ${rideState.passengerName}!`);
               setRideState(prev => ({ ...prev, status: 'completed', pickupToDropoffPath: null }));
             }
             return targetLocation; 
@@ -419,11 +420,30 @@ export default function PassengerPage() {
     rideState.currentTriderPathIndex,
     rideState.pickupLocation,
     rideState.dropoffLocation,
-    rideState.assignedTrider,
-    rideState.passengerName,
-    handleStatusToast,
-    fetchRoute
+    fetchRoute // Removed rideState.assignedTrider, rideState.passengerName as they are not direct dependencies for movement logic
   ]);
+
+  // Toast for "Trider Arrived for Pickup"
+  React.useEffect(() => {
+    if (rideState.status === 'inProgress' && rideState.assignedTrider && !hasShownArrivedAtPickupToast.current) {
+      handleStatusToast("Trider Arrived for Pickup!", `${rideState.assignedTrider.name} is here. Heading to destination.`);
+      hasShownArrivedAtPickupToast.current = true;
+    }
+    if (rideState.status === 'idle' || rideState.status === 'cancelled' || rideState.currentRideId !== rideState.assignedTrider?.id) { // Reset if new ride or cancelled
+        hasShownArrivedAtPickupToast.current = false;
+    }
+  }, [rideState.status, rideState.assignedTrider, rideState.currentRideId, handleStatusToast]);
+
+  // Toast for "Ride Completed"
+  React.useEffect(() => {
+    if (rideState.status === 'completed' && rideState.passengerName && !hasShownRideCompletedToast.current) {
+      handleStatusToast("Ride Completed!", `You've arrived. Thank you for using TriGo, ${rideState.passengerName}!`);
+      hasShownRideCompletedToast.current = true;
+    }
+     if (rideState.status === 'idle' || rideState.status === 'cancelled' || rideState.currentRideId === null) { // Reset if new ride or cancelled
+        hasShownRideCompletedToast.current = false;
+    }
+  }, [rideState.status, rideState.passengerName, rideState.currentRideId, handleStatusToast]);
 
 
   const getRouteDuration = React.useCallback(async (start: Coordinates, end: Coordinates): Promise<number | null> => {
@@ -458,7 +478,7 @@ export default function PassengerPage() {
         const atDestinationOfSegment = currentPath && rideState.currentTriderPathIndex !== undefined && rideState.currentTriderPathIndex >= currentPath.coordinates.length - 1;
 
         if (atDestinationOfSegment) { 
-            setIsRefreshingEta(false);
+            setIsRefreshingEta(false); // Stop refreshing if arrived
             return;
         }
 
@@ -475,7 +495,7 @@ export default function PassengerPage() {
                                    ((prev.status === 'triderAssigned' && prev.triderToPickupPath && prev.currentTriderPathIndex < prev.triderToPickupPath.coordinates.length -1) ||
                                    (prev.status === 'inProgress' && prev.pickupToDropoffPath && prev.currentTriderPathIndex < prev.pickupToDropoffPath.coordinates.length -1));
 
-              if(stillEnRoute) {
+              if(stillEnRoute) { // Only update if still en route and not yet at final point of current segment
                 return {
                   ...prev,
                   estimatedDurationSeconds: newDuration,
@@ -492,7 +512,7 @@ export default function PassengerPage() {
 
     return () => {
       clearInterval(etaRefreshIntervalId);
-      if (isRefreshingEta) setIsRefreshingEta(false); 
+      if (isRefreshingEta) setIsRefreshingEta(false); // Clean up on unmount or dependency change
     };
   }, [
     rideState.status,
@@ -539,7 +559,7 @@ export default function PassengerPage() {
       setRideState(prev => ({ ...prev, pickupLocation: location, pickupAddress: suggestion.place_name, status: prev.dropoffLocation ? 'confirmingRide' : 'selectingDropoff', pickupTodaZoneId: selectedZone?.id || null }));
       setPickupInput(suggestion.place_name);
       setPickupSuggestions([]);
-      handleStatusToast("Pickup Set", `Zone: ${selectedZone?.name || 'N/A'}. Now select dropoff.`);
+      toast({ title: "Pickup Set", description: `Zone: ${selectedZone?.name || 'N/A'}. Now select dropoff.` });
       if (rideState.dropoffLocation) {
         const fare = calculateEstimatedFare(location, rideState.dropoffLocation, selectedZone?.id || null);
         fetchRoute(location, rideState.dropoffLocation, 'confirmation', false);
@@ -549,7 +569,7 @@ export default function PassengerPage() {
       setRideState(prev => ({ ...prev, dropoffLocation: location, dropoffAddress: suggestion.place_name, status: prev.pickupLocation ? 'confirmingRide' : 'selectingDropoff' }));
       setDropoffInput(suggestion.place_name);
       setDropoffSuggestions([]);
-      handleStatusToast("Dropoff Set", "Review details and confirm.");
+      toast({ title: "Dropoff Set", description: "Review details and confirm." });
       if (rideState.pickupLocation) {
         const fare = calculateEstimatedFare(rideState.pickupLocation, location, rideState.pickupTodaZoneId);
         fetchRoute(rideState.pickupLocation, location, 'confirmation', false);
@@ -571,7 +591,7 @@ export default function PassengerPage() {
       setRideState(prev => ({ ...prev, status: 'selectingDropoff', pickupLocation: newLocation, pickupAddress: newAddress, pickupTodaZoneId: clickedZone?.id || null }));
       setPickupInput(newAddress);
       setPickupSuggestions([]);
-      handleStatusToast("Pickup Set by Map Click", `Zone: ${clickedZone?.name || 'N/A'}. Now select your dropoff location.`);
+      toast({ title: "Pickup Set by Map Click", description: `Zone: ${clickedZone?.name || 'N/A'}. Now select your dropoff location.` });
        if (rideState.dropoffLocation) {
          const fare = calculateEstimatedFare(newLocation, rideState.dropoffLocation, clickedZone?.id || null);
          fetchRoute(newLocation, rideState.dropoffLocation, 'confirmation', false);
@@ -584,7 +604,7 @@ export default function PassengerPage() {
       setDropoffInput(newAddress);
       setDropoffSuggestions([]);
       if(rideState.pickupLocation) fetchRoute(rideState.pickupLocation, newLocation, 'confirmation', false);
-      handleStatusToast("Dropoff Set by Map Click", "Confirm your ride details.");
+      toast({ title: "Dropoff Set by Map Click", description: "Confirm your ride details." });
     }
   };
 
@@ -605,7 +625,7 @@ export default function PassengerPage() {
     }
 
     setRideState(prev => ({ ...prev, status: 'searching', currentRideId: `TKT-${Date.now()}`, currentTriderPathIndex: 0 }));
-    handleStatusToast("Searching for Trider...", `We're finding a TriGo for you in ${passengerPickupZone.name}.`);
+    toast({ title: "Searching for Trider...", description: `We're finding a TriGo for you in ${passengerPickupZone.name}.` });
 
     setTimeout(async () => {
       const availableTridersInZone = mockTridersForDemo.filter(t => t.todaZoneId === rideState.pickupTodaZoneId || t.todaZoneId === TALON_KUATRO_ZONE_ID); 
@@ -620,11 +640,9 @@ export default function PassengerPage() {
       setTriderSimLocation(randomTrider.location); 
       if(rideState.pickupLocation) {
         const path = await fetchRoute(randomTrider.location, rideState.pickupLocation, 'triderToPickup', true);
-        if (path && rideState.estimatedDurationSeconds !== null) {
-          // Duration is set by fetchRoute, countdown starts automatically
-        }
+        // Duration and countdown are set by fetchRoute's setRideState call
       }
-      handleStatusToast("Trider Found!", `${randomTrider.name} (${randomTrider.todaZoneName}) is on the way.`);
+      toast({ title: "Trider Found!", description: `${randomTrider.name} (${randomTrider.todaZoneName}) is on the way.` });
     }, 3000);
   };
 
@@ -643,18 +661,19 @@ export default function PassengerPage() {
     setPickupSuggestions([]);
     setDropoffSuggestions([]);
     setActiveSuggestionBox(null);
+    hasShownArrivedAtPickupToast.current = false; // Reset toast flags
+    hasShownRideCompletedToast.current = false;
     toast({ title: "Ride Cancelled" });
     if (loadedPassengerProfile) {
         const passengerZone = appTodaZones.find(z => z.id === loadedPassengerProfile.todaZoneId);
         if (passengerZone) {
             setViewState(prev => ({ ...prev, ...passengerZone.center, zoom: 15 }));
-             // If resetting, re-suggest initial pickup if a profile was loaded
             const initialPickupLocation = getRandomPointInCircle(passengerZone.center, passengerZone.radiusKm * 0.2);
             setRideState(prev => ({
                 ...prev,
                 pickupLocation: initialPickupLocation,
                 pickupAddress: `${passengerZone.name} area (suggested)`,
-                status: 'selectingDropoff', // Back to selecting dropoff
+                status: 'selectingDropoff', 
                 pickupTodaZoneId: passengerZone.id,
             }));
             setPickupInput(`${passengerZone.name} area (suggested)`);
@@ -753,7 +772,7 @@ export default function PassengerPage() {
                       onChange={(e) => { setPickupInput(e.target.value); handleGeocodeSearch(e.target.value, 'pickup'); }}
                       onFocus={() => setActiveSuggestionBox('pickup')}
                       disabled={isGeolocating || (rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff')}
-                      className="pr-10" // Add padding for the button
+                      className="pr-10" 
                     />
                     <Button 
                       type="button"
@@ -929,4 +948,3 @@ export default function PassengerPage() {
     </div>
   );
 }
-

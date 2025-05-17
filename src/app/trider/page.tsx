@@ -71,6 +71,7 @@ export default function TriderPage() {
   const [isGeolocating, setIsGeolocating] = React.useState(false);
   const [routeColor, setRouteColor] = React.useState('hsl(var(--accent))');
   const mapRefTrider = React.useRef<MapRef | null>(null);
+  const [lastToastRideId, setLastToastRideId] = React.useState<string | null>(null);
 
 
   React.useEffect(() => {
@@ -98,7 +99,7 @@ export default function TriderPage() {
         ...prev,
         longitude: triderState.currentLocation.longitude,
         latitude: triderState.currentLocation.latitude,
-        zoom: defaultMapZoom + 2, // Slightly more zoomed in for trider view
+        zoom: defaultMapZoom + 2, 
       }));
     }
   }, [triderState.currentLocation, defaultMapZoom, settingsLoading]);
@@ -134,7 +135,7 @@ export default function TriderPage() {
         const randomDropoffZone = appTodaZones[randomDropoffZoneIndex];
 
         if (!randomDropoffZone) {
-            console.error("Failed to select a random dropoff zone (this should not happen if appTodaZones is not empty). Skipping ride generation.");
+            console.error("Failed to select a random dropoff zone. Skipping ride generation.");
             return;
         }
         
@@ -149,20 +150,19 @@ export default function TriderPage() {
             pickupAddress: `Near ${currentTriderZone.name}`,
             dropoffAddress: `Near ${randomDropoffZone.name}`,
             status: 'pending',
-            fare: calculateDistance(pickupLocation, dropoffLocation) * 20 + 30, // Example fare
+            fare: calculateDistance(pickupLocation, dropoffLocation) * 20 + 30, 
             requestedAt: new Date(),
-            pickupTodaZoneId: currentTriderZone.id, // Safe: currentTriderZone is confirmed to exist
+            pickupTodaZoneId: currentTriderZone.id, 
         };
 
         setTriderState(prev => ({
             ...prev,
-            // Filter out any potentially undefined or malformed existing requests before adding new one
             availableRideRequests: [newRide, ...prev.availableRideRequests.filter(r => r && r.id).slice(0, 4)],
         }));
     };
 
     if (triderState.status === 'onlineAvailable') {
-        requestIntervalId = setInterval(generateRideRequest, 15000); // Mock new request every 15s
+        requestIntervalId = setInterval(generateRideRequest, 15000); 
     }
     
     return () => {
@@ -170,16 +170,20 @@ export default function TriderPage() {
             clearInterval(requestIntervalId);
         }
     };
-  }, [triderState.status, triderProfile]); // triderProfile is now a dependency
+  }, [triderState.status, triderProfile]); 
   
   React.useEffect(() => {
     if(triderState.status === 'onlineAvailable' && triderState.availableRideRequests.length > 0) {
         const latestRequest = triderState.availableRideRequests[0];
-        if (latestRequest && typeof latestRequest.pickupTodaZoneId === 'string' && latestRequest.pickupTodaZoneId === triderProfile.todaZoneId) {
+        if (latestRequest && latestRequest.id !== lastToastRideId && typeof latestRequest.pickupTodaZoneId === 'string' && latestRequest.pickupTodaZoneId === triderProfile.todaZoneId) {
           handleStatusToast("New Ride Request!", `From ${latestRequest.pickupAddress || 'N/A'} to ${latestRequest.dropoffAddress || 'N/A'}`);
+          setLastToastRideId(latestRequest.id);
         }
     }
-  }, [triderState.status, triderState.availableRideRequests, triderProfile.todaZoneId, handleStatusToast]);
+    if (triderState.status === 'offline' || triderState.activeRideRequest) {
+        setLastToastRideId(null); // Reset if trider goes offline or accepts a ride
+    }
+  }, [triderState.status, triderState.availableRideRequests, triderProfile.todaZoneId, handleStatusToast, lastToastRideId]);
 
 
   React.useEffect(() => {
@@ -200,8 +204,10 @@ export default function TriderPage() {
             setTriderProfile(p => ({...p, location: newLocation}));
             return { ...prev, currentLocation: newLocation, currentPathIndex: nextIdx };
           } else { 
-             let newStatus = prev.status;
-            return { ...prev, currentLocation: targetLocation, currentPathIndex: prev.currentPath.coordinates.length -1, status: newStatus };
+             // Reached end of path, update location to exact target
+             setTriderProfile(p => ({...p, location: targetLocation}));
+             // Status update and other logic will be handled by handlePickedUp/handleCompleteRide
+             return { ...prev, currentLocation: targetLocation, currentPathIndex: prev.currentPath.coordinates.length -1 };
           }
         });
       }, 2000); 
@@ -554,4 +560,3 @@ export default function TriderPage() {
     </div>
   );
 }
-
