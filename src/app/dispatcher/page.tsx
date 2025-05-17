@@ -373,13 +373,24 @@ export default function DispatcherPage() {
     }
     setIsFetchingRoute(true);
     const coordinatesString = `${trider.location.longitude},${trider.location.latitude};${pickup.longitude},${pickup.latitude};${dropoff.longitude},${dropoff.latitude}`;
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?steps=true&geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?steps=true&geometries=geojson&overview=full&alternatives=true&access_token=${MAPBOX_TOKEN}`;
 
     try {
       const response = await fetch(url);
       const data = await response.json();
+
+      let chosenRoute = null;
       if (data.routes && data.routes.length > 0) {
-        const routeGeometry = data.routes[0].geometry;
+        if (data.routes.length > 1) {
+          // Find the route with the shortest distance
+          chosenRoute = data.routes.reduce((shortest: any, current: any) => {
+            return current.distance < shortest.distance ? current : shortest;
+          });
+        } else {
+          chosenRoute = data.routes[0];
+        }
+
+        const routeGeometry = chosenRoute.geometry;
         setRouteGeoJson({
           type: 'FeatureCollection',
           features: [{ type: 'Feature', properties: {}, geometry: routeGeometry }]
@@ -387,15 +398,15 @@ export default function DispatcherPage() {
         
         const triderToPickupPath: RoutePath = {
             type: "LineString",
-            coordinates: data.routes[0].legs[0].steps.flatMap((step: any) => step.geometry.coordinates)
+            coordinates: chosenRoute.legs[0].steps.flatMap((step: any) => step.geometry.coordinates)
         };
 
         setTriders(prev => prev.map(t => t.id === trider.id ? { ...t, currentPath: triderToPickupPath, pathIndex: 0 } : t));
         setSelectedTrider(prev => prev && prev.id === trider.id ? { ...prev, currentPath: triderToPickupPath, pathIndex: 0 } : prev);
 
-        const durationMinutes = Math.round(data.routes[0].duration / 60);
-        const distanceKm = (data.routes[0].distance / 1000).toFixed(1);
-        toast({ title: "Route Calculated", description: `ETA: ${durationMinutes} mins, Distance: ${distanceKm} km.` });
+        const durationMinutes = Math.round(chosenRoute.duration / 60);
+        const distanceKm = (chosenRoute.distance / 1000).toFixed(1);
+        toast({ title: "Route Calculated (Shortest Distance)", description: `ETA: ${durationMinutes} mins, Distance: ${distanceKm} km.` });
       } else {
         toast({ title: "Route Error", description: data.message || "Could not calculate route.", variant: "destructive" });
         setRouteGeoJson(null);
@@ -537,3 +548,4 @@ export default function DispatcherPage() {
     </div>
   );
 }
+

@@ -330,13 +330,23 @@ export default function PassengerPage() {
   const fetchRoute = async (start: Coordinates, end: Coordinates, routeType: 'triderToPickup' | 'pickupToDropoff' | 'confirmation', showToastFeedback: boolean = true) => {
     if (!MAPBOX_TOKEN) return;
     const coordinatesString = `${start.longitude},${start.latitude};${end.longitude},${end.latitude}`;
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?steps=true&geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?steps=true&geometries=geojson&overview=full&alternatives=true&access_token=${MAPBOX_TOKEN}`;
     try {
       const response = await fetch(url);
       const data = await response.json();
+      
+      let chosenRoute = null;
       if (data.routes && data.routes.length > 0) {
-        const routeGeometry: RoutePath = data.routes[0].geometry;
-        const durationSeconds = Math.round(data.routes[0].duration);
+        if (data.routes.length > 1) {
+          chosenRoute = data.routes.reduce((shortest: any, current: any) => 
+            current.distance < shortest.distance ? current : shortest
+          );
+        } else {
+          chosenRoute = data.routes[0];
+        }
+
+        const routeGeometry: RoutePath = chosenRoute.geometry;
+        const durationSeconds = Math.round(chosenRoute.duration);
         
         if (routeType === 'triderToPickup') {
           setRideState(prev => ({ ...prev, triderToPickupPath: routeGeometry, pickupToDropoffPath: null, estimatedDurationSeconds: durationSeconds, countdownSeconds: durationSeconds }));
@@ -345,6 +355,10 @@ export default function PassengerPage() {
         } else if (routeType === 'confirmation') {
            setRideState(prev => ({ ...prev, pickupToDropoffPath: routeGeometry, triderToPickupPath: null, estimatedDurationSeconds: durationSeconds, countdownSeconds: null }));
         }
+        if (showToastFeedback && routeType !== 'confirmation') {
+          toast({ title: "Route Updated", description: `Using shortest distance route.` });
+        }
+
       } else {
         setRideState(prev => ({ ...prev, triderToPickupPath: null, pickupToDropoffPath: null, estimatedDurationSeconds: null, countdownSeconds: null }));
         if (showToastFeedback) toast({title: "Route Not Found", description: "Could not calculate route for the selected points.", variant: "destructive"});
@@ -753,3 +767,4 @@ export default function PassengerPage() {
     </div>
   );
 }
+

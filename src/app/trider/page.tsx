@@ -218,13 +218,23 @@ export default function TriderPage() {
   const fetchAndSetRoute = async (start: Coordinates, end: Coordinates) => {
     if (!MAPBOX_TOKEN) return null;
     const coordinatesString = `${start.longitude},${start.latitude};${end.longitude},${end.latitude}`;
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?steps=true&geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?steps=true&geometries=geojson&overview=full&alternatives=true&access_token=${MAPBOX_TOKEN}`;
     try {
       const response = await fetch(url);
       const data = await response.json();
+      
+      let chosenRoute = null;
       if (data.routes && data.routes.length > 0) {
-        const path: RoutePath = data.routes[0].geometry;
+        if (data.routes.length > 1) {
+          chosenRoute = data.routes.reduce((shortest: any, current: any) => 
+            current.distance < shortest.distance ? current : shortest
+          );
+        } else {
+          chosenRoute = data.routes[0];
+        }
+        const path: RoutePath = chosenRoute.geometry;
         setTriderState(prev => ({ ...prev, currentPath: path, currentPathIndex: 0 }));
+        // toast({ title: "Route Updated", description: `Using shortest distance route for trider.` });
         return path;
       }
     } catch (error) {
@@ -512,3 +522,4 @@ export default function TriderPage() {
     </div>
   );
 }
+
