@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -10,7 +11,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet" // Added SheetTitle
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -46,6 +47,25 @@ function useSidebar() {
 
   return context
 }
+
+// VisuallyHidden component for accessibility
+const VisuallyHidden: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span style={{
+    border: 0,
+    clip: 'rect(0 0 0 0)',
+    height: '1px',
+    margin: '-1px',
+    overflow: 'hidden',
+    padding: 0,
+    position: 'absolute',
+    width: '1px',
+    whiteSpace: 'nowrap',
+    wordWrap: 'normal',
+  }}>
+    {children}
+  </span>
+);
+
 
 const SidebarProvider = React.forwardRef<
   HTMLDivElement,
@@ -206,6 +226,9 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
+            <VisuallyHidden>
+              <SheetTitle>Main Menu</SheetTitle>
+            </VisuallyHidden>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
