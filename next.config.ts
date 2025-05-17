@@ -1,6 +1,7 @@
 
 import type {NextConfig} from 'next';
 
+// Configuration for Next.js
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   typescript: {
