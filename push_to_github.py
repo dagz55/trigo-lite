@@ -216,7 +216,9 @@ def main():
             sys.exit(1)
 
 
-    # Summary Table
+    
+
+# Summary Table
     console.print("\n[bold underline]Push Summary[/bold underline]")
     summary_table = Table(title_style="bold", header_style="bold cyan")
     summary_table.add_column("Item", style="dim")
