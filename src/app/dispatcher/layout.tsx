@@ -18,6 +18,7 @@ import { Settings, LayoutDashboard, Landmark, Users, Siren, CarTaxiFront, LogIn,
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { SheetTitle } from "@/components/ui/sheet"; // Ensure SheetTitle is imported
 
 // TriGo Logo SVG
 const TriGoLogo = () => (
@@ -36,7 +37,7 @@ const TriGoAlertLogo = () => (
 );
 
 
-export default function DispatcherLayout({ // Renamed from DispatchLayout
+export default function DispatcherLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -151,7 +152,11 @@ export default function DispatcherLayout({ // Renamed from DispatchLayout
       </Sidebar>
       <SidebarInset className="flex flex-col">
          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2 md:hidden">
-          <SidebarTrigger />
+          <SidebarTrigger>
+            <VisuallyHidden>
+                <SheetTitle>Mobile Menu</SheetTitle>
+            </VisuallyHidden>
+          </SidebarTrigger>
            <div className="flex items-center gap-2">
             <TriGoLogo />
             <h1 className="text-lg font-semibold text-primary">TriGo Dispatch</h1>
@@ -177,3 +182,21 @@ export default function DispatcherLayout({ // Renamed from DispatchLayout
     </SidebarProvider>
   );
 }
+
+// VisuallyHidden component for accessibility
+const VisuallyHidden: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span style={{
+    border: 0,
+    clip: 'rect(0 0 0 0)',
+    height: '1px',
+    margin: '-1px',
+    overflow: 'hidden',
+    padding: 0,
+    position: 'absolute',
+    width: '1px',
+    whiteSpace: 'nowrap',
+    wordWrap: 'normal',
+  }}>
+    {children}
+  </span>
+);
