@@ -14,11 +14,30 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Settings, LayoutDashboard, Landmark, Users, Siren, CarTaxiFront, LogIn, UserPlus } from 'lucide-react'; // Ensured Landmark icon
+import { 
+  Settings, 
+  LayoutDashboard, 
+  Landmark, 
+  Users, 
+  Siren, 
+  CarTaxiFront, 
+  LogIn, 
+  UserPlus,
+  MessagesSquare, // Added
+  Wallet,         // Added
+  MoreHorizontal  // Added
+} from 'lucide-react';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { SheetTitle } from "@/components/ui/sheet"; // Ensure SheetTitle is imported
+import { SheetTitle } from "@/components/ui/sheet"; 
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu"; // Added
 
 // TriGo Logo SVG
 const TriGoLogo = () => (
@@ -36,7 +55,7 @@ const TriGoAlertLogo = () => (
   <Siren className="text-destructive" />
 );
 
-// VisuallyHidden component for accessibility (if not already globally available or imported)
+// VisuallyHidden component for accessibility
 const VisuallyHidden: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span style={{
     border: 0,
@@ -98,15 +117,15 @@ export default function DispatcherLayout({
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/toda-management"}>
                 <Link href="/dispatcher/toda-management"> 
                   <span style={{ display: "contents" }}>
-                    <Landmark /> {/* Corrected Icon */}
-                    <span className="group-data-[collapsible=icon]:hidden">TODA Zones</span> {/* Corrected Label */}
+                    <Landmark /> 
+                    <span className="group-data-[collapsible=icon]:hidden">TODA Zones</span> 
                   </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/alerts"}>
-                <Link href="#"> {/* Update href when alerts page exists */}
+                <Link href="#"> 
                   <span style={{ display: "contents" }}>
                     <TriGoAlertLogo /> 
                     <span className="group-data-[collapsible=icon]:hidden">Alerts</span>
@@ -114,6 +133,60 @@ export default function DispatcherLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            
+            {/* New Menu Items Below Alerts */}
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/dispatcher/channels"}>
+                <Link href="#"> 
+                  <span style={{ display: "contents" }}>
+                    <MessagesSquare /> 
+                    <span className="group-data-[collapsible=icon]:hidden">Channels</span>
+                  </span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === "/dispatcher/wallet"}>
+                <Link href="#"> 
+                  <span style={{ display: "contents" }}>
+                    <Wallet /> 
+                    <span className="group-data-[collapsible=icon]:hidden">Wallet</span>
+                  </span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton isActive={false} className="w-full">
+                     <span style={{ display: "contents" }}>
+                        <MoreHorizontal />
+                        <span className="group-data-[collapsible=icon]:hidden">More Options</span>
+                      </span>
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="start" className="w-48 ml-2 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:mt-2">
+                  <DropdownMenuItem>
+                     {/* <User className="mr-2 h-4 w-4" /> */}
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                     {/* <CreditCard className="mr-2 h-4 w-4" /> */}
+                    <span>Billing</span>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem>
+                    {/* <HelpCircle className="mr-2 h-4 w-4" /> */}
+                    <span>Help Center</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    {/* <LogOutIcon className="mr-2 h-4 w-4" /> */}
+                    <span>Logout (Simulated)</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-2">
@@ -170,7 +243,6 @@ export default function DispatcherLayout({
       <SidebarInset className="flex flex-col">
          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2 md:hidden">
           <SidebarTrigger>
-            {/* Added VisuallyHidden SheetTitle for mobile menu trigger accessibility */}
             <VisuallyHidden>
                 <SheetTitle>Mobile Navigation Menu</SheetTitle>
             </VisuallyHidden>
