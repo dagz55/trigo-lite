@@ -6,18 +6,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Eye, AlertCircle } from 'lucide-react';
+import { MessageCircle, Eye, AlertCircle, ArrowDown, ArrowUp, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import * as React from 'react';
 
 interface TridersTableProps {
   triders: TriderProfile[];
   selectedTriderId: string | null;
   onSelectTrider: (trider: TriderProfile) => void;
   onOpenChat: (trider: TriderProfile) => void;
-  todaZones: TodaZone[]; // Pass all TODA zones for resolving names
+  todaZones: TodaZone[]; 
+}
+
+type SortKey = 'name' | 'todaZoneName' | 'status';
+type SortDirection = 'ascending' | 'descending';
+
+interface SortConfig {
+  key: SortKey;
+  direction: SortDirection;
 }
 
 const statusColors: Record<TriderProfile['status'], string> = {
@@ -30,6 +39,42 @@ const statusColors: Record<TriderProfile['status'], string> = {
 };
 
 export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpenChat, todaZones }: TridersTableProps) {
+  const [sortConfig, setSortConfig] = React.useState<SortConfig | null>(null);
+
+  const sortedTriders = React.useMemo(() => {
+    let sortableItems = [...triders];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const valA = a[sortConfig.key] || ''; 
+        const valB = b[sortConfig.key] || '';
+
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [triders, sortConfig]);
+
+  const requestSort = (key: SortKey) => {
+    let direction: SortDirection = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key: SortKey) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending' ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
+
   if (!triders || triders.length === 0) {
     return (
       <Card className="h-full">
@@ -47,22 +92,40 @@ export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpen
     <TooltipProvider>
       <Card className="h-full flex flex-col">
         <CardHeader>
-          <CardTitle>Triders List ({triders.length})</CardTitle>
+          <CardTitle>Triders List ({sortedTriders.length})</CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex-grow overflow-hidden">
           <ScrollArea className="h-full">
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden md:table-cell">TODA Zone</TableHead>
+                  <TableHead onClick={() => requestSort('name')} className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center">Name {getSortIndicator('name')}</div>
+                  </TableHead>
+                  <TableHead onClick={() => requestSort('todaZoneName')} className="hidden md:table-cell cursor-pointer hover:bg-muted/50 transition-colors">
+                     <div className="flex items-center">TODA Zone {getSortIndicator('todaZoneName')}</div>
+                  </TableHead>
                   <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead onClick={() => requestSort('status')} className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center">Status {getSortIndicator('status')}</div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center">
+                      Actions
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Quick actions for each trider: Chat & View Details.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {triders.map((trider) => {
+                {sortedTriders.map((trider) => {
                   const requestedZoneName = trider.requestedTodaZoneId 
                     ? todaZones.find(z => z.id === trider.requestedTodaZoneId)?.name 
                     : null;
@@ -122,25 +185,35 @@ export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpen
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={(e) => { e.stopPropagation(); onOpenChat(trider); }}
-                            aria-label={`Chat with ${trider.name}`}
-                            disabled={trider.status === 'offline' || trider.status === 'suspended'}
-                            className="h-8 w-8"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                           <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={(e) => { e.stopPropagation(); onSelectTrider(trider); }}
-                            aria-label={`View details for ${trider.name}`}
-                            className="h-8 w-8"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={(e) => { e.stopPropagation(); onOpenChat(trider); }}
+                                aria-label={`Chat with ${trider.name}`}
+                                disabled={trider.status === 'offline' || trider.status === 'suspended'}
+                                className="h-8 w-8"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Chat</p></TooltipContent>
+                          </Tooltip>
+                           <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={(e) => { e.stopPropagation(); onSelectTrider(trider); }}
+                                aria-label={`View details for ${trider.name}`}
+                                className="h-8 w-8"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>View Details</p></TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
