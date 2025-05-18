@@ -10,10 +10,11 @@ import type { Trider, RideRequest, AiInsight, Coordinates, TodaZone, RoutePath }
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from 'lucide-react';
+import { Loader2, ListChecks, Map } from 'lucide-react'; // Added ListChecks and Map icons
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { isPointInCircle, getRandomPointInCircle, calculateDistance } from '@/lib/geoUtils';
 import { useSettings } from '@/contexts/SettingsContext'; 
+import { cn } from '@/lib/utils';
 
 const FALLBACK_LAS_PINAS_CENTER: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
 const TALON_KUATRO_ZONE_ID = '2'; 
@@ -150,6 +151,8 @@ const initialAiInsights: AiInsight[] = [
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
+type ActiveView = 'control' | 'map';
+
 export default function DispatcherPage() {
   const { 
     defaultMapZoom, 
@@ -159,9 +162,9 @@ export default function DispatcherPage() {
     triderUpdateIntervalMs,
     aiInsightIntervalMs,
     isLoading: settingsLoading,
-    getTodaBaseFare, // For TODA-specific base fare or default
-    perKmCharge,     // Global per KM charge
-    convenienceFee   // Global convenience fee
+    getTodaBaseFare, 
+    perKmCharge,     
+    convenienceFee   
   } = useSettings();
 
   const [triders, setTriders] = React.useState<Trider[]>(initialTriders);
@@ -176,6 +179,8 @@ export default function DispatcherPage() {
   const [heatmapData, setHeatmapData] = React.useState<GeoJSON.FeatureCollection | null>(null);
   const [isFetchingRoute, setIsFetchingRoute] = React.useState(false);
   const [candidateTriders, setCandidateTriders] = React.useState<Trider[]>(initialTriders.filter(t => t.status === 'available'));
+
+  const [activeView, setActiveView] = React.useState<ActiveView>('control');
 
 
   const { toast } = useToast();
@@ -192,8 +197,8 @@ export default function DispatcherPage() {
   const calculateMockFare = React.useCallback((pickupLoc: Coordinates, dropoffLoc: Coordinates, pickupZoneId: string | null): number => {
     if (!pickupLoc || !dropoffLoc || !pickupZoneId) return 0;
     const distance = calculateDistance(pickupLoc, dropoffLoc);
-    const todaBase = getTodaBaseFare(pickupZoneId); // Uses SettingsContext: specific TODA fare or defaultBaseFare
-    const fare = todaBase + (distance * perKmCharge) + convenienceFee; // Uses SettingsContext for perKmCharge and convenienceFee
+    const todaBase = getTodaBaseFare(pickupZoneId); 
+    const fare = todaBase + (distance * perKmCharge) + convenienceFee; 
     return parseFloat(fare.toFixed(2));
   }, [getTodaBaseFare, perKmCharge, convenienceFee]);
 
@@ -484,66 +489,95 @@ export default function DispatcherPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-var(--header-height,0px))] md:h-screen">
-      <div className="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 overflow-hidden">
-        <div className="lg:col-span-1 flex flex-col gap-4 overflow-y-auto h-full max-h-[calc(100vh-2rem)] lg:max-h-full">
-          <Card className="flex-shrink-0">
-            <CardHeader>
-              <CardTitle className="text-lg">Dispatch Control</CardTitle>
-              <CardDescription>Select a ride and an available trider from the same TODA zone to dispatch. All data is mocked.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {selectedRideRequest && <p className="text-sm mb-1">Ride: <span className="font-medium">{selectedRideRequest.passengerName}</span> (Zone: {todaZones.find(z=>z.id === selectedRideRequest.pickupTodaZoneId)?.name || 'N/A'})</p>}
-              {selectedTrider && <p className="text-sm mb-2">Trider: <span className="font-medium">{selectedTrider.name}</span> ({selectedTrider.status}, Zone: {selectedTrider.todaZoneName})</p>}
-              {!selectedRideRequest && !selectedTrider && <p className="text-sm text-muted-foreground">No ride or trider selected.</p>}
-            </CardContent>
-            <CardFooter>
-              <Button 
-                onClick={handleDispatchRide} 
-                disabled={isDispatchDisabled}
-                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-              >
-                {isFetchingRoute && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Dispatch Ride
-              </Button>
-            </CardFooter>
-          </Card>
+    <div className="flex flex-col h-[calc(100vh-var(--header-height,0px))] md:h-screen p-4">
+      <div className="mb-4 p-1 rounded-md bg-card border border-border inline-flex">
+        <Button
+          variant="ghost"
+          onClick={() => setActiveView('control')}
+          className={cn(
+            "flex-1 justify-center px-4 py-2 text-sm font-medium rounded-sm",
+            activeView === 'control' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <ListChecks className="mr-2 h-4 w-4" />
+          Dispatch Control
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => setActiveView('map')}
+          className={cn(
+            "flex-1 justify-center px-4 py-2 text-sm font-medium rounded-sm",
+            activeView === 'map' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <Map className="mr-2 h-4 w-4" />
+          Map View
+        </Button>
+      </div>
 
-          <div className="flex-grow min-h-[200px]">
-            <TriderList 
-              triders={selectedRideRequest ? candidateTriders : triders.filter(t => t.status === 'available')}
-              selectedTriderId={selectedTrider?.id || null}
-              onSelectTrider={handleSelectTrider} 
-            />
+      <div className="flex-grow grid grid-cols-1 overflow-hidden">
+        {activeView === 'control' && (
+          <div className="flex flex-col gap-4 overflow-y-auto h-full">
+            <Card className="flex-shrink-0">
+              <CardHeader>
+                <CardTitle className="text-lg">Dispatch Control</CardTitle>
+                <CardDescription>Select a ride and an available trider from the same TODA zone to dispatch. All data is mocked.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedRideRequest && <p className="text-sm mb-1">Ride: <span className="font-medium">{selectedRideRequest.passengerName}</span> (Zone: {todaZones.find(z=>z.id === selectedRideRequest.pickupTodaZoneId)?.name || 'N/A'})</p>}
+                {selectedTrider && <p className="text-sm mb-2">Trider: <span className="font-medium">{selectedTrider.name}</span> ({selectedTrider.status}, Zone: {selectedTrider.todaZoneName})</p>}
+                {!selectedRideRequest && !selectedTrider && <p className="text-sm text-muted-foreground">No ride or trider selected.</p>}
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  onClick={handleDispatchRide} 
+                  disabled={isDispatchDisabled}
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                >
+                  {isFetchingRoute && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Dispatch Ride
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <div className="flex-grow min-h-[200px]">
+              <TriderList 
+                triders={selectedRideRequest ? candidateTriders : triders.filter(t => t.status === 'available')}
+                selectedTriderId={selectedTrider?.id || null}
+                onSelectTrider={handleSelectTrider} 
+              />
+            </div>
+            <div className="flex-grow min-h-[200px]">
+              <RideRequestList 
+                rideRequests={rideRequests} 
+                selectedRideRequestId={selectedRideRequest?.id || null}
+                onSelectRideRequest={handleSelectRideRequest}
+                todaZones={todaZones}
+              />
+            </div>
+            <div className="flex-grow min-h-[150px]">
+               <AiInsights insights={aiInsights} />
+            </div>
           </div>
-          <div className="flex-grow min-h-[200px]">
-            <RideRequestList 
-              rideRequests={rideRequests} 
-              selectedRideRequestId={selectedRideRequest?.id || null}
+        )}
+
+        {activeView === 'map' && (
+          <div className="h-full min-h-[400px] rounded-lg overflow-hidden shadow-lg border">
+            <MapboxMap
+              initialViewState={mapInitialViewState}
+              triders={triders}
+              rideRequests={rideRequests}
+              selectedTrider={selectedTrider}
+              onSelectTrider={handleSelectTrider}
+              selectedRideRequest={selectedRideRequest}
               onSelectRideRequest={handleSelectRideRequest}
+              routeGeoJson={routeGeoJson}
+              heatmapData={heatmapData}
               todaZones={todaZones}
+              showHeatmap={showHeatmap}
             />
           </div>
-          <div className="flex-grow min-h-[150px]">
-             <AiInsights insights={aiInsights} />
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 h-full min-h-[400px] lg:min-h-0 rounded-lg overflow-hidden shadow-lg border">
-          <MapboxMap
-            initialViewState={mapInitialViewState}
-            triders={triders}
-            rideRequests={rideRequests}
-            selectedTrider={selectedTrider}
-            onSelectTrider={handleSelectTrider}
-            selectedRideRequest={selectedRideRequest}
-            onSelectRideRequest={handleSelectRideRequest}
-            routeGeoJson={routeGeoJson}
-            heatmapData={heatmapData}
-            todaZones={todaZones}
-            showHeatmap={showHeatmap}
-          />
-        </div>
+        )}
       </div>
     </div>
   );
