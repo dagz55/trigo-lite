@@ -148,7 +148,8 @@ export interface PassengerRideState {
   currentTriderPathIndex?: number; 
   pickupTodaZoneId: string | null;
   countdownSeconds: number | null;
-  estimatedDurationSeconds: number | null; 
+  estimatedDurationSeconds: number | null;
+  completionTime?: Date; 
 }
 
 export type TriderRideStatus = 'onlineAvailable' | 'onlineBusyEnRouteToPickup' | 'onlineBusyEnRouteToDropoff' | 'offline';

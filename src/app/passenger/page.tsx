@@ -29,6 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RideReceiptDialog } from '@/components/passenger/RideReceiptDialog'; // Import the new component
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2'; 
@@ -81,10 +82,9 @@ export default function PassengerPage() {
     defaultMapCenter, 
     defaultMapZoom, 
     isLoading: settingsLoading, 
-    defaultBaseFare,
+    getTodaBaseFare, // Use this from settings
     convenienceFee,
     perKmCharge,
-    getTodaBaseFare
   } = useGeneralSettings();
   const { toast } = useToast();
 
@@ -116,6 +116,7 @@ export default function PassengerPage() {
     pickupTodaZoneId: null,
     countdownSeconds: null,
     estimatedDurationSeconds: null,
+    completionTime: undefined,
   });
 
   const [triderSimLocation, setTriderSimLocation] = React.useState<Coordinates | null>(null);
@@ -131,9 +132,35 @@ export default function PassengerPage() {
   const [triderToPickupRouteColor, setTriderToPickupRouteColor] = React.useState('hsl(var(--accent))'); 
   const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(FIREBASE_ORANGE_HSL_STRING);
 
+  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = React.useState(false);
+  const [completedRideDetails, setCompletedRideDetails] = React.useState<PassengerRideState | null>(null);
+
+
   const mapRef = React.useRef<MapRef | null>(null);
   const hasShownArrivedAtPickupToast = React.useRef(false);
   const hasShownRideCompletedToast = React.useRef(false);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+        const computedStyles = getComputedStyle(document.documentElement);
+        const parseHsl = (hslString: string) => {
+            const parts = hslString.split(' ').map(p => p.trim());
+            if (parts.length === 3 && !hslString.startsWith('hsl(')) {
+                const h = parts[0];
+                const s = parts[1].endsWith('%') ? parts[1] : `${parts[1]}%`;
+                const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`;
+                return `hsl(${h}, ${s}, ${l})`;
+            }
+            return hslString;
+        };
+        const accentColorVar = computedStyles.getPropertyValue('--accent').trim();
+        setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'green');
+        
+        // Firebase Orange is already defined as a constant, but if you wanted it from CSS:
+        // const primaryColorVar = computedStyles.getPropertyValue('--primary').trim(); 
+        // setPickupToDropoffRouteColor(primaryColorVar ? parseHsl(primaryColorVar) : FIREBASE_ORANGE_HSL_STRING);
+    }
+  }, []);
 
   const getTodaZoneForLocation = React.useCallback((location: Coordinates): TodaZone | null => {
     for (const zone of appTodaZones) {
@@ -276,10 +303,10 @@ export default function PassengerPage() {
   const calculateEstimatedFare = React.useCallback((pickupLoc: Coordinates, dropoffLoc: Coordinates, pickupZoneId: string | null): number => {
     if (!pickupLoc || !dropoffLoc || !pickupZoneId) return 0;
     const distance = calculateDistance(pickupLoc, dropoffLoc);
-    const base = getTodaBaseFare(pickupZoneId) || defaultBaseFare; 
+    const base = getTodaBaseFare(pickupZoneId); 
     const fare = base + (distance * perKmCharge) + convenienceFee;
     return parseFloat(fare.toFixed(2));
-  }, [getTodaBaseFare, defaultBaseFare, perKmCharge, convenienceFee]);
+  }, [getTodaBaseFare, perKmCharge, convenienceFee]);
 
 
   React.useEffect(() => {
@@ -330,7 +357,7 @@ export default function PassengerPage() {
           setRideState(prev => ({
             ...prev,
             triderToPickupPath: routeGeometry,
-            pickupToDropoffPath: null, // Clear other path
+            pickupToDropoffPath: null, 
             estimatedDurationSeconds: durationSeconds,
             countdownSeconds: durationSeconds
           }));
@@ -338,17 +365,17 @@ export default function PassengerPage() {
           setRideState(prev => ({
             ...prev,
             pickupToDropoffPath: routeGeometry,
-            triderToPickupPath: null, // Clear other path
+            triderToPickupPath: null, 
             estimatedDurationSeconds: durationSeconds,
             countdownSeconds: durationSeconds
           }));
         } else if (routeType === 'confirmation') {
            setRideState(prev => ({
              ...prev,
-             pickupToDropoffPath: routeGeometry, // Show this for confirmation
+             pickupToDropoffPath: routeGeometry, 
              triderToPickupPath: null,
              estimatedDurationSeconds: durationSeconds,
-             countdownSeconds: null // No active countdown yet
+             countdownSeconds: null 
            }));
         }
         if (showToastFeedback && routeType !== 'confirmation' && chosenRoute) {
@@ -367,7 +394,6 @@ export default function PassengerPage() {
     return null;
   }, [MAPBOX_TOKEN, toast]);
 
-  // Trider Movement Simulation
   React.useEffect(() => {
     let moveIntervalId: NodeJS.Timeout;
     if (
@@ -385,18 +411,22 @@ export default function PassengerPage() {
           if (!currentPath || !targetLocation || rideState.currentTriderPathIndex === undefined) {
             return prevLoc;
           }
-
+          
           const atDestinationOfSegment = rideState.currentTriderPathIndex >= currentPath.coordinates.length - 1;
 
           if (atDestinationOfSegment) {
             clearInterval(moveIntervalId);
-            setRideState(prev => ({ ...prev, countdownSeconds: 0 })); 
+            setRideState(prev => ({ ...prev, countdownSeconds: 0 }));
 
             if (rideState.status === 'triderAssigned' && rideState.pickupLocation && rideState.dropoffLocation) {
               setRideState(prev => ({ ...prev, status: 'inProgress', currentTriderPathIndex: 0, triderToPickupPath: null }));
               fetchRoute(rideState.pickupLocation, rideState.dropoffLocation, 'pickupToDropoff', true);
             } else if (rideState.status === 'inProgress') {
-              setRideState(prev => ({ ...prev, status: 'completed', pickupToDropoffPath: null }));
+              const now = new Date();
+              setRideState(prev => ({ ...prev, status: 'completed', pickupToDropoffPath: null, completionTime: now }));
+              setCompletedRideDetails(prev => ({...rideState, status: 'completed', completionTime: now})); // Capture current state for receipt
+              setIsReceiptDialogOpen(true);
+              console.log("Simulating: Ride completed. Receipt data to save:", {...rideState, status: 'completed', completionTime: now});
             }
             return targetLocation; 
           }
@@ -420,30 +450,23 @@ export default function PassengerPage() {
     rideState.currentTriderPathIndex,
     rideState.pickupLocation,
     rideState.dropoffLocation,
-    fetchRoute // Removed rideState.assignedTrider, rideState.passengerName as they are not direct dependencies for movement logic
+    fetchRoute,
+    rideState // Added rideState to dependencies to ensure completedRideDetails gets fresh data
   ]);
 
-  // Toast for "Trider Arrived for Pickup"
   React.useEffect(() => {
     if (rideState.status === 'inProgress' && rideState.assignedTrider && !hasShownArrivedAtPickupToast.current) {
       handleStatusToast("Trider Arrived for Pickup!", `${rideState.assignedTrider.name} is here. Heading to destination.`);
       hasShownArrivedAtPickupToast.current = true;
     }
-    if (rideState.status === 'idle' || rideState.status === 'cancelled' || rideState.currentRideId !== rideState.assignedTrider?.id) { // Reset if new ride or cancelled
-        hasShownArrivedAtPickupToast.current = false;
-    }
-  }, [rideState.status, rideState.assignedTrider, rideState.currentRideId, handleStatusToast]);
+  }, [rideState.status, rideState.assignedTrider, handleStatusToast]);
 
-  // Toast for "Ride Completed"
   React.useEffect(() => {
     if (rideState.status === 'completed' && rideState.passengerName && !hasShownRideCompletedToast.current) {
       handleStatusToast("Ride Completed!", `You've arrived. Thank you for using TriGo, ${rideState.passengerName}!`);
       hasShownRideCompletedToast.current = true;
     }
-     if (rideState.status === 'idle' || rideState.status === 'cancelled' || rideState.currentRideId === null) { // Reset if new ride or cancelled
-        hasShownRideCompletedToast.current = false;
-    }
-  }, [rideState.status, rideState.passengerName, rideState.currentRideId, handleStatusToast]);
+  }, [rideState.status, rideState.passengerName, handleStatusToast]);
 
 
   const getRouteDuration = React.useCallback(async (start: Coordinates, end: Coordinates): Promise<number | null> => {
@@ -478,7 +501,7 @@ export default function PassengerPage() {
         const atDestinationOfSegment = currentPath && rideState.currentTriderPathIndex !== undefined && rideState.currentTriderPathIndex >= currentPath.coordinates.length - 1;
 
         if (atDestinationOfSegment) { 
-            setIsRefreshingEta(false); // Stop refreshing if arrived
+            setIsRefreshingEta(false); 
             return;
         }
 
@@ -495,7 +518,7 @@ export default function PassengerPage() {
                                    ((prev.status === 'triderAssigned' && prev.triderToPickupPath && prev.currentTriderPathIndex < prev.triderToPickupPath.coordinates.length -1) ||
                                    (prev.status === 'inProgress' && prev.pickupToDropoffPath && prev.currentTriderPathIndex < prev.pickupToDropoffPath.coordinates.length -1));
 
-              if(stillEnRoute) { // Only update if still en route and not yet at final point of current segment
+              if(stillEnRoute) { 
                 return {
                   ...prev,
                   estimatedDurationSeconds: newDuration,
@@ -512,7 +535,7 @@ export default function PassengerPage() {
 
     return () => {
       clearInterval(etaRefreshIntervalId);
-      if (isRefreshingEta) setIsRefreshingEta(false); // Clean up on unmount or dependency change
+      if (isRefreshingEta) setIsRefreshingEta(false); 
     };
   }, [
     rideState.status,
@@ -640,7 +663,6 @@ export default function PassengerPage() {
       setTriderSimLocation(randomTrider.location); 
       if(rideState.pickupLocation) {
         const path = await fetchRoute(randomTrider.location, rideState.pickupLocation, 'triderToPickup', true);
-        // Duration and countdown are set by fetchRoute's setRideState call
       }
       toast({ title: "Trider Found!", description: `${randomTrider.name} (${randomTrider.todaZoneName}) is on the way.` });
     }, 3000);
@@ -653,7 +675,7 @@ export default function PassengerPage() {
       pickupLocation: null, dropoffLocation: null, pickupAddress: '', dropoffAddress: '',
       estimatedFare: null, assignedTrider: null, currentRideId: null,
       triderToPickupPath: null, pickupToDropoffPath: null, currentTriderPathIndex: 0, pickupTodaZoneId: null,
-      countdownSeconds: null, estimatedDurationSeconds: null,
+      countdownSeconds: null, estimatedDurationSeconds: null, completionTime: undefined,
     });
     setTriderSimLocation(null);
     setPickupInput('');
@@ -661,8 +683,10 @@ export default function PassengerPage() {
     setPickupSuggestions([]);
     setDropoffSuggestions([]);
     setActiveSuggestionBox(null);
-    hasShownArrivedAtPickupToast.current = false; // Reset toast flags
+    hasShownArrivedAtPickupToast.current = false; 
     hasShownRideCompletedToast.current = false;
+    setIsReceiptDialogOpen(false);
+    setCompletedRideDetails(null);
     toast({ title: "Ride Cancelled" });
     if (loadedPassengerProfile) {
         const passengerZone = appTodaZones.find(z => z.id === loadedPassengerProfile.todaZoneId);
@@ -683,7 +707,11 @@ export default function PassengerPage() {
     }
   }, [loadedPassengerProfile, performGeolocation, toast]);
   
-  const handleNewRide = () => handleCancelRide(); 
+  const handleNewRide = () => {
+    setIsReceiptDialogOpen(false); // Ensure receipt dialog is closed
+    setCompletedRideDetails(null);
+    handleCancelRide(); 
+  }
 
   const formatCountdown = (seconds: number | null): string => {
     if (seconds === null || seconds < 0) return "00:00";
@@ -945,6 +973,11 @@ export default function PassengerPage() {
           </Map>
         </div>
       </div>
+      <RideReceiptDialog 
+        isOpen={isReceiptDialogOpen} 
+        onOpenChange={setIsReceiptDialogOpen} 
+        rideDetails={completedRideDetails} 
+      />
     </div>
   );
 }
