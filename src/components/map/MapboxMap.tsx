@@ -16,7 +16,7 @@ const FALLBACK_LATITUDE = 14.4445;
 const FALLBACK_ZOOM = 12.5; 
 
 interface MapboxMapProps {
-  initialViewState?: Partial<ViewState>; // This will come from settings or page defaults
+  initialViewState?: Partial<ViewState>; 
   triders: Trider[];
   rideRequests: RideRequest[];
   selectedTrider: Trider | null;
@@ -26,7 +26,7 @@ interface MapboxMapProps {
   routeGeoJson: GeoJSON.FeatureCollection | null;
   heatmapData: GeoJSON.FeatureCollection | null;
   todaZones: TodaZone[];
-  showHeatmap: boolean; // Controlled by settings
+  showHeatmap: boolean; 
 }
 
 const triderStatusColors: Record<Trider['status'], string> = {
@@ -62,16 +62,15 @@ export function MapboxMap({
     longitude: initialViewState?.longitude ?? FALLBACK_LONGITUDE,
     latitude: initialViewState?.latitude ?? FALLBACK_LATITUDE,
     zoom: initialViewState?.zoom ?? FALLBACK_ZOOM,
-    pitch: 45, // Default pitch for 3D view
-    bearing: 0, // Default bearing
-    ...initialViewState, // Apply any other settings from initialViewState
+    pitch: 45, 
+    bearing: 0, 
+    ...initialViewState, 
   });
   
-  // Update viewState if initialViewState prop changes (e.g., from settings context)
   React.useEffect(() => {
     if (initialViewState) {
       setViewState(prev => ({
-        ...prev, // Keep pitch, bearing etc. unless overridden
+        ...prev, 
         longitude: initialViewState.longitude ?? prev.longitude,
         latitude: initialViewState.latitude ?? prev.latitude,
         zoom: initialViewState.zoom ?? prev.zoom,
@@ -89,9 +88,9 @@ export function MapboxMap({
 
   const mapRef = React.useRef<MapRef>(null);
   
-  const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(180, 100%, 25.1%)'); 
-  const [resolvedForegroundColor, setResolvedForegroundColor] = React.useState<string>('hsl(240, 10%, 3.9%)');
-  const [resolvedBackgroundColor, setResolvedBackgroundColor] = React.useState<string>('hsl(0, 0%, 94.1%)');
+  const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(90, 90%, 50%)'); // Default to lime green
+  const [resolvedForegroundColor, setResolvedForegroundColor] = React.useState<string>('hsl(210, 20%, 88%)'); // Default to light gray
+  const [resolvedBackgroundColor, setResolvedBackgroundColor] = React.useState<string>('hsl(220, 13%, 7%)'); // Default to dark gray
 
   const parseHslString = (hslString: string): string => {
     const parts = hslString.split(' ').map(p => p.trim());
@@ -113,15 +112,15 @@ export function MapboxMap({
       const computedStyles = getComputedStyle(document.documentElement);
       
       const primaryColorVar = computedStyles.getPropertyValue('--primary').trim();
-      setResolvedPrimaryColor(primaryColorVar ? parseHslString(primaryColorVar) : 'teal');
+      setResolvedPrimaryColor(primaryColorVar ? parseHslString(primaryColorVar) : 'hsl(90, 90%, 50%)');
 
       const foregroundColorVar = computedStyles.getPropertyValue('--foreground').trim();
-      setResolvedForegroundColor(foregroundColorVar ? parseHslString(foregroundColorVar) : '#0A0A0A');
+      setResolvedForegroundColor(foregroundColorVar ? parseHslString(foregroundColorVar) : 'hsl(210, 20%, 88%)');
 
       const backgroundColorVar = computedStyles.getPropertyValue('--background').trim();
-      setResolvedBackgroundColor(backgroundColorVar ? parseHslString(backgroundColorVar) : '#F0F0F0');
+      setResolvedBackgroundColor(backgroundColorVar ? parseHslString(backgroundColorVar) : 'hsl(220, 13%, 7%)');
     }
-  }, []);
+  }, []); // This effect runs once on mount. If theme changes, CSS vars change, but these states don't re-run unless theme is a dep.
 
   const handleTriderClick = (trider: Trider) => {
     onSelectTrider(trider);
@@ -167,15 +166,24 @@ export function MapboxMap({
     };
   }, [todaZones]);
 
-  if (!MAPBOX_TOKEN) {
-    return (
-      <div className="flex items-center justify-center h-full bg-muted text-destructive">
-        Mapbox Access Token is missing. Please configure NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN.
-      </div>
-    );
-  }
+  const todaZoneLabelFeatures: GeoJSON.FeatureCollection<GeoJSON.Point> = React.useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: todaZones.map(zone => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [zone.center.longitude, zone.center.latitude]
+        },
+        properties: {
+          name: zone.name
+        }
+      }))
+    };
+  }, [todaZones]);
 
-  const routeLayer: any = {
+
+  const routeLayer: any = React.useMemo(() => ({
     id: 'route',
     type: 'line',
     source: 'route',
@@ -188,9 +196,9 @@ export function MapboxMap({
       'line-width': 6,
       'line-opacity': 0.8,
     },
-  };
+  }), [resolvedPrimaryColor]);
   
-  const heatmapLayer: any = {
+  const heatmapLayer: any = { // Heatmap layer definition is static, colors are predefined
     id: 'heatmap',
     type: 'heatmap',
     source: 'heatmap-data',
@@ -214,17 +222,18 @@ export function MapboxMap({
     }
   };
 
-  const todaZoneLayer: any = {
+  const todaZoneLayer: any = React.useMemo(() => ({
     id: 'toda-zones',
     type: 'fill',
     source: 'toda-zones-source',
     paint: {
       'fill-color': resolvedPrimaryColor,
-      'fill-opacity': 0.1,
+      'fill-opacity': 0.2, // Increased opacity
       'fill-outline-color': resolvedPrimaryColor,
     }
-  };
-   const todaZoneLabelLayer: any = {
+  }), [resolvedPrimaryColor]);
+
+  const todaZoneLabelLayer: any = React.useMemo(() => ({
     id: 'toda-zone-labels',
     type: 'symbol',
     source: 'toda-zones-labels-source', 
@@ -238,26 +247,18 @@ export function MapboxMap({
     paint: {
       'text-color': resolvedForegroundColor,
       'text-halo-color': resolvedBackgroundColor,
-      'text-halo-width': 1,
+      'text-halo-width': 1.5, // Increased halo width
     }
-  };
+  }), [resolvedForegroundColor, resolvedBackgroundColor]);
 
-  const todaZoneLabelFeatures: GeoJSON.FeatureCollection<GeoJSON.Point> = React.useMemo(() => {
-    return {
-      type: 'FeatureCollection',
-      features: todaZones.map(zone => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [zone.center.longitude, zone.center.latitude]
-        },
-        properties: {
-          name: zone.name
-        }
-      }))
-    };
-  }, [todaZones]);
 
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="flex items-center justify-center h-full bg-muted text-destructive">
+        Mapbox Access Token is missing. Please configure NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN.
+      </div>
+    );
+  }
 
   return (
     <Map
@@ -274,11 +275,9 @@ export function MapboxMap({
       <ScaleControl />
 
       <Source id="toda-zones-source" type="geojson" data={todaZoneFeatures}>
-        {/* @ts-ignore LayerProps type mismatch */}
         <Layer {...todaZoneLayer} />
       </Source>
       <Source id="toda-zones-labels-source" type="geojson" data={todaZoneLabelFeatures}>
-        {/* @ts-ignore LayerProps type mismatch */}
         <Layer {...todaZoneLabelLayer} />
       </Source>
 
@@ -344,14 +343,12 @@ export function MapboxMap({
 
       {routeGeoJson && (
         <Source id="route" type="geojson" data={routeGeoJson}>
-           {/* @ts-ignore LayerProps type mismatch */}
           <Layer {...routeLayer} />
         </Source>
       )}
 
       {showHeatmap && heatmapData && (
          <Source id="heatmap-data" type="geojson" data={heatmapData}>
-          {/* @ts-ignore LayerProps type mismatch */}
           <Layer {...heatmapLayer} />
         </Source>
       )}
