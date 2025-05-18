@@ -9,44 +9,48 @@ body {
 
 @layer base {
   :root {
-    /* Dark theme based on the provided image */
+    /* Dark theme based on the previous image, with updated primary/accent */
     --background: 220 13% 7%; /* Very dark gray/blueish: #0F1114 */
     --foreground: 210 20% 88%; /* Light gray/off-white: #D9DEE3 */
     --card: 220 13% 11%; /* Darker content background: #1A1D21 */
     --card-foreground: 210 20% 88%; /* Light gray/off-white */
     --popover: 220 13% 9%; /* Slightly darker popover: #14171A */
     --popover-foreground: 210 20% 88%;
-    --primary: 217 91% 60%; /* Blue accent (like "Request Feature" button): #3B82F6 */
-    --primary-foreground: 210 20% 98%; /* White for primary button text */
+    
+    --primary: 90 90% 50%;            /* Vibrant Lime Green for buttons */
+    --primary-foreground: 90 90% 10%; /* Very Dark Green for text on lime buttons */
+    
     --secondary: 220 13% 18%; /* Lighter dark gray for secondary elements/borders: #2A2F36 */
     --secondary-foreground: 210 20% 88%;
     --muted: 220 13% 22%; /* Muted dark gray: #333940 */
     --muted-foreground: 210 15% 60%; /* Softer gray for muted text: #8C96A3 */
-    --accent: 217 91% 60%; /* Using primary blue as accent for now */
-    --accent-foreground: 210 20% 98%;
+    
+    --accent: 90 90% 50%;             /* Vibrant Lime Green for accent buttons/elements */
+    --accent-foreground: 90 90% 10%;  /* Very Dark Green for text on lime accent */
+    
     --destructive: 0 72% 51%; /* Red for destructive actions */
     --destructive-foreground: 0 0% 98%;
     --border: 220 13% 18%; /* #2A2F36 */
     --input: 220 13% 14%; /* Darker input background: #1F2328 */
-    --ring: 217 91% 65%; /* Slightly lighter blue for rings */
+    --ring: 90 90% 55%; /* Slightly lighter lime for rings */
     --radius: 0.5rem;
 
     /* Chart colors - can be adjusted if charts are used extensively */
-    --chart-1: 217 91% 60%;
+    --chart-1: 90 90% 50%; /* Lime */
     --chart-2: 180 70% 45%; /* Teal as a secondary chart color */
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-3: 30 80% 55%;  /* Orange */
+    --chart-4: 280 65% 60%; /* Purple */
+    --chart-5: 340 75% 55%; /* Pink/Red */
 
     /* Sidebar specific theme variables using the new dark theme */
     --sidebar-background: 220 13% 9%; /* #14171A */
     --sidebar-foreground: 210 20% 88%; /* #D9DEE3 */
-    --sidebar-primary: 217 91% 60%; /* Blue */
-    --sidebar-primary-foreground: 210 20% 98%; /* White */
-    --sidebar-accent: 220 13% 18%; /* #2A2F36 for hover/active items */
+    --sidebar-primary: 90 90% 50%; /* Lime, for consistency if primary elements are in sidebar */
+    --sidebar-primary-foreground: 90 90% 10%; 
+    --sidebar-accent: 220 13% 22%; /* Muted dark gray for hover/active items #333940 */
     --sidebar-accent-foreground: 210 20% 98%; /* White text on accent */
     --sidebar-border: 220 13% 14%; /* #1F2328 */
-    --sidebar-ring: 217 91% 65%; /* Blue for ring */
+    --sidebar-ring: 90 90% 55%; /* Lime for ring */
   }
 
   /* Remove the .dark class specific overrides as this is now the default */
@@ -94,7 +98,7 @@ body {
    background-color: hsl(var(--card)) !important;
 }
 .mapboxgl-ctrl button span {
-  color: hsl(var(--foreground)) !important; /* For icon color if it's a span */
+  /* Defaulting to Mapbox's icon color, can be overridden if needed */
 }
 
 .mapboxgl-ctrl button:not(:disabled):hover {
@@ -115,3 +119,4 @@ body {
 .mapboxgl-ctrl-geocoder--suggestion:hover {
   background-color: hsl(var(--muted)) !important;
 }
+
