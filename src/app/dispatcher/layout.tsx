@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Settings, LayoutDashboard, Landmark, Users, Siren, CarTaxiFront, LogIn, UserPlus } from 'lucide-react'; // Changed MapIcon to Landmark
+import { Settings, LayoutDashboard, Landmark, Users, Siren, CarTaxiFront, LogIn, UserPlus } from 'lucide-react'; // Ensured Landmark icon
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,23 @@ const TriGoAlertLogo = () => (
   <Siren className="text-destructive" />
 );
 
+// VisuallyHidden component for accessibility (if not already globally available or imported)
+const VisuallyHidden: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span style={{
+    border: 0,
+    clip: 'rect(0 0 0 0)',
+    height: '1px',
+    margin: '-1px',
+    overflow: 'hidden',
+    padding: 0,
+    position: 'absolute',
+    width: '1px',
+    whiteSpace: 'nowrap',
+    wordWrap: 'normal',
+  }}>
+    {children}
+  </span>
+);
 
 export default function DispatcherLayout({
   children,
@@ -81,8 +98,8 @@ export default function DispatcherLayout({
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/toda-management"}>
                 <Link href="/dispatcher/toda-management"> 
                   <span style={{ display: "contents" }}>
-                    <Landmark />
-                    <span className="group-data-[collapsible=icon]:hidden">TODA Zones</span>
+                    <Landmark /> {/* Corrected Icon */}
+                    <span className="group-data-[collapsible=icon]:hidden">TODA Zones</span> {/* Corrected Label */}
                   </span>
                 </Link>
               </SidebarMenuButton>
@@ -153,8 +170,9 @@ export default function DispatcherLayout({
       <SidebarInset className="flex flex-col">
          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2 md:hidden">
           <SidebarTrigger>
+            {/* Added VisuallyHidden SheetTitle for mobile menu trigger accessibility */}
             <VisuallyHidden>
-                <SheetTitle>Mobile Menu</SheetTitle>
+                <SheetTitle>Mobile Navigation Menu</SheetTitle>
             </VisuallyHidden>
           </SidebarTrigger>
            <div className="flex items-center gap-2">
@@ -182,21 +200,3 @@ export default function DispatcherLayout({
     </SidebarProvider>
   );
 }
-
-// VisuallyHidden component for accessibility
-const VisuallyHidden: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span style={{
-    border: 0,
-    clip: 'rect(0 0 0 0)',
-    height: '1px',
-    margin: '-1px',
-    overflow: 'hidden',
-    padding: 0,
-    position: 'absolute',
-    width: '1px',
-    whiteSpace: 'nowrap',
-    wordWrap: 'normal',
-  }}>
-    {children}
-  </span>
-);
