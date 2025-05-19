@@ -25,10 +25,14 @@ import {
   UserPlus,
   MessagesSquare,
   Wallet,
-  MoreHorizontal
+  MoreHorizontal,
+  UserCircle,
+  CreditCard,
+  HelpCircle as HelpCircleIcon, // Renamed to avoid conflict with a potential local variable
+  LogOut as LogOutIcon
 } from 'lucide-react';
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SheetTitle } from "@/components/ui/sheet"; 
 import { 
@@ -38,6 +42,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import * as React from 'react';
 
 // TriGo Logo SVG
 const TriGoLogo = () => (
@@ -79,8 +84,15 @@ export default function DispatcherLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname(); 
+  const router = useRouter();
 
-  const isAuthenticated = false; 
+  const isAuthenticated = false; // This is a placeholder, replace with actual auth check
+
+  const handleLogout = () => {
+    // Add any actual logout logic here (e.g., clearing tokens, API calls)
+    console.log("Simulating logout...");
+    router.push('/sign-in');
+  };
 
   return (
     <SidebarProvider defaultOpen>
@@ -125,7 +137,7 @@ export default function DispatcherLayout({
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/alerts"}>
-                <Link href="#"> 
+                <Link href="/dispatcher/alerts"> 
                   <span style={{ display: "contents" }}>
                     <TriGoAlertLogo /> 
                     <span className="group-data-[collapsible=icon]:hidden">Alerts</span>
@@ -136,7 +148,7 @@ export default function DispatcherLayout({
             
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/channels"}>
-                <Link href="#"> 
+                <Link href="/dispatcher/channels"> 
                   <span style={{ display: "contents" }}>
                     <MessagesSquare /> 
                     <span className="group-data-[collapsible=icon]:hidden">Channels</span>
@@ -146,7 +158,7 @@ export default function DispatcherLayout({
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/wallet"}>
-                <Link href="#"> 
+                <Link href="/dispatcher/wallet"> 
                   <span style={{ display: "contents" }}>
                     <Wallet /> 
                     <span className="group-data-[collapsible=icon]:hidden">Wallet</span>
@@ -165,17 +177,27 @@ export default function DispatcherLayout({
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="right" align="start" className="w-48 ml-2 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:mt-2">
-                  <DropdownMenuItem>
-                    <span>Profile</span>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dispatcher/profile" className="flex items-center w-full">
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <span>Billing</span>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dispatcher/billing" className="flex items-center w-full">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>Billing</span>
+                    </Link>
                   </DropdownMenuItem>
-                   <DropdownMenuItem>
-                    <span>Help Center</span>
+                   <DropdownMenuItem asChild>
+                    <Link href="/dispatcher/help" className="flex items-center w-full">
+                      <HelpCircleIcon className="mr-2 h-4 w-4" />
+                      <span>Help Center</span>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onSelect={handleLogout} className="flex items-center w-full cursor-pointer">
+                    <LogOutIcon className="mr-2 h-4 w-4" />
                     <span>Logout (Simulated)</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -236,25 +258,31 @@ export default function DispatcherLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col">
-         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2 md:hidden">
-          <SidebarTrigger>
-            {/* Ensure an accessible title for the mobile sheet trigger */}
-            <VisuallyHidden>
-                <SheetTitle>Mobile Navigation Menu</SheetTitle>
-            </VisuallyHidden>
-          </SidebarTrigger>
-           <div className="flex items-center gap-2">
+         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2">
+          <div className="md:hidden"> {/* Only show trigger on mobile */}
+            <SidebarTrigger>
+              <VisuallyHidden>
+                  <SheetTitle>Mobile Navigation Menu</SheetTitle>
+              </VisuallyHidden>
+            </SidebarTrigger>
+          </div>
+           <div className="flex items-center gap-2 md:hidden"> {/* Show logo/title on mobile */}
             <TriGoLogo />
             <h1 className="text-lg font-semibold text-primary">TriGo Dispatcher</h1>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+             <Button variant="ghost" size="icon" asChild>
+                <Link href="/dispatcher/alerts" aria-label="View Alerts">
+                  <TriGoAlertLogo />
+                </Link>
+              </Button>
             {isAuthenticated ? (
               <Button variant="ghost" size="icon">
                 <Users className="h-5 w-5"/>
               </Button>
             ) : (
-               <Button variant="outline" size="sm" asChild>
-                  <Link href="/sign-in">
+               <Button variant="outline" size="icon" asChild className="md:hidden">
+                  <Link href="/sign-in" aria-label="Sign In">
                     <LogIn className="h-4 w-4"/>
                   </Link>
                 </Button>
