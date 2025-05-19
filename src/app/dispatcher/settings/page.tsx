@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import { useSettings, DEFAULT_TODA_BASE_FARE } from '@/contexts/SettingsContext';
+import { useSettings, DEFAULT_TODA_BASE_FARE_FALLBACK } from '@/contexts/SettingsContext';
 import type { ThemeSetting, Coordinates, TodaZone } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, RotateCcw, Lock, Unlock, Edit } from 'lucide-react';
@@ -37,10 +37,11 @@ export default function SettingsPage() {
     aiInsightIntervalMs,
     convenienceFee,
     todaBaseFares,
+    defaultBaseFare, // Keep this for global default
     updateSetting,
     resetSettings,
     isLoading,
-    getTodaBaseFare
+    getTodaBaseFare 
   } = useSettings();
   
   const { toast } = useToast();
@@ -71,11 +72,12 @@ export default function SettingsPage() {
 
       const initialLocalTodaFares: Record<string, string> = {};
       appTodaZones.forEach(zone => {
-        initialLocalTodaFares[zone.id] = (todaBaseFares[zone.id] ?? DEFAULT_TODA_BASE_FARE).toString();
+        // Use getTodaBaseFare which correctly falls back to defaultBaseFare from context, then to fallback
+        initialLocalTodaFares[zone.id] = getTodaBaseFare(zone.id).toString();
       });
       setLocalTodaBaseFares(initialLocalTodaFares);
     }
-  }, [isLoading, defaultMapZoom, defaultMapCenter, rideRequestIntervalMs, triderUpdateIntervalMs, aiInsightIntervalMs, convenienceFee, todaBaseFares]);
+  }, [isLoading, defaultMapZoom, defaultMapCenter, rideRequestIntervalMs, triderUpdateIntervalMs, aiInsightIntervalMs, convenienceFee, todaBaseFares, getTodaBaseFare, defaultBaseFare]);
 
   const handleThemeChange = (value: string) => {
     updateSetting('theme', value as ThemeSetting);
@@ -225,7 +227,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Fare Configuration</CardTitle>
-          <CardDescription>Set base fares for TODA zones and the global convenience fee. Default base fare is ₱{DEFAULT_TODA_BASE_FARE.toFixed(2)} if not specified.</CardDescription>
+          <CardDescription>Set base fares for TODA zones and the global convenience fee. Default base fare is ₱{(defaultBaseFare || DEFAULT_TODA_BASE_FARE_FALLBACK).toFixed(2)} if not specified for a TODA.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
@@ -273,7 +275,7 @@ export default function SettingsPage() {
                   <Input
                     id={`fare-${zone.id}`}
                     type="number"
-                    value={localTodaBaseFares[zone.id] ?? DEFAULT_TODA_BASE_FARE.toString()}
+                    value={localTodaBaseFares[zone.id] ?? (defaultBaseFare || DEFAULT_TODA_BASE_FARE_FALLBACK).toString()}
                     onChange={e => setLocalTodaBaseFares(prev => ({ ...prev, [zone.id]: e.target.value }))}
                     min="0"
                     step="0.01"
@@ -304,3 +306,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    

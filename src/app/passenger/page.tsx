@@ -34,11 +34,11 @@ import { RideReceiptDialog } from '@/components/passenger/RideReceiptDialog';
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2'; 
 
-// Red Hat Inspired Theme Colors for Passenger Page
-const REDHAT_RED_COLOR = '#EE0000'; 
-const REDHAT_RED_HSL_FOR_MAPBOX = 'hsl(0, 87%, 46%)'; 
-const PASSENGER_HEADER_BG = '#1A1A1A'; // Dark gray/black for header
-const PASSENGER_HEADER_TEXT = '#FFFFFF';
+const REDHAT_RED_COLOR_BUTTON_BG = '#EE0000'; 
+const REDHAT_RED_COLOR_ACCENT = 'hsl(0, 87%, 46%)'; 
+const PASSENGER_HEADER_BG = '#1A1A1A'; 
+const PASSENGER_HEADER_TEXT = '#FFFFFF'; 
+const PASSENGER_INPUT_TEXT_COLOR = 'text-neutral-100'; // For dark input backgrounds
 
 const DEFAULT_PASSENGER_MAP_STYLE: PassengerMapStyle = 'streets';
 
@@ -78,10 +78,9 @@ interface MapboxGeocodingFeature {
   center: [number, number]; // [longitude, latitude]
 }
 
-// Simple TriGo Passenger Logo SVG
 const TriGoPassengerLogo = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="16" cy="16" r="13" stroke={REDHAT_RED_COLOR} strokeWidth="1.5"/>
+    <circle cx="16" cy="16" r="13" stroke={REDHAT_RED_COLOR_ACCENT} strokeWidth="1.5"/>
     <path d="M9.5 20V14C9.5 12.8954 10.3954 12 11.5 12H17.5C18.6046 12 19.5 12.8954 19.5 14V20" stroke={PASSENGER_HEADER_TEXT} strokeWidth="1.2" fill="none"/>
     <path d="M M9.5 12 Q16 8 22.5 12 L19.5 12" stroke={PASSENGER_HEADER_TEXT} strokeWidth="1.2" fill="none" />
     <path d="M19.5 13H21.5C22.0523 13 22.5 13.4477 22.5 14V17C22.5 17.5523 22.0523 18 21.5 18H19.5" stroke={PASSENGER_HEADER_TEXT} strokeWidth="1.2" fill="none"/>
@@ -144,7 +143,7 @@ export default function PassengerPage() {
   const [activeSuggestionBox, setActiveSuggestionBox] = React.useState<'pickup' | 'dropoff' | null>(null);
   
   const [triderToPickupRouteColor, setTriderToPickupRouteColor] = React.useState('hsl(var(--accent))'); 
-  const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(REDHAT_RED_HSL_FOR_MAPBOX);
+  const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(REDHAT_RED_COLOR_ACCENT);
 
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = React.useState(false);
   const [completedRideDetails, setCompletedRideDetails] = React.useState<PassengerRideState | null>(null);
@@ -167,7 +166,7 @@ export default function PassengerPage() {
             return hslString;
         };
         const accentColorVar = computedStyles.getPropertyValue('--accent').trim();
-        setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'green');
+        setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'green'); // Keep trider to pickup as accent (lime green)
     }
   }, []);
 
@@ -257,18 +256,11 @@ export default function PassengerPage() {
           setPickupInput(`${passengerZone.name} area (suggested)`);
         }
         localStorage.removeItem('selectedPassengerProfile'); 
-      } else {
-        if (navigator.geolocation && MAPBOX_TOKEN && rideState.status === 'idle') {
-          // performGeolocation(); // Geolocation will be initiated by button click or if no profile.
-        }
       }
     } catch (error) {
       console.error("Error loading passenger profile/settings from localStorage:", error);
-      if (navigator.geolocation && MAPBOX_TOKEN && rideState.status === 'idle') {
-         // performGeolocation();
-      }
     }
-  }, [MAPBOX_TOKEN, rideState.status]); 
+  }, []); 
 
   React.useEffect(() => {
     if (loadedPassengerProfile && !settingsLoading && !toastShownForStatus.current[`welcome-${loadedPassengerProfile.id}`]) { 
@@ -405,12 +397,13 @@ export default function PassengerPage() {
     return null;
   }, [MAPBOX_TOKEN, handleStatusToast]);
 
-  React.useEffect(() => {
+ React.useEffect(() => {
     let moveIntervalId: NodeJS.Timeout;
+
     if (
+      triderSimLocation && rideState.pickupLocation && rideState.dropoffLocation &&
       ((rideState.status === 'triderAssigned' && rideState.triderToPickupPath) ||
-      (rideState.status === 'inProgress' && rideState.pickupToDropoffPath)) &&
-      triderSimLocation && rideState.pickupLocation && rideState.dropoffLocation 
+       (rideState.status === 'inProgress' && rideState.pickupToDropoffPath))
     ) {
       moveIntervalId = setInterval(() => {
         setTriderSimLocation(prevLoc => {
@@ -418,17 +411,17 @@ export default function PassengerPage() {
 
           const currentPath = rideState.status === 'triderAssigned' ? rideState.triderToPickupPath : rideState.pickupToDropoffPath;
           const targetLocation = rideState.status === 'triderAssigned' ? rideState.pickupLocation! : rideState.dropoffLocation!;
-
-          if (!currentPath || !targetLocation || rideState.currentTriderPathIndex === undefined) {
-            return prevLoc;
-          }
+          
+          if (!currentPath || !targetLocation || rideState.currentTriderPathIndex === undefined) return prevLoc;
           
           const atDestinationOfSegment = rideState.currentTriderPathIndex >= currentPath.coordinates.length - 1;
 
           if (atDestinationOfSegment) {
-            clearInterval(moveIntervalId);
-            setRideState(prev => ({ ...prev, countdownSeconds: 0 }));
-            return targetLocation; 
+            setRideState(prev => ({ ...prev, countdownSeconds: 0 })); // Set countdown to 0 on arrival
+            if (prevLoc.longitude !== targetLocation.longitude || prevLoc.latitude !== targetLocation.latitude) {
+                return targetLocation; // Snap to exact target
+            }
+            return prevLoc; // Already at target
           }
 
           let nextIndex = rideState.currentTriderPathIndex + 1;
@@ -452,7 +445,7 @@ export default function PassengerPage() {
     rideState.dropoffLocation
   ]);
   
-  React.useEffect(() => {
+ React.useEffect(() => {
     const currentStatus = rideState.status;
     const rideId = rideState.currentRideId || 'ride'; 
 
@@ -717,8 +710,6 @@ export default function PassengerPage() {
             }));
             setPickupInput(`${passengerZone.name} area (suggested)`);
         }
-    } else if (navigator.geolocation && MAPBOX_TOKEN) { 
-      // performGeolocation(); // Geolocation will be initiated by button click
     }
   }, [loadedPassengerProfile, handleStatusToast]);
   
@@ -748,10 +739,12 @@ export default function PassengerPage() {
 
 
   if (settingsLoading || !MAPBOX_TOKEN) {
-    return <div className="flex items-center justify-center h-screen bg-white text-black"><Loader2 className="h-8 w-8 animate-spin mr-2" style={{color: REDHAT_RED_COLOR}} /> <p>Loading Passenger Experience...</p></div>;
+    return <div className="flex items-center justify-center h-screen bg-white text-black"><Loader2 className="h-8 w-8 animate-spin mr-2" style={{color: REDHAT_RED_COLOR_ACCENT}} /> <p>Loading Passenger Experience...</p></div>;
   }
 
-  const countdownColorStyle = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 && rideState.countdownSeconds > 0 ? { color: REDHAT_RED_COLOR, fontWeight: 'bold' } : { color: REDHAT_RED_COLOR };
+  const isFinalCountdown = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 && rideState.countdownSeconds > 0;
+  const countdownColorStyle = { color: PASSENGER_HEADER_TEXT }; // Always white text for countdown digits
+  const countdownPulseClass = isFinalCountdown ? 'animate-pulse font-bold' : '';
 
 
   return (
@@ -759,7 +752,7 @@ export default function PassengerPage() {
       <header className="p-4 shadow-md flex justify-between items-center" style={{ backgroundColor: PASSENGER_HEADER_BG, color: PASSENGER_HEADER_TEXT }}>
         <div className="flex items-center gap-2">
             <TriGoPassengerLogo />
-            <h1 className="text-xl font-semibold">
+            <h1 className="text-xl font-semibold" style={{color: REDHAT_RED_COLOR_ACCENT}}>
                 TriGo Passenger
             </h1>
         </div>
@@ -796,15 +789,15 @@ export default function PassengerPage() {
             </CardHeader>
             <CardContent className="space-y-3 pt-6">
             {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.currentRideId && (
-                <Alert variant="default" className="bg-neutral-50 border-neutral-300 text-black">
-                    <Ticket className="h-5 w-5" style={{ color: REDHAT_RED_COLOR }} />
-                    <AlertTitle className="font-semibold text-black">Ride Ticket #: {rideState.currentRideId}</AlertTitle>
+                <Alert variant="default" className="bg-neutral-800 border-red-500 text-neutral-100 shadow-xl p-4 rounded-lg">
+                    <Ticket className="h-5 w-5 text-white" />
+                    <AlertTitle className="font-semibold text-white">Ride Ticket #: {rideState.currentRideId}</AlertTitle>
                     {rideState.countdownSeconds !== null && rideState.estimatedDurationSeconds !== null && (
-                         <div className="mt-2 p-3 rounded-lg bg-white border border-neutral-200 shadow-inner">
-                            <p className={`text-3xl font-mono text-center ${rideState.countdownSeconds <= 10 && rideState.countdownSeconds > 0 ? 'animate-pulse font-bold' : ''}`} style={countdownColorStyle}>
+                         <div className="mt-2 p-3 rounded-lg shadow-inner bg-black/70 backdrop-blur-sm">
+                            <p className={`text-3xl font-mono text-center ${countdownPulseClass}`} style={countdownColorStyle}>
                                 {formatCountdown(rideState.countdownSeconds)}
                             </p>
-                            <p className="text-xs text-neutral-500 text-center mt-1">
+                            <p className="text-xs text-neutral-300 text-center mt-1">
                                 Estimated {rideState.status === 'triderAssigned' ? 'Arrival at Pickup' : 'Arrival at Destination'}
                             </p>
                         </div>
@@ -821,13 +814,13 @@ export default function PassengerPage() {
                       onChange={(e) => { setPickupInput(e.target.value); handleGeocodeSearch(e.target.value, 'pickup'); }}
                       onFocus={() => setActiveSuggestionBox('pickup')}
                       disabled={isGeolocating || (rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff')}
-                      className="pr-10 border-neutral-300 focus:border-red-500 focus:ring-red-500 text-black" 
+                      className={`pr-10 border-neutral-300 focus:border-red-500 focus:ring-red-500 ${PASSENGER_INPUT_TEXT_COLOR} placeholder:text-neutral-400`}
                     />
                     <Button 
                       type="button"
                       variant="ghost" 
                       size="icon" 
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-neutral-500 hover:text-red-600"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-neutral-400 hover:text-neutral-100"
                       onClick={performGeolocation}
                       disabled={isGeolocating}
                       aria-label="Locate Me"
@@ -836,10 +829,10 @@ export default function PassengerPage() {
                     </Button>
                 </div>
                 {activeSuggestionBox === 'pickup' && pickupSuggestions.length > 0 && (
-                  <ul className="absolute z-10 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
+                  <ul className="absolute z-10 w-full bg-neutral-800 border border-neutral-700 rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
                     {pickupSuggestions.map(s => (
                       <li key={s.id} onClick={() => handleSuggestionSelect(s, 'pickup')}
-                          className="p-2 hover:bg-neutral-100 cursor-pointer text-sm text-black">
+                          className={`p-2 hover:bg-neutral-700 cursor-pointer text-sm ${PASSENGER_INPUT_TEXT_COLOR}`}>
                         {s.place_name}
                       </li>
                     ))}
@@ -856,15 +849,15 @@ export default function PassengerPage() {
                     onChange={(e) => { setDropoffInput(e.target.value); handleGeocodeSearch(e.target.value, 'dropoff'); }}
                     onFocus={() => setActiveSuggestionBox('dropoff')}
                     disabled={(rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff')}
-                    className="border-neutral-300 focus:border-red-500 focus:ring-red-500 text-black"
+                    className={`border-neutral-300 focus:border-red-500 focus:ring-red-500 ${PASSENGER_INPUT_TEXT_COLOR} placeholder:text-neutral-400`}
                     />
                      {(isSearchingAddress && activeSuggestionBox === 'dropoff') && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-neutral-400"/>}
                 </div>
                  {activeSuggestionBox === 'dropoff' && dropoffSuggestions.length > 0 && (
-                  <ul className="absolute z-10 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
+                  <ul className="absolute z-10 w-full bg-neutral-800 border border-neutral-700 rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
                     {dropoffSuggestions.map(s => (
                       <li key={s.id} onClick={() => handleSuggestionSelect(s, 'dropoff')}
-                          className="p-2 hover:bg-neutral-100 cursor-pointer text-sm text-black">
+                          className={`p-2 hover:bg-neutral-700 cursor-pointer text-sm ${PASSENGER_INPUT_TEXT_COLOR}`}>
                         {s.place_name}
                       </li>
                     ))}
@@ -884,7 +877,7 @@ export default function PassengerPage() {
 
               {rideState.status === 'searching' && (
                 <div className="flex items-center justify-center py-4 text-black">
-                  <Loader2 className="h-8 w-8 animate-spin" style={{color: REDHAT_RED_COLOR}} />
+                  <Loader2 className="h-8 w-8 animate-spin" style={{color: REDHAT_RED_COLOR_ACCENT}} />
                   <p className="ml-2">Looking for available triders...</p>
                 </div>
               )}
@@ -927,7 +920,7 @@ export default function PassengerPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <Button onClick={handleSavePassengerSettings} size="sm" className="w-full" style={{ backgroundColor: REDHAT_RED_COLOR, color: PASSENGER_HEADER_TEXT }}>Save My Settings</Button>
+                      <Button onClick={handleSavePassengerSettings} size="sm" className="w-full" style={{ backgroundColor: REDHAT_RED_COLOR_BUTTON_BG, color: PASSENGER_HEADER_TEXT }}>Save My Settings</Button>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
@@ -935,13 +928,13 @@ export default function PassengerPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-2 pt-6 border-t border-neutral-200">
               {rideState.status === 'confirmingRide' && (
-                <Button onClick={handleRequestRide} className="w-full text-white" style={{ backgroundColor: REDHAT_RED_COLOR }} disabled={!rideState.pickupLocation || !rideState.dropoffLocation || !rideState.pickupTodaZoneId}>Request TriGo Now</Button>
+                <Button onClick={handleRequestRide} className="w-full text-white" style={{ backgroundColor: REDHAT_RED_COLOR_BUTTON_BG }} disabled={!rideState.pickupLocation || !rideState.dropoffLocation || !rideState.pickupTodaZoneId}>Request TriGo Now</Button>
               )}
               {(rideState.status === 'searching' || rideState.status === 'triderAssigned') && (
                 <Button onClick={handleCancelRide} variant="outline" className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700">Cancel Ride</Button>
               )}
                {rideState.status === 'completed' && (
-                <Button onClick={handleNewRide} className="w-full text-white" style={{ backgroundColor: REDHAT_RED_COLOR }}>Book Another Ride</Button>
+                <Button onClick={handleNewRide} className="w-full text-white" style={{ backgroundColor: REDHAT_RED_COLOR_BUTTON_BG }}>Book Another Ride</Button>
               )}
                {(rideState.status === 'idle' || rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') ? (
                 <Button onClick={handleCancelRide} variant="ghost" className="w-full text-neutral-600 hover:text-red-600">Reset / New Ride</Button>
@@ -970,7 +963,7 @@ export default function PassengerPage() {
             )}
             {rideState.dropoffLocation && (
               <Marker longitude={rideState.dropoffLocation.longitude} latitude={rideState.dropoffLocation.latitude}>
-                 <div title="Dropoff" className="p-1 rounded-full text-white shadow-md flex items-center justify-center" style={{backgroundColor: REDHAT_RED_COLOR}}>
+                 <div title="Dropoff" className="p-1 rounded-full text-white shadow-md flex items-center justify-center" style={{backgroundColor: REDHAT_RED_COLOR_ACCENT}}>
                     <MapPin size={18} />
                  </div>
               </Marker>
