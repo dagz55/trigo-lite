@@ -16,15 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - UI for selecting pickup and dropoff on map.
     - Mock ride request flow: searching, trider assignment, trider en route, ride completion.
     - Map display of assigned trider's live location (simulated) and ETA.
-    - Trider follows Mapbox-calculated route to pickup and dropoff.
+    - Trider follows Mapbox-calculated route to pickup and dropoff segments.
     - Distinct route colors for trider-to-pickup and pickup-to-dropoff segments.
     - Geolocation for initial pickup suggestion.
     - Address input fields with Mapbox Geocoding API for autocomplete/suggestions.
-    - Neon orange theme accents.
+    - Red Hat inspired theme (white background, black header, red accents).
     - Glassmorphism countdown timer for ETA, with visual cues for final 10 seconds.
     - Ride Ticket ID display.
     - Per-passenger map style settings (streets, satellite, dark) saved to localStorage.
     - "Locate Me" button inside pickup input field to trigger geolocation.
+    - Ride receipt dialog displayed upon ride completion.
 - **Trider Role Simulation (`/trider`):**
     - UI for trider to go online/offline.
     - Geolocation on going online to set initial position.
@@ -43,7 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TODA Zones Management Page (`/dispatcher/toda-management`):**
     - New page for managing fare matrix.
     - Inputs for global default base fare, per KM charge, and convenience fee.
-    - Inputs for overriding base fares for each specific TODA zone.
+    - Modal-based editing for overriding base fares for each specific TODA zone.
+    - Search functionality for TODA zones when configuring fares.
     - Placeholder sections for future TODA, Trider-in-TODA, and Passenger CRUD.
 - **Settings Context (`SettingsContext.tsx`):**
     - Manages application settings state.
@@ -70,6 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `triders/page.tsx` (Dispatcher view) and `page.tsx` (Dispatcher dashboard) to initialize `currentPath` and `pathIndex` for Trider objects.
 - Toast notifications in Passenger and Trider demo pages are now triggered more safely within `useEffect` hooks dependent on state changes.
 - Mapbox route fetching logic updated to request alternatives and select the route with the shortest distance.
+- Updated passenger page theme to Red Hat inspired (white background, black header, red accents).
+- Improved countdown timer accuracy and display on Passenger page.
 - `README.md` and `CHANGELOG.md` updated to reflect recent major changes.
 
 ### Fixed
@@ -81,7 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `React.Children.only` error in `SidebarMenuButton` by wrapping `Link` children.
 - Resolved `ReferenceError: rs is not defined` in Passenger page countdown logic.
 - Fixed `TypeError: Cannot read properties of undefined (reading 'id')` in Trider page ride request generation.
-- Added accessible `SheetTitle` to mobile sidebar to fix Radix UI warning.
+- Addressed accessibility warning by adding `SheetTitle` to mobile sidebar in `Sidebar` component and dispatcher layout.
+- Corrected import error for `DEFAULT_TODA_BASE_FARE_FALLBACK` in settings page.
 
 ### Removed
 - **Clerk Authentication:**
@@ -123,4 +128,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ensured map layers (route, TODA zones, labels, heatmap) use correctly resolved color values from CSS variables.
 - Placeholder middleware (prior to Clerk removal).
 
-```

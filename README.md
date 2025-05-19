@@ -17,6 +17,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 - **Trider Management (`/dispatcher/triders`):**
   - Comprehensive list of all triders with details: name, TODA zone, vehicle type, status.
   - Filtering options: by name, TODA zone, status.
+  - Sorting functionality by name, TODA zone, or status.
   - Detailed Trider panel:
     - Live GPS preview on a mini-map.
     - Status controls (force online/offline, ping trider, suspend/unsuspend).
@@ -32,9 +33,9 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - Address input with autocomplete/suggestions using Mapbox Geocoding API.
   - Simulation of trider assignment, movement to pickup (following Mapbox route), and trip to destination (following Mapbox route).
   - Displays trider's live location and ETA on the map, with distinct route colors.
-  - Firebase Orange theme accents.
+  - Red Hat inspired theme (white background, black header, red accents).
   - Glassmorphism countdown timer for ETA with visual cues.
-  - Ride Ticket ID display.
+  - Ride Ticket ID display and ride receipt dialog upon completion.
   - Customizable map style (streets, satellite, dark) per passenger, saved in `localStorage`.
 - **Trider Role Simulation (`/trider`):**
   - Dashboard for triders to manage their status (online/offline).
@@ -48,11 +49,12 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - Configuration for default map zoom and center coordinates.
   - Toggle for heatmap visibility on the dispatch map.
   - Adjustable intervals for mock data simulation (new rides, trider updates, AI insights).
-  - Configuration for global convenience fee (PIN-protected for demo) and per-TODA base fares.
+  - Configuration for global convenience fee (PIN-protected for demo) and per-TODA base fares (if not set on TODA Management page).
 - **TODA Zones Management (`/dispatcher/toda-management`):**
   - Dedicated page to configure the fare matrix.
   - Set global default base fare and per KM charge.
-  - Override base fares for specific TODA zones.
+  - Modal-based editing to override base fares for specific TODA zones.
+  - Search functionality for TODA zones when configuring fares.
   - Placeholders for future TODA/Trider/Passenger CRUD operations.
 - **Authentication:** (Currently Removed)
   - Authentication was previously handled by Clerk but has been removed for streamlined testing.
@@ -148,6 +150,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 │   ├── components/                 # UI components
 │   │   ├── dispatch/               # Components specific to the dispatch dashboard
 │   │   ├── map/                    # Map-related components
+│   │   ├── passenger/              # Components specific to the passenger demo
 │   │   ├── triders/                # Components for the trider management dashboard
 │   │   ├── ui/                     # ShadCN UI components (button, card, etc.)
 │   │   └── RoleSwitcher.tsx        # Component for role selection
@@ -184,4 +187,3 @@ Please refer to contributing guidelines if available. For now, ensure code quali
 
 This project is licensed under [Specify License Here - e.g., MIT License].
 
-```
