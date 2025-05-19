@@ -17,16 +17,16 @@ const TriGoCentralLogo = () => (
   >
     <div 
       className="
-        bg-white/20 /* Opacity of triangle fill is 0.2 */
-        backdrop-blur-md /* Glassmorphism blur */
-        border border-white/20 /* Subtle glass edge */
+        bg-white/20 
+        backdrop-blur-md 
+        border border-white/20 
         w-32 h-28 
         flex items-center justify-center 
         relative 
         transition-all duration-500 ease-in-out
         transform-style-3d 
         group-hover:rotate-y-180 
-        electric-animation /* Apply continuous electric aura animation */
+        electric-animation 
       "
       style={{ 
         clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
@@ -40,6 +40,7 @@ const TriGoCentralLogo = () => (
                       pt-3">
         <Bike 
           className="w-16 h-16 text-white" 
+          data-ai-hint="tricycle logo"
         />
       </div>
     </div>
@@ -69,10 +70,36 @@ const RoleCard: React.FC<RoleCardProps> = ({
   openInNewTab = true,
 }) => {
   const handleClick = () => {
+    // For regular links, use Next.js Link or simple anchor if opening new tab
     if (openInNewTab) {
       window.open(href, '_blank');
+    } else {
+      // If you want to navigate within the app, use Next.js Link (or router for programmatic nav)
+      // This example assumes button directly handles window.open or is wrapped by <Link> if same-tab nav
+      // For simplicity, direct window.open for all button clicks handled here
+      if (href.startsWith('/')) { // Basic check for internal links
+         window.open(href, '_blank'); // Defaulting to new tab for all for now
+      } else {
+         window.open(href, '_blank');
+      }
     }
   };
+  
+  // If we want to use Next/Link for same-tab navigation, the button should be wrapped by it,
+  // or the onClick handler should use Next's router.
+  // For this component, we'll stick to window.open for new tabs as per original design.
+  const actualHref = href.startsWith('/') && !openInNewTab ? href : '#'; // Prepare for Link if needed
+
+  const cardButton = (
+     <Button
+        onClick={handleClick}
+        className={`${buttonColorClass} text-white font-semibold group/button w-full mt-auto relative z-10 transition-transform duration-300 group-hover:scale-105`}
+      >
+        {buttonText}
+        <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/button:translate-x-1" />
+      </Button>
+  );
+
 
   return (
     <div 
@@ -91,13 +118,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
         <h3 className="text-2xl font-semibold text-white mb-2">{title}</h3>
         <p className="text-sm text-slate-300 mb-4 h-12 overflow-hidden">{description}</p>
       </div>
-      <Button
-        onClick={handleClick}
-        className={`${buttonColorClass} text-white font-semibold group/button w-full mt-auto relative z-10 transition-transform duration-300 group-hover:scale-105`}
-      >
-        {buttonText}
-        <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/button:translate-x-1" />
-      </Button>
+      {cardButton}
     </div>
   );
 };
@@ -186,7 +207,7 @@ export default function HomePage() {
           href="/dispatcher"
           iconColorClass="text-yellow-400"
           buttonColorClass="bg-yellow-500 hover:bg-yellow-400"
-          openInNewTab={false} // Dispatcher opens in the same tab
+          openInNewTab={false} 
         />
         <RoleCard
           icon={AdminIconSettings}
@@ -257,34 +278,34 @@ export default function HomePage() {
         }
 
         @keyframes line-flow-animation {
-          0% {
-            /* For div backgrounds, you might animate background-position or use pseudo-elements */
-            /* This is a placeholder for a more complex line animation if needed */
-          }
-          100% {
-            /* stroke-dashoffset: 0; */
-          }
+          /* Placeholder for more complex line animation if needed */
         }
-        /* For perspective transformations */
+        
         .perspective {
           perspective: 1000px;
         }
         .transform-style-3d {
           transform-style: preserve-3d;
         }
-        .rotate-y-180 { /* This class is applied on hover by group-hover:rotate-y-180 */
-           /* transform: rotateY(180deg); */
-        }
-        
+       
         @keyframes electric-pulse {
-          0% { box-shadow: 0 0 3px rgba(200,255,255,0.4), 0 0 5px rgba(0,170,255,0.3), 0 0 7px rgba(0,170,255,0.3), inset 0 0 2px rgba(225,255,255,0.1); }
-          25% { box-shadow: 0 0 4px rgba(225,255,255,0.5), 0 0 7px rgba(0,180,255,0.4), 0 0 10px rgba(0,180,255,0.4), inset 0 0 3px rgba(225,255,255,0.2); }
-          50% { box-shadow: 0 0 3px rgba(200,255,255,0.3), 0 0 6px rgba(0,170,255,0.2), 0 0 8px rgba(0,170,255,0.2), inset 0 0 1px rgba(225,255,255,0.1); }
-          75% { box-shadow: 0 0 5px rgba(225,255,255,0.6), 0 0 9px rgba(0,190,255,0.5), 0 0 13px rgba(0,190,255,0.5), inset 0 0 4px rgba(225,255,255,0.3); }
-          100% { box-shadow: 0 0 3px rgba(200,255,255,0.4), 0 0 5px rgba(0,170,255,0.3), 0 0 7px rgba(0,170,255,0.3), inset 0 0 2px rgba(225,255,255,0.1); }
+          0%, 100% { 
+            box-shadow: 
+              0 0 6px rgba(200, 225, 255, 0.7), 
+              0 0 12px rgba(100, 180, 255, 0.6), 
+              0 0 20px rgba(0, 150, 255, 0.5),
+              0 0 30px rgba(0, 150, 255, 0.4);
+          }
+          50% { 
+            box-shadow: 
+              0 0 10px rgba(225, 255, 255, 0.9), 
+              0 0 20px rgba(150, 200, 255, 0.8), 
+              0 0 35px rgba(50, 180, 255, 0.7),
+              0 0 50px rgba(50, 180, 255, 0.6);
+          }
         }
         .electric-animation {
-          animation: electric-pulse 1.5s infinite linear;
+          animation: electric-pulse 1.2s infinite ease-in-out;
         }
 
       `}</style>
