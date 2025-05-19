@@ -65,9 +65,16 @@ def git_add_all():
 def git_commit(message):
     with Progress(console=console, transient=True, refresh_per_second=10) as progress:
         task = progress.add_task("[cyan]Committing changes...", total=1)
-        run_command(["git", "commit", "-m", message], capture_output=False)
-        progress.update(task, advance=1)
-    console.print(f"[green]Changes committed with message: '{message}'[/green]")
+        try:
+            run_command(["git", "commit", "-m", message], capture_output=True, text=True, quiet=True, allow_fail=True)
+            progress.update(task, advance=1)
+            console.print(f"[green]Changes committed with message: '{message}'[/green]")
+        except subprocess.CalledProcessError as e:
+            # Check if the error is "nothing to commit"
+            if "nothing to commit" in e.stderr.lower():
+                console.print("[yellow]No changes to commit.[/yellow]")
+            else:
+                raise # Re-raise other errors
 
 def get_current_branch():
     result = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, quiet=True)
