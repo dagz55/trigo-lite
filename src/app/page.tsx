@@ -6,22 +6,46 @@ import Link from 'next/link';
 import { User, Bike, Phone, Settings as AdminIcon, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Simplified TriGo Logo (Bike icon in a styled container)
+// Updated TriGoCentralLogo
 const TriGoCentralLogo = () => (
   <a
     href="https://trigo.live"
     target="_blank"
     rel="noopener noreferrer"
-    className="inline-block mb-6 transition-transform hover:scale-105 group"
+    className="inline-block mb-6 group perspective" // Added perspective for 3D flip
     aria-label="Visit TriGo Live"
   >
-    <div className="bg-white/20 p-4 rounded-2xl shadow-xl w-28 h-28 flex items-center justify-center border-2 border-white/30 group-hover:border-white/50 transition-all duration-300 ease-in-out relative overflow-hidden">
-      <Bike className="w-16 h-16 text-white transform transition-transform duration-500 group-hover:scale-110" />
-       {/* Shine effect for logo */}
-      <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 group-hover:animate-shine group-hover:left-full transition-all duration-700 opacity-0 group-hover:opacity-100"></div>
+    <div 
+      className="
+        bg-white/20 
+        w-32 h-28 /* Adjusted size for triangle proportions */
+        flex items-center justify-center 
+        relative 
+        transition-all duration-500 ease-in-out
+        transform-style-3d /* Enable 3D transforms */
+        group-hover:rotate-y-180 /* Flip on group hover */
+        group-hover:shadow-[0_0_15px_#fff,0_0_25px_#fff,0_0_40px_#f0f030,0_0_60px_#f0f030,0_0_80px_#f0f030] /* Aura effect */
+      "
+      style={{ 
+        clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+      }}
+    >
+      {/* Icon wrapper for consistent centering and preventing flip issues with icon itself */}
+      <div className="w-full h-full flex items-center justify-center 
+                      transform transition-transform duration-300 
+                      group-hover:scale-95 /* Slight scale adjust on hover */
+                      relative z-10 /* Ensure icon is above potential pseudo-elements if added later */
+                      pt-3 /* Adjust vertical position of icon within triangle */">
+        <Bike 
+          className="
+            w-16 h-16 text-white
+          " 
+        />
+      </div>
     </div>
   </a>
 );
+
 
 interface RoleCardProps {
   icon: React.ElementType;
@@ -55,9 +79,9 @@ const RoleCard: React.FC<RoleCardProps> = ({
       className="bg-slate-900/40 backdrop-blur-lg border border-slate-700/60 rounded-xl p-6 flex flex-col items-center text-center shadow-2xl w-full sm:w-72 h-80 justify-between transition-all duration-300 ease-in-out hover:scale-105 hover:border-slate-500/80 hover:shadow-blue-500/20 relative overflow-hidden group"
     >
       {/* Shine effect for card hover */}
-      <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 group-hover:animate-shine group-hover:left-full transition-all duration-1000 opacity-0 group-hover:opacity-100"></div>
+      <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 group-hover:animate-card-shine group-hover:left-full transition-all duration-1000 opacity-0 group-hover:opacity-100"></div>
       
-      {/* Sparkles (example for top-left and bottom-right) */}
+      {/* Sparkles */}
       <div className="absolute top-2 left-2 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-70 group-hover:animate-sparkle delay-100"></div>
       <div className="absolute bottom-2 right-2 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-70 group-hover:animate-sparkle delay-200"></div>
       <div className="absolute top-3 right-3 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-60 group-hover:animate-sparkle delay-300"></div>
@@ -81,7 +105,6 @@ const RoleCard: React.FC<RoleCardProps> = ({
 };
 
 
-// Simple Network Node and Line components for background visualization
 const NetworkNode: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
   <div 
     className="absolute w-2 h-2 md:w-3 md:h-3 bg-blue-500/50 rounded-full animate-pulse-soft" 
@@ -91,14 +114,13 @@ const NetworkNode: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
 
 const NetworkLine: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
   <div 
-    className="absolute h-px bg-blue-400/30 animate-line-flow" 
-    style={style}
+    className="absolute h-px bg-blue-400/30" 
+    style={{...style, animation: 'line-flow-animation 10s infinite linear'}}
   ></div>
 );
 
 
 export default function HomePage() {
-  // Define positions for nodes and lines. These are examples and can be expanded.
   const nodes = [
     { top: '10%', left: '15%' }, { top: '20%', left: '80%' },
     { top: '50%', left: '5%' },  { top: '60%', left: '90%' },
@@ -107,31 +129,23 @@ export default function HomePage() {
   ];
 
   const lines = [
-    // Connect node 0 to 1
     { top: '15%', left: '16%', width: '64%', transform: 'rotate(7deg)'},
-    // Connect node 2 to 0
     { top: '30%', left: '6%', width: '10%', transform: 'rotate(-45deg)'},
-    // Connect node 2 to 6
     { top: '40%', left: '6%', width: '34%', transform: 'rotate(15deg)'},
-    // Connect node 3 to 1
     { top: '40%', left: '80%', width: '10%', transform: 'rotate(120deg)'},
-     // Connect node 7 to 3
     { top: '65%', left: '61%', width: '29%', transform: 'rotate(-8deg)'},
-     // Connect node 4 to 5
     { top: '87%', left: '26%', width: '44%', transform: 'rotate(4deg)'},
   ];
 
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white p-4 sm:p-8 overflow-hidden relative">
-      {/* Animated Background Light */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-purple-600/30 rounded-full blur-[150px] animate-bg-pulse-slow"></div>
         <div className="absolute bottom-1/4 right-1/4 w-1/3 h-1/3 bg-blue-500/30 rounded-full blur-[120px] animate-bg-pulse-slow animation-delay-2000"></div>
-         <div className="absolute top-1/3 right-1/5 w-1/4 h-1/4 bg-green-500/20 rounded-full blur-[100px] animate-bg-pulse-slow animation-delay-4000"></div>
+        <div className="absolute top-1/3 right-1/5 w-1/4 h-1/4 bg-green-500/20 rounded-full blur-[100px] animate-bg-pulse-slow animation-delay-4000"></div>
       </div>
 
-      {/* Network Visualization Layer */}
       <div className="absolute inset-0 z-0 opacity-50">
         {nodes.map((node, i) => <NetworkNode key={`node-${i}`} style={node} />)}
         {lines.map((line, i) => <NetworkLine key={`line-${i}`} style={line} />)}
@@ -214,14 +228,14 @@ export default function HomePage() {
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
 
-        @keyframes shine {
-          0% { transform: translateX(-100%) skewX(-30deg); opacity: 0.1; }
-          20% { transform: translateX(-100%) skewX(-30deg); opacity: 0.5; }
-          60% { transform: translateX(100%) skewX(-30deg); opacity: 0.5; }
-          100% { transform: translateX(100%) skewX(-30deg); opacity: 0.1; }
+        @keyframes card-shine { /* Renamed from animate-shine to avoid conflict if used elsewhere */
+          0% { transform: translateX(-120%) skewX(-30deg); opacity: 0.1; }
+          20% { opacity: 0.3; }
+          60% { opacity: 0.3; }
+          100% { transform: translateX(120%) skewX(-30deg); opacity: 0.1; }
         }
-        .animate-shine {
-          animation: shine 1s forwards; /* Slower shine effect */
+        .animate-card-shine {
+          animation: card-shine 1s ease-in-out;
         }
 
         @keyframes sparkle {
@@ -240,27 +254,26 @@ export default function HomePage() {
           animation: pulse-soft 3s infinite ease-in-out;
         }
 
-        /* Basic line flow animation */
-        @keyframes line-flow {
+        @keyframes line-flow-animation {
           0% {
-            opacity: 0.1;
-            transform-origin: left;
-            transform: scaleX(0.1) rotate(var(--line-rotation, 0deg));
-          }
-          50% {
-            opacity: 0.3;
-            transform-origin: left;
-            transform: scaleX(1) rotate(var(--line-rotation, 0deg));
+            stroke-dashoffset: 1000;
           }
           100% {
-            opacity: 0.1;
-            transform-origin: right;
-            transform: scaleX(0.1) rotate(var(--line-rotation, 0deg));
+            stroke-dashoffset: 0;
           }
         }
-        .animate-line-flow {
-          /* transform-origin for scaleX to make it look like it flows */
-          /* Actual rotation will be applied via inline style */
+        /* For perspective transformations */
+        .perspective {
+          perspective: 1000px;
+        }
+        .transform-style-3d {
+          transform-style: preserve-3d;
+        }
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
+        .group:hover .group-hover\\:rotate-y-180 {
+            transform: rotateY(180deg);
         }
       `}</style>
     </div>
