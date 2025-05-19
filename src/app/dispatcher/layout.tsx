@@ -88,12 +88,12 @@ export default function DispatcherLayout({
         <SidebarHeader className="p-4">
           <div className="flex items-center gap-2">
             <TriGoLogo />
-            <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">TriGo Dispatch</h1>
+            <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">TriGo Dispatcher</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            <SidebarMenuItem>
+           <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher"}>
                 <Link href="/dispatcher">
                   <span style={{ display: "contents" }}>
@@ -102,7 +102,7 @@ export default function DispatcherLayout({
                   </span>
                 </Link>
               </SidebarMenuButton>
-            </SidebarMenuItem>
+           </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/triders"}>
                 <Link href="/dispatcher/triders">
@@ -245,7 +245,7 @@ export default function DispatcherLayout({
           </SidebarTrigger>
            <div className="flex items-center gap-2">
             <TriGoLogo />
-            <h1 className="text-lg font-semibold text-primary">TriGo Dispatch</h1>
+            <h1 className="text-lg font-semibold text-primary">TriGo Dispatcher</h1>
           </div>
           <div className="ml-auto">
             {isAuthenticated ? (
