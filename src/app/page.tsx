@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { User, Bike, Phone, Settings as AdminIconSettings, ArrowRight } from 'lucide-react'; // Renamed Settings to AdminIconSettings
+import { User, Bike, Phone, Settings as AdminIconSettings, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Updated TriGoCentralLogo
@@ -12,34 +12,34 @@ const TriGoCentralLogo = () => (
     href="https://trigo.live"
     target="_blank"
     rel="noopener noreferrer"
-    className="inline-block mb-6 group perspective" // Added perspective for 3D flip
+    className="inline-block mb-6 group perspective"
     aria-label="Visit TriGo Live"
   >
     <div 
       className="
-        bg-white/20 
-        w-32 h-28 /* Adjusted size for triangle proportions */
+        bg-white/20 /* Opacity of triangle fill is 0.2 */
+        backdrop-blur-md /* Glassmorphism blur */
+        border border-white/20 /* Subtle glass edge */
+        w-32 h-28 
         flex items-center justify-center 
         relative 
         transition-all duration-500 ease-in-out
-        transform-style-3d /* Enable 3D transforms */
-        group-hover:rotate-y-180 /* Flip on group hover */
-        group-hover:shadow-[0_0_15px_#fff,0_0_25px_#fff,0_0_40px_#f0f030,0_0_60px_#f0f030,0_0_80px_#f0f030] /* Aura effect */
+        transform-style-3d 
+        group-hover:rotate-y-180 
+        electric-animation /* Apply continuous electric aura animation */
       "
       style={{ 
         clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
       }}
     >
-      {/* Icon wrapper for consistent centering and preventing flip issues with icon itself */}
+      {/* Icon wrapper for consistent centering */}
       <div className="w-full h-full flex items-center justify-center 
                       transform transition-transform duration-300 
-                      group-hover:scale-95 /* Slight scale adjust on hover */
-                      relative z-10 /* Ensure icon is above potential pseudo-elements if added later */
-                      pt-3 /* Adjust vertical position of icon within triangle */">
+                      group-hover:scale-95 
+                      relative z-10 
+                      pt-3">
         <Bike 
-          className="
-            w-16 h-16 text-white
-          " 
+          className="w-16 h-16 text-white" 
         />
       </div>
     </div>
@@ -71,11 +71,6 @@ const RoleCard: React.FC<RoleCardProps> = ({
   const handleClick = () => {
     if (openInNewTab) {
       window.open(href, '_blank');
-    } else {
-      // If you want some cards to navigate in the same tab
-      // import { useRouter } from 'next/navigation';
-      // const router = useRouter();
-      // router.push(href);
     }
   };
 
@@ -83,10 +78,8 @@ const RoleCard: React.FC<RoleCardProps> = ({
     <div 
       className="bg-slate-900/40 backdrop-blur-lg border border-slate-700/60 rounded-xl p-6 flex flex-col items-center text-center shadow-2xl w-full sm:w-72 h-80 justify-between transition-all duration-300 ease-in-out hover:scale-105 hover:border-slate-500/80 hover:shadow-blue-500/20 relative overflow-hidden group"
     >
-      {/* Shine effect for card hover */}
       <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 group-hover:animate-card-shine group-hover:left-full transition-all duration-1000 opacity-0 group-hover:opacity-100"></div>
       
-      {/* Sparkles */}
       <div className="absolute top-2 left-2 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-70 group-hover:animate-sparkle delay-100"></div>
       <div className="absolute bottom-2 right-2 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-70 group-hover:animate-sparkle delay-200"></div>
       <div className="absolute top-3 right-3 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-60 group-hover:animate-sparkle delay-300"></div>
@@ -193,14 +186,14 @@ export default function HomePage() {
           href="/dispatcher"
           iconColorClass="text-yellow-400"
           buttonColorClass="bg-yellow-500 hover:bg-yellow-400"
-          openInNewTab={true}
+          openInNewTab={false} // Dispatcher opens in the same tab
         />
         <RoleCard
           icon={AdminIconSettings}
           title="Admin"
           description="Oversee system and configure settings"
           buttonText="Select Role"
-          href="/dispatcher/admin-dashboard"
+          href="/dispatcher/admin-dashboard" 
           iconColorClass="text-emerald-400"
           buttonColorClass="bg-emerald-600 hover:bg-emerald-500"
           openInNewTab={true} 
@@ -265,11 +258,11 @@ export default function HomePage() {
 
         @keyframes line-flow-animation {
           0% {
-            stroke-dashoffset: 1000; /* For SVG lines, not directly applicable to div bg */
-            /* For div backgrounds, you might animate background-position */
+            /* For div backgrounds, you might animate background-position or use pseudo-elements */
+            /* This is a placeholder for a more complex line animation if needed */
           }
           100% {
-            stroke-dashoffset: 0;
+            /* stroke-dashoffset: 0; */
           }
         }
         /* For perspective transformations */
@@ -279,13 +272,23 @@ export default function HomePage() {
         .transform-style-3d {
           transform-style: preserve-3d;
         }
-        .rotate-y-180 {
-          transform: rotateY(180deg);
+        .rotate-y-180 { /* This class is applied on hover by group-hover:rotate-y-180 */
+           /* transform: rotateY(180deg); */
         }
-        .group:hover .group-hover\\:rotate-y-180 {
-            transform: rotateY(180deg);
+        
+        @keyframes electric-pulse {
+          0% { box-shadow: 0 0 3px rgba(200,255,255,0.4), 0 0 5px rgba(0,170,255,0.3), 0 0 7px rgba(0,170,255,0.3), inset 0 0 2px rgba(225,255,255,0.1); }
+          25% { box-shadow: 0 0 4px rgba(225,255,255,0.5), 0 0 7px rgba(0,180,255,0.4), 0 0 10px rgba(0,180,255,0.4), inset 0 0 3px rgba(225,255,255,0.2); }
+          50% { box-shadow: 0 0 3px rgba(200,255,255,0.3), 0 0 6px rgba(0,170,255,0.2), 0 0 8px rgba(0,170,255,0.2), inset 0 0 1px rgba(225,255,255,0.1); }
+          75% { box-shadow: 0 0 5px rgba(225,255,255,0.6), 0 0 9px rgba(0,190,255,0.5), 0 0 13px rgba(0,190,255,0.5), inset 0 0 4px rgba(225,255,255,0.3); }
+          100% { box-shadow: 0 0 3px rgba(200,255,255,0.4), 0 0 5px rgba(0,170,255,0.3), 0 0 7px rgba(0,170,255,0.3), inset 0 0 2px rgba(225,255,255,0.1); }
         }
+        .electric-animation {
+          animation: electric-pulse 1.5s infinite linear;
+        }
+
       `}</style>
     </div>
   );
 }
+
