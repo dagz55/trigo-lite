@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { User, Bike, Phone, Settings as AdminIcon, ArrowRight } from 'lucide-react';
+import { User, Bike, Phone, Settings as AdminIconSettings, ArrowRight } from 'lucide-react'; // Renamed Settings to AdminIconSettings
 import { Button } from '@/components/ui/button';
 
 // Updated TriGoCentralLogo
@@ -71,6 +71,11 @@ const RoleCard: React.FC<RoleCardProps> = ({
   const handleClick = () => {
     if (openInNewTab) {
       window.open(href, '_blank');
+    } else {
+      // If you want some cards to navigate in the same tab
+      // import { useRouter } from 'next/navigation';
+      // const router = useRouter();
+      // router.push(href);
     }
   };
 
@@ -168,6 +173,7 @@ export default function HomePage() {
           href="/passenger"
           iconColorClass="text-purple-400"
           buttonColorClass="bg-purple-600 hover:bg-purple-500"
+          openInNewTab={true}
         />
         <RoleCard
           icon={Bike}
@@ -177,6 +183,7 @@ export default function HomePage() {
           href="/trider"
           iconColorClass="text-blue-400"
           buttonColorClass="bg-blue-600 hover:bg-blue-500"
+          openInNewTab={true}
         />
         <RoleCard
           icon={Phone}
@@ -186,15 +193,17 @@ export default function HomePage() {
           href="/dispatcher"
           iconColorClass="text-yellow-400"
           buttonColorClass="bg-yellow-500 hover:bg-yellow-400"
+          openInNewTab={true}
         />
         <RoleCard
-          icon={AdminIcon}
+          icon={AdminIconSettings}
           title="Admin"
           description="Oversee system and configure settings"
           buttonText="Select Role"
-          href="/dispatcher/settings"
+          href="/dispatcher/admin-dashboard"
           iconColorClass="text-emerald-400"
           buttonColorClass="bg-emerald-600 hover:bg-emerald-500"
+          openInNewTab={true} 
         />
       </div>
 
@@ -228,7 +237,7 @@ export default function HomePage() {
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
 
-        @keyframes card-shine { /* Renamed from animate-shine to avoid conflict if used elsewhere */
+        @keyframes card-shine { 
           0% { transform: translateX(-120%) skewX(-30deg); opacity: 0.1; }
           20% { opacity: 0.3; }
           60% { opacity: 0.3; }
@@ -256,7 +265,8 @@ export default function HomePage() {
 
         @keyframes line-flow-animation {
           0% {
-            stroke-dashoffset: 1000;
+            stroke-dashoffset: 1000; /* For SVG lines, not directly applicable to div bg */
+            /* For div backgrounds, you might animate background-position */
           }
           100% {
             stroke-dashoffset: 0;
@@ -279,4 +289,3 @@ export default function HomePage() {
     </div>
   );
 }
-
