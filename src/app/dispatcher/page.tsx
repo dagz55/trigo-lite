@@ -10,7 +10,7 @@ import type { Trider, RideRequest, AiInsight, Coordinates, TodaZone, RoutePath }
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ListChecks, Map } from 'lucide-react';
+import { Loader2, ListChecks, Map, ArrowRightCircle } from 'lucide-react';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { isPointInCircle, getRandomPointInCircle, calculateDistance } from '@/lib/geoUtils';
 import { useSettings } from '@/contexts/SettingsContext'; 
@@ -32,12 +32,12 @@ if (!teptodaZone) throw new Error(`TEPTODA zone with ID ${TEPTODA_ZONE_ID} not f
 if (!p1TodaZone) throw new Error(`P1TODA zone with ID ${P1TODA_ZONE_ID} not found.`);
 
 const initialTalonKuatroTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = [
-  "Peter", "Andrew", "James Z.", "John", "Philip"
+  "Peter", "Andrew", "James Z.", "John", "Philip", "Bartholomew", "Thomas", "Matthew", "James A.", "Thaddaeus"
 ].map((name, index) => {
   const randomLocationInZone = getRandomPointInCircle(talonKuatroZone.center, talonKuatroZone.radiusKm * 0.8);
   const statuses: Trider['status'][] = ['available', 'busy', 'offline', 'assigned'];
   let status = statuses[index % statuses.length];
-  if (index < 2) status = 'available'; 
+  if (index < 5) status = 'available'; 
 
   return {
     id: `trider-dispatch-tk-${index + 1}`,
@@ -50,7 +50,7 @@ const initialTalonKuatroTridersData: Omit<Trider, 'todaZoneName' | 'currentPath'
 });
 
 const initialTeptodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = [
-  "Bartholomew", "Thomas", "Matthew", "James A.", "Thaddaeus"
+  "Judas Iscariot (TEP)", "Simon Peter (TEP)", "John the Baptist (TEP)", "Mary Magdalene (TEP)", "Lazarus (TEP)"
 ].map((name, index) => {
   const randomLocationInZone = getRandomPointInCircle(teptodaZone.center, teptodaZone.radiusKm * 0.8);
   const statuses: Trider['status'][] = ['available', 'offline', 'busy', 'assigned'];
@@ -59,7 +59,7 @@ const initialTeptodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | '
 
   return {
     id: `trider-dispatch-tep-${index + 1}`,
-    name: `${name} (TEP)`,
+    name: name,
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'E-Bike' : 'Tricycle',
@@ -68,7 +68,7 @@ const initialTeptodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | '
 });
 
 const initialP1TodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = [
-  "Simon Z.", "Matthias", "Paul"
+  "Simon Z. (P1)", "Matthias (P1)", "Paul (P1)"
 ].map((name, index) => {
   const randomLocationInZone = getRandomPointInCircle(p1TodaZone.center, p1TodaZone.radiusKm * 0.8);
   const statuses: Trider['status'][] = ['available', 'offline', 'busy'];
@@ -77,7 +77,7 @@ const initialP1TodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'p
 
   return {
     id: `trider-dispatch-p1-${index + 1}`,
-    name: `${name} (P1)`,
+    name: name,
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
@@ -384,24 +384,27 @@ export default function DispatcherPage() {
   const handleSelectTrider = React.useCallback((trider: Trider | null) => {
     if (!trider) {
       setSelectedTrider(null);
-      setRouteGeoJson(null);
+      if (!selectedRideRequest) setRouteGeoJson(null); // Clear route only if no ride is selected
       return;
     }
-    setSelectedTrider(trider);
+  
     if (selectedRideRequest) {
       const ridePickupZoneId = selectedRideRequest.pickupTodaZoneId || getTodaZoneForLocation(selectedRideRequest.pickupLocation)?.id;
       if (ridePickupZoneId && trider.todaZoneId === ridePickupZoneId) {
+        setSelectedTrider(trider);
         fetchRouteAndUpdateTrider(trider, selectedRideRequest.pickupLocation, selectedRideRequest.dropoffLocation);
       } else {
+        setSelectedTrider(trider); // Still select the trider
         toast({
           title: "Zone Mismatch",
-          description: `Trider ${trider.name} (${trider.todaZoneName}) is in a different zone than the ride request (${todaZones.find(z => z.id === ridePickupZoneId)?.name || 'N/A'}). Select a matching trider or ride.`,
+          description: `Trider ${trider.name} (${trider.todaZoneName}) is in a different zone than the ride request (${todaZones.find(z => z.id === ridePickupZoneId)?.name || 'N/A'}). Dispatch will be disabled.`,
           variant: "destructive"
         });
-        setRouteGeoJson(null);
+        setRouteGeoJson(null); // Clear route due to mismatch
       }
     } else {
-      setRouteGeoJson(null);
+      setSelectedTrider(trider); // No ride request selected, just select the trider
+      setRouteGeoJson(null); // Clear any existing route
     }
   }, [selectedRideRequest, getTodaZoneForLocation, fetchRouteAndUpdateTrider, todaZones, toast]);
   
@@ -409,7 +412,7 @@ export default function DispatcherPage() {
     if (!request) {
       setSelectedRideRequest(null);
       setCandidateTriders(triders.filter(t => t.status === 'available'));
-      setRouteGeoJson(null);
+      if (!selectedTrider) setRouteGeoJson(null); // Clear route only if no trider is selected
       return;
     }
   
@@ -434,7 +437,7 @@ export default function DispatcherPage() {
       } else {
         toast({
           title: "Zone Mismatch",
-          description: `Selected trider ${selectedTrider.name} (${selectedTrider.todaZoneName}) is not in the ride's zone (${todaZones.find(z => z.id === pickupZoneId)?.name || 'N/A'}). Please select a trider from the updated list.`,
+          description: `Previously selected trider ${selectedTrider.name} (${selectedTrider.todaZoneName}) is not in the ride's zone (${todaZones.find(z => z.id === pickupZoneId)?.name || 'N/A'}). Please select a trider from the updated list.`,
           variant: "destructive"
         });
         setSelectedTrider(null); 
@@ -460,7 +463,6 @@ export default function DispatcherPage() {
       return;
     }
 
-    // Use the already resolved pickupTodaZoneId from the selectedRideRequest state
     const ridePickupZoneId = selectedRideRequest.pickupTodaZoneId;
 
     if (!ridePickupZoneId) {
@@ -472,24 +474,14 @@ export default function DispatcherPage() {
       return;
     }
 
-    // Route should have been fetched already if selections are valid and matching
-    // If not, fetchRouteAndUpdateTrider can be called, but it might be redundant
-    // For now, assume route is ready or will be handled by selection logic
-    // We can ensure it's called here again if routeGeoJson is null for safety,
-    // but ideally, the selection logic handles it.
-
     setTriders(prev => prev.map(t => t.id === selectedTrider!.id ? { ...t, status: 'assigned' } : t));
     setRideRequests(prev => prev.map(r => r.id === selectedRideRequest!.id ? { ...r, status: 'assigned', assignedTriderId: selectedTrider!.id } : r));
     
     toast({ title: "Ride Dispatched! (Mock)", description: `${selectedTrider!.name} assigned to ${selectedRideRequest!.passengerName}.` });
     
-    // Update candidate triders excluding the one just dispatched
     const updatedCandidateTriders = candidateTriders.filter(t => t.id !== selectedTrider!.id);
     setCandidateTriders(updatedCandidateTriders);
-    // It's good practice to clear selectedTrider after dispatch,
-    // selectedRideRequest will likely move out of 'pending' list.
     setSelectedTrider(null); 
-    // setSelectedRideRequest(null); // Or let it update via status change filtering
   };
   
   const resolvedRidePickupZoneId = selectedRideRequest?.pickupTodaZoneId;
@@ -545,8 +537,8 @@ export default function DispatcherPage() {
 
       <div className="flex-grow grid grid-cols-1 overflow-hidden">
         {activeView === 'control' && (
-          <div className="flex flex-col gap-4 overflow-y-auto h-full">
-            <Card className="flex-shrink-0">
+           <div className="flex flex-col gap-4 h-full"> {/* Main container for control view */}
+            <Card className="flex-shrink-0"> {/* Dispatch Control Card */}
               <CardHeader>
                 <CardTitle className="text-lg">Dispatch Control</CardTitle>
                 <CardDescription>Select a ride and an available trider from the same TODA zone to dispatch. All data is mocked.</CardDescription>
@@ -564,26 +556,27 @@ export default function DispatcherPage() {
                 >
                   {isFetchingRoute && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Dispatch Ride
+                  {!isDispatchDisabled && <ArrowRightCircle className="ml-2 h-5 w-5" />}
                 </Button>
               </CardFooter>
             </Card>
 
-            <div className="flex-grow min-h-[200px]">
+            {/* This div will contain the two lists and should grow to fill available space */}
+            <div className="flex-grow grid md:grid-cols-2 gap-4 min-h-0"> 
               <TriderList 
                 triders={selectedRideRequest ? candidateTriders : triders.filter(t => t.status === 'available')}
                 selectedTriderId={selectedTrider?.id || null}
                 onSelectTrider={handleSelectTrider} 
               />
-            </div>
-            <div className="flex-grow min-h-[200px]">
               <RideRequestList 
-                rideRequests={rideRequests} 
+                rideRequests={rideRequests.filter(r => r.status === 'pending')}
                 selectedRideRequestId={selectedRideRequest?.id || null}
                 onSelectRideRequest={handleSelectRideRequest}
                 todaZones={todaZones}
               />
             </div>
-            <div className="flex-grow min-h-[150px]">
+            
+            <div className="flex-shrink-0 mt-4"> {/* AI Insights at the bottom */}
                <AiInsights insights={aiInsights} />
             </div>
           </div>
