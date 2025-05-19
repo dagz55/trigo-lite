@@ -23,9 +23,9 @@ import {
   CarTaxiFront, 
   LogIn, 
   UserPlus,
-  MessagesSquare, // Added
-  Wallet,         // Added
-  MoreHorizontal  // Added
+  MessagesSquare,
+  Wallet,
+  MoreHorizontal
 } from 'lucide-react';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -37,7 +37,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"; // Added
+} from "@/components/ui/dropdown-menu";
 
 // TriGo Logo SVG
 const TriGoLogo = () => (
@@ -134,7 +134,6 @@ export default function DispatcherLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            {/* New Menu Items Below Alerts */}
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dispatcher/channels"}>
                 <Link href="#"> 
@@ -167,20 +166,16 @@ export default function DispatcherLayout({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="right" align="start" className="w-48 ml-2 group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:mt-2">
                   <DropdownMenuItem>
-                     {/* <User className="mr-2 h-4 w-4" /> */}
                     <span>Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                     {/* <CreditCard className="mr-2 h-4 w-4" /> */}
                     <span>Billing</span>
                   </DropdownMenuItem>
                    <DropdownMenuItem>
-                    {/* <HelpCircle className="mr-2 h-4 w-4" /> */}
                     <span>Help Center</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
-                    {/* <LogOutIcon className="mr-2 h-4 w-4" /> */}
                     <span>Logout (Simulated)</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -243,6 +238,7 @@ export default function DispatcherLayout({
       <SidebarInset className="flex flex-col">
          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2 md:hidden">
           <SidebarTrigger>
+            {/* Ensure an accessible title for the mobile sheet trigger */}
             <VisuallyHidden>
                 <SheetTitle>Mobile Navigation Menu</SheetTitle>
             </VisuallyHidden>
