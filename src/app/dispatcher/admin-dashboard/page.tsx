@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from "@/components/ui/badge"; // Added Badge import
 import {
   LineChart,
   Line,
@@ -76,6 +77,7 @@ interface ActivityItem {
   id: number;
   icon: React.ElementType;
   color: string;
+  bgColor: string; // Added bgColor for consistency with other uses
   description: string;
   tag: string;
   time: Date;
@@ -316,13 +318,14 @@ export default function AdminDashboardPage() {
                     <span className="text-sm" style={{color: adminDashboardTextSecondary}}>{metric.label}</span>
                     <span className="text-sm font-medium" style={{color: adminDashboardTextPrimary}}>{metric.value}</span>
                   </div>
-                  <Progress 
-                    value={metric.progress} 
-                    className="h-2 [&>div]:transition-all [&>div]:duration-500" 
-                    indicatorClassName={
-                        metric.progress > 80 ? "bg-[#34D399]" : 
-                        metric.progress > 50 ? "bg-[#FBBF24]" : "bg-[#F87171]"
-                    }
+                  <Progress
+                    value={metric.progress}
+                    className={cn(
+                        "h-2 [&>div]:transition-all [&>div]:duration-500",
+                        metric.progress > 80 ? "[&>div]:bg-[#34D399]" : 
+                        metric.progress > 50 ? "[&>div]:bg-[#FBBF24]" : 
+                        "[&>div]:bg-[#F87171]"
+                    )}
                   />
                 </div>
               ))}
@@ -413,3 +416,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
