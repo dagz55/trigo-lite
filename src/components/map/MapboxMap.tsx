@@ -35,6 +35,7 @@ const rideRequestStatusColors: Record<RideRequest['status'], string> = {
   'in-progress': 'bg-purple-500 text-white',
   completed: 'bg-green-600 text-white',
   cancelled: 'bg-gray-500 text-white',
+  searching: 'bg-orange-500 text-white',
 };
 
 const purpleShades: string[] = [
@@ -238,9 +239,9 @@ export function MapboxMap({
     type: 'fill',
     source: 'toda-zones-source',
     paint: {
-      'fill-color': resolvedPrimaryColor,
+      'fill-color': resolvedPrimaryColor, // This should be in a format Mapbox expects
       'fill-opacity': 0.2, 
-      'fill-outline-color': resolvedPrimaryColor,
+      'fill-outline-color': resolvedPrimaryColor, // This should also be in a format Mapbox expects
     }
   }), [resolvedPrimaryColor]);
 

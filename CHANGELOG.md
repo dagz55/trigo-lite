@@ -13,9 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Dispatcher related pages (Dashboard, Triders, Settings) moved under `/dispatcher` route.
     - `/passenger` and `/trider` routes remain top-level for role simulation.
 - **Passenger Role Simulation (`/passenger`):**
-    - **New Landing Page:** Implemented a new landing page UI for passengers as per image reference, with options to "Ride Before", "Ride Now", "Ride Later".
-    - **"Pick Me Up Now" Feature:** Implemented the core passenger ride request flow. This includes a button for passengers to request a ride. The system will sequentially alert the nearest available triders at 10-second intervals until a trider accepts the request. This is a key feature of the application.
-    - UI for selecting pickup and dropoff on map.
+    - **New Landing Page:** Initial view for passengers featuring "Ride Before", "Ride Now", "Ride Later" options, with a background image and themed elements.
+    - **"Pick Me Up Now" Feature:** Core passenger ride request flow implemented. Passengers can request a ride via a button. The system alerts the nearest available triders sequentially at 10-second intervals until accepted.
     - Mock ride request flow: searching, trider assignment, trider en route, ride completion.
     - Map display of assigned trider's live location (simulated) and ETA, with trider accurately following Mapbox-calculated route.
     - Distinct route colors for trider-to-pickup and pickup-to-dropoff segments.

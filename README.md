@@ -50,9 +50,11 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - Customizable map style (streets, satellite, dark) per passenger, saved in `localStorage`.
 - **Trider Role Simulation (`/trider`):**
   - **Bottom Navigation:** Dashboard, Wallet, Settings, Premium views.
+
   - **Dashboard:** Manage status (online/offline). Geolocation on going online. View and accept incoming ride requests within their TODA zone. Map view showing current location, active ride details, and route. Simulation of movement following Mapbox routes.
   - **Wallet (Mocked):** View balance, send/add mock "TriCoin", view mock transaction history.
   - **Settings (Mocked):** Toggle notification preferences, select map style (saved to localStorage).
+
   - **Premium (Mocked):** View subscription status, mock upgrade/downgrade.
   - Ability to request a change to a different TODA zone.
 - **Application Settings (`/dispatcher/settings`):**
