@@ -101,29 +101,29 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
   }, [settings.theme, isLoading]);
 
 
-  const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+  const updateSetting = React.useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings(prevSettings => ({
       ...prevSettings,
       [key]: value,
     }));
-  };
+  }, []);
 
-  const resetSettings = () => {
+  const resetSettings = React.useCallback(() => {
     setSettings(defaultSettings);
     try {
       localStorage.removeItem('triGoAppSettings');
     } catch (error) {
       console.error("Failed to remove settings from localStorage:", error);
     }
-  };
+  }, []);
 
-  const getTodaBaseFare = (todaZoneId: string): number => {
+  const getTodaBaseFare = React.useCallback((todaZoneId: string): number => {
     return settings.todaBaseFares[todaZoneId] ?? settings.defaultBaseFare ?? DEFAULT_TODA_BASE_FARE_FALLBACK;
-  };
+  }, [settings.todaBaseFares, settings.defaultBaseFare]);
 
-  const getTodaTerminalExitPoint = (todaZoneId: string): { point: Coordinates; address: string } | undefined => {
+  const getTodaTerminalExitPoint = React.useCallback((todaZoneId: string): { point: Coordinates; address: string } | undefined => {
     return settings.todaTerminalExitPoints[todaZoneId];
-  };
+  }, [settings.todaTerminalExitPoints]);
 
   const contextValue = React.useMemo(() => ({
     ...settings,
@@ -132,7 +132,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     isLoading,
     getTodaBaseFare,
     getTodaTerminalExitPoint,
-  }), [settings, isLoading]);
+  }), [settings, isLoading, updateSetting, resetSettings, getTodaBaseFare, getTodaTerminalExitPoint]);
 
 
   return (
