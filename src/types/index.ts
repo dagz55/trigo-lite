@@ -25,7 +25,7 @@ export interface TodaZone {
 export interface Trider {
   id:string;
   name: string;
-  bodyNumber: string; // Added bodyNumber
+  bodyNumber: string;
   location: Coordinates;
   status: TriderExtendedStatus;
   vehicleType?: string;
@@ -95,9 +95,26 @@ export interface TriderWallet {
 
 export type TodaZoneChangeRequestStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
+export interface TriderWalletTransaction {
+  id: string;
+  type: 'sent' | 'received' | 'added' | 'payout' | 'commission';
+  amount: number;
+  description: string;
+  timestamp: Date;
+}
+
+export type PassengerMapStyle = 'streets' | 'satellite' | 'dark';
+
+export interface TriderAppSettings {
+  notifications: {
+    newRequests: boolean;
+    chatMessages: boolean;
+  };
+  mapStyle: PassengerMapStyle; 
+}
+
 export interface TriderProfile extends Trider {
-  // bodyNumber is inherited from Trider
-  status: TriderExtendedStatus; // More specific status for profile view
+  status: TriderExtendedStatus;
   wallet: TriderWallet;
   contactNumber?: string;
   profilePictureUrl?: string;
@@ -105,6 +122,11 @@ export interface TriderProfile extends Trider {
   lastSeen?: Date;
   requestedTodaZoneId?: string;
   todaZoneChangeRequestStatus?: TodaZoneChangeRequestStatus;
+  // New fields for Trider page expansion
+  walletBalance?: number; 
+  transactions?: TriderWalletTransaction[];
+  appSettings?: TriderAppSettings;
+  subscriptionStatus?: 'basic' | 'premium';
 }
 
 export interface ChatMessage {
@@ -127,9 +149,9 @@ export interface AppSettings {
   triderUpdateIntervalMs: number;
   aiInsightIntervalMs: number;
   convenienceFee: number;
-  todaBaseFares: Record<string, number>; // Stores baseFare per TODA zone ID
-  defaultBaseFare: number; // New global default base fare
-  perKmCharge: number; // New global charge per KM
+  todaBaseFares: Record<string, number>; 
+  defaultBaseFare: number; 
+  perKmCharge: number; 
 }
 
 export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings> = {
@@ -166,8 +188,6 @@ export interface TriderSimState {
   currentPath: RoutePath | null; 
   currentPathIndex: number; 
 }
-
-export type PassengerMapStyle = 'streets' | 'satellite' | 'dark';
 
 export interface PassengerSettings {
   mapStyle: PassengerMapStyle;

@@ -2,25 +2,28 @@
 "use client";
 
 import * as React from 'react';
-import { MapPin, Users, Bike, LogIn, UserCircle, CircleDollarSign, CheckCircle, XCircle, Loader2, Send, Edit3 } from 'lucide-react';
+import { MapPin, Users, Bike, LogIn, UserCircle, CircleDollarSign, CheckCircle, XCircle, Loader2, Send, Edit3, LayoutDashboard, Wallet as WalletIcon, Settings as SettingsIcon, Star, ChevronRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import Map, { Marker, Popup, Source, Layer, NavigationControl, MapRef } from 'react-map-gl';
-import type { Coordinates, RideRequest, TriderSimState, TriderProfile, RoutePath, TodaZone, TodaZoneChangeRequestStatus } from '@/types';
+import type { Coordinates, RideRequest, TriderSimState, TriderProfile, RoutePath, TodaZone, TriderWalletTransaction, TriderAppSettings, PassengerMapStyle } from '@/types';
 import { todaZones as appTodaZones } from '@/data/todaZones';
 import { getRandomPointInCircle, calculateDistance } from '@/lib/geoUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
-const TALON_KUATRO_ZONE_ID = '2'; // APHDA
+const TALON_KUATRO_ZONE_ID = '2'; 
 const talonKuatroZone = appTodaZones.find(z => z.id === TALON_KUATRO_ZONE_ID);
 
 if (!talonKuatroZone) {
@@ -30,7 +33,7 @@ if (!talonKuatroZone) {
 const selfTriderProfileInitial: TriderProfile = {
   id: 'trider-self-sim-tk',
   name: 'Juan Dela Cruz (You)',
-  bodyNumber: "999", // Default body number for self-simulated trider
+  bodyNumber: "999",
   location: getRandomPointInCircle(talonKuatroZone.center, talonKuatroZone.radiusKm * 0.3),
   status: 'offline',
   vehicleType: 'E-Bike',
@@ -41,11 +44,24 @@ const selfTriderProfileInitial: TriderProfile = {
   wallet: { currentBalance: 250.75, totalEarnedAllTime: 1250.50, todayTotalRides: 0, todayTotalFareCollected: 0, todayNetEarnings: 0, todayTotalCommission: 0, paymentLogs: [], recentRides: [] },
   currentPath: null,
   pathIndex: 0,
-  isOnline: false, // Ensure this aligns with status
+  isOnline: false,
   requestedTodaZoneId: undefined,
   todaZoneChangeRequestStatus: 'none',
+  // New fields
+  walletBalance: 250.75,
+  transactions: [
+    { id: 'tx1', type: 'received', amount: 50, description: 'Ride 123', timestamp: new Date(Date.now() - 1000 * 60 * 30)},
+    { id: 'tx2', type: 'commission', amount: -10, description: 'Commission for Ride 123', timestamp: new Date(Date.now() - 1000 * 60 * 29)},
+    { id: 'tx3', type: 'payout', amount: -100, description: 'Weekly Payout', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24)},
+  ],
+  appSettings: {
+    notifications: { newRequests: true, chatMessages: true },
+    mapStyle: 'streets',
+  },
+  subscriptionStatus: 'basic',
 };
 
+type TriderActiveView = 'dashboard' | 'wallet' | 'settings' | 'premium';
 
 export default function TriderPage() {
   const { defaultMapCenter, defaultMapZoom, isLoading: settingsLoading } = useSettings();
@@ -53,6 +69,25 @@ export default function TriderPage() {
 
   const [triderProfile, setTriderProfile] = React.useState<TriderProfile>(selfTriderProfileInitial);
   const [selectedNewZone, setSelectedNewZone] = React.useState<string>('');
+
+  const [activeTriderView, setActiveTriderView] = React.useState<TriderActiveView>('dashboard');
+  
+  const [triderAppSettings, setTriderAppSettings] = React.useState<TriderAppSettings>(
+    triderProfile.appSettings || { notifications: { newRequests: true, chatMessages: true }, mapStyle: 'streets' }
+  );
+  const [triderWalletBalance, setTriderWalletBalance] = React.useState(triderProfile.walletBalance || 250.75);
+  const [triderTransactions, setTriderTransactions] = React.useState<TriderWalletTransaction[]>(
+    triderProfile.transactions || [
+      { id: 'tx1', type: 'received', amount: 50, description: 'Ride ABC', timestamp: new Date(Date.now() - 3600000) },
+      { id: 'tx2', type: 'commission', amount: -10, description: 'Commission for Ride ABC', timestamp: new Date(Date.now() - 3540000) },
+      { id: 'tx3', type: 'payout', amount: -100, description: 'Weekly payout', timestamp: new Date(Date.now() - 86400000) },
+    ]
+  );
+  const [triderSubscriptionStatus, setTriderSubscriptionStatus] = React.useState<'basic' | 'premium'>(
+    triderProfile.subscriptionStatus || 'basic'
+  );
+  const [sendCoinRecipient, setSendCoinRecipient] = React.useState('');
+  const [sendCoinAmount, setSendCoinAmount] = React.useState('');
 
   const [viewState, setViewState] = React.useState({
     longitude: triderProfile.location.longitude,
@@ -74,7 +109,6 @@ export default function TriderPage() {
   const [routeColor, setRouteColor] = React.useState('hsl(var(--accent))');
   const mapRefTrider = React.useRef<MapRef | null>(null);
   const [lastToastRideId, setLastToastRideId] = React.useState<string | null>(null);
-
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -110,7 +144,6 @@ export default function TriderPage() {
     toast({ title, description, variant });
   }, [toast]);
 
-
   React.useEffect(() => {
     let requestIntervalId: NodeJS.Timeout | undefined = undefined;
 
@@ -133,9 +166,8 @@ export default function TriderPage() {
 
         const pickupLocation = getRandomPointInCircle(currentTriderZone.center, currentTriderZone.radiusKm * 0.8);
         
-        // For trider demo, dropoff is also within their zone for simplicity, or a nearby one.
         let randomDropoffZone = currentTriderZone;
-        if (Math.random() > 0.7 && appTodaZones.length > 1) { // Occasionally pick a different (nearby) zone
+        if (Math.random() > 0.7 && appTodaZones.length > 1) { 
             const otherZones = appTodaZones.filter(z => z.id !== currentTriderZone.id);
             if (otherZones.length > 0) randomDropoffZone = otherZones[Math.floor(Math.random() * otherZones.length)];
         }
@@ -187,7 +219,7 @@ export default function TriderPage() {
         }
     }
     if (triderState.status === 'offline' || triderState.activeRideRequest) {
-        setLastToastRideId(null); // Reset if trider goes offline or accepts a ride
+        setLastToastRideId(null); 
     }
   }, [triderState.status, triderState.availableRideRequests, triderProfile.todaZoneId, handleStatusToast, lastToastRideId]);
 
@@ -210,9 +242,7 @@ export default function TriderPage() {
             setTriderProfile(p => ({...p, location: newLocation}));
             return { ...prev, currentLocation: newLocation, currentPathIndex: nextIdx };
           } else { 
-             // Reached end of path, update location to exact target
              setTriderProfile(p => ({...p, location: targetLocation}));
-             // Status update and other logic will be handled by handlePickedUp/handleCompleteRide
              return { ...prev, currentLocation: targetLocation, currentPathIndex: prev.currentPath.coordinates.length -1 };
           }
         });
@@ -342,16 +372,28 @@ export default function TriderPage() {
     const fare = triderState.activeRideRequest.fare || 0;
     const earnings = fare * 0.8; 
     
+    const newTransaction: TriderWalletTransaction = {
+      id: `tx-ride-${Date.now()}`,
+      type: 'received',
+      amount: earnings,
+      description: `Earnings from ride #${triderState.activeRideRequest.id.slice(-4)}`,
+      timestamp: new Date()
+    };
+    setTriderTransactions(prev => [newTransaction, ...prev]);
+    setTriderWalletBalance(prev => prev + earnings);
+
     setTriderProfile(prev => ({
         ...prev,
         status: 'available', 
+        walletBalance: (prev.walletBalance || 0) + earnings,
+        transactions: [newTransaction, ...(prev.transactions || [])].slice(0,10),
         wallet: {
             ...prev.wallet,
-            currentBalance: prev.wallet.currentBalance + earnings,
-            totalEarnedAllTime: prev.wallet.totalEarnedAllTime + earnings,
-            todayTotalRides: prev.wallet.todayTotalRides + 1,
-            todayTotalFareCollected: prev.wallet.todayTotalFareCollected + fare,
-            todayNetEarnings: prev.wallet.todayNetEarnings + earnings,
+            currentBalance: (prev.wallet.currentBalance || 0) + earnings,
+            totalEarnedAllTime: (prev.wallet.totalEarnedAllTime || 0) + earnings,
+            todayTotalRides: (prev.wallet.todayTotalRides || 0) + 1,
+            todayTotalFareCollected: (prev.wallet.todayTotalFareCollected || 0) + fare,
+            todayNetEarnings: (prev.wallet.todayNetEarnings || 0) + earnings,
             recentRides: [{id: prev.activeRideRequest!.id, date: new Date(), pickupAddress: prev.activeRideRequest!.pickupAddress || 'N/A', dropoffAddress: prev.activeRideRequest!.dropoffAddress || 'N/A', fare, commissionDeducted: fare * 0.2, netEarnings: earnings}, ...prev.wallet.recentRides.slice(0,4)]
         }
     }));
@@ -378,6 +420,52 @@ export default function TriderPage() {
     }));
     handleStatusToast("Zone Change Requested", `Request to move to ${appTodaZones.find(z => z.id === selectedNewZone)?.name} sent.`);
   };
+
+  const handleSaveTriderSettings = () => {
+    setTriderProfile(prev => ({ ...prev, appSettings: triderAppSettings }));
+    // Simulate saving to localStorage
+    try {
+      localStorage.setItem(`triderAppSettings_${triderProfile.id}`, JSON.stringify(triderAppSettings));
+      handleStatusToast("Settings Saved", "Your preferences have been updated for this session.");
+    } catch (error) {
+      console.error("Error saving trider settings to localStorage:", error);
+      handleStatusToast("Save Error", "Could not save settings.", "destructive");
+    }
+  };
+
+  const handleSendTriCoin = () => {
+    const amount = parseFloat(sendCoinAmount);
+    if (!sendCoinRecipient.trim() || isNaN(amount) || amount <= 0) {
+      handleStatusToast("Invalid Input", "Please enter a valid recipient and amount.", "destructive");
+      return;
+    }
+    if (amount > triderWalletBalance) {
+      handleStatusToast("Insufficient Balance", "You do not have enough TriCoin.", "destructive");
+      return;
+    }
+    // Mock transaction
+    const newTx: TriderWalletTransaction = {
+      id: `send-${Date.now()}`, type: 'sent', amount: -amount,
+      description: `Sent to ${sendCoinRecipient}`, timestamp: new Date()
+    };
+    setTriderTransactions(prev => [newTx, ...prev].slice(0,10));
+    setTriderWalletBalance(prev => prev - amount);
+    setSendCoinRecipient('');
+    setSendCoinAmount('');
+    handleStatusToast("TriCoin Sent (Mock)", `₱${amount.toFixed(2)} sent to ${sendCoinRecipient}.`);
+  };
+
+  const handleAddTriCoin = () => {
+    // Mock adding funds
+    const addedAmount = 100; // Mock amount
+    const newTx: TriderWalletTransaction = {
+      id: `add-${Date.now()}`, type: 'added', amount: addedAmount,
+      description: `Added funds via GCash (Mock)`, timestamp: new Date()
+    };
+    setTriderTransactions(prev => [newTx, ...prev].slice(0,10));
+    setTriderWalletBalance(prev => prev + addedAmount);
+    handleStatusToast("Funds Added (Mock)", `₱${addedAmount.toFixed(2)} added to your wallet.`);
+  };
   
   const routeLayerConfig: any = {
     id: 'route-trider', type: 'line', source: 'route-trider',
@@ -385,13 +473,28 @@ export default function TriderPage() {
     paint: { 'line-color': routeColor, 'line-width': 5, 'line-opacity': 0.8 },
   };
 
+  React.useEffect(() => {
+    // Load trider settings from localStorage
+    try {
+      const storedSettings = localStorage.getItem(`triderAppSettings_${triderProfile.id}`);
+      if (storedSettings) {
+        setTriderAppSettings(JSON.parse(storedSettings));
+      }
+    } catch (error) {
+      console.error("Error loading trider settings:", error);
+    }
+  }, [triderProfile.id]);
 
-  if (settingsLoading || !MAPBOX_TOKEN) {
-    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary mr-2" /><p>Loading Trider Dashboard...</p></div>;
-  }
+  const mapStyleUrl = React.useMemo(() => {
+    switch (triderAppSettings.mapStyle) {
+      case 'satellite': return 'mapbox://styles/mapbox/satellite-streets-v12';
+      case 'dark': return 'mapbox://styles/mapbox/dark-v11';
+      default: return 'mapbox://styles/mapbox/streets-v12';
+    }
+  }, [triderAppSettings.mapStyle]);
 
-  return (
-    <div className="flex flex-col h-screen bg-background">
+  const renderDashboardView = () => (
+    <>
       <header className="p-4 border-b shadow-sm flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-primary flex items-center">
           <Bike className="mr-2" /> {triderProfile.todaZoneName} Trider (#{triderProfile.bodyNumber})
@@ -523,7 +626,7 @@ export default function TriderPage() {
             ref={mapRefTrider}
             onMove={evt => setViewState(evt.viewState)}
             style={{ width: '100%', height: '100%' }}
-            mapStyle="mapbox://styles/mapbox/streets-v12"
+            mapStyle={mapStyleUrl}
             mapboxAccessToken={MAPBOX_TOKEN}
           >
             <NavigationControl position="top-right" />
@@ -563,6 +666,201 @@ export default function TriderPage() {
           </Map>
         </div>
       </div>
+    </>
+  );
+
+  const renderWalletView = () => (
+    <ScrollArea className="h-full p-4 md:p-6">
+      <Card className="mb-6 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center"><WalletIcon className="mr-2 text-primary" /> My Wallet</CardTitle>
+          <CardDescription>Manage your TriCoins and view transaction history.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Current Balance</Label>
+            <p className="text-3xl font-bold text-primary">₱{triderWalletBalance.toFixed(2)}</p>
+          </div>
+          <Separator />
+          <div>
+            <Label htmlFor="send-recipient">Send TriCoin (Mock)</Label>
+            <div className="flex gap-2 mt-1">
+              <Input id="send-recipient" placeholder="Recipient ID/Username" value={sendCoinRecipient} onChange={e => setSendCoinRecipient(e.target.value)} />
+              <Input type="number" placeholder="Amount" value={sendCoinAmount} onChange={e => setSendCoinAmount(e.target.value)} className="w-32" />
+              <Button onClick={handleSendTriCoin}><Send size={16} className="mr-2" />Send</Button>
+            </div>
+          </div>
+          <Button onClick={handleAddTriCoin} variant="outline" className="w-full">Add TriCoin (Mock GCash Top-up)</Button>
+        </CardContent>
+      </Card>
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {triderTransactions.length === 0 ? (
+            <p className="text-muted-foreground">No transactions yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {triderTransactions.map(tx => (
+                <li key={tx.id} className="flex justify-between items-center p-2 border-b last:border-b-0">
+                  <div>
+                    <p className="font-medium text-sm">{tx.description}</p>
+                    <p className="text-xs text-muted-foreground">{format(tx.timestamp, "MMM d, yyyy HH:mm")}</p>
+                  </div>
+                  <span className={cn("font-semibold", tx.amount > 0 ? "text-green-500" : "text-red-500")}>
+                    {tx.amount > 0 ? '+' : ''}₱{Math.abs(tx.amount).toFixed(2)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </ScrollArea>
+  );
+
+  const renderSettingsView = () => (
+    <ScrollArea className="h-full p-4 md:p-6">
+      <Card className="mb-6 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center"><SettingsIcon className="mr-2 text-primary" /> Trider Settings</CardTitle>
+          <CardDescription>Customize your app preferences.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Label className="text-base">Notifications</Label>
+            <div className="space-y-2 mt-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="notif-new-requests">New Ride Requests</Label>
+                <Switch 
+                  id="notif-new-requests" 
+                  checked={triderAppSettings.notifications.newRequests}
+                  onCheckedChange={checked => setTriderAppSettings(s => ({...s, notifications: {...s.notifications, newRequests: checked}}))}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="notif-chat">Chat Messages</Label>
+                <Switch 
+                  id="notif-chat"
+                  checked={triderAppSettings.notifications.chatMessages}
+                  onCheckedChange={checked => setTriderAppSettings(s => ({...s, notifications: {...s.notifications, chatMessages: checked}}))}
+                />
+              </div>
+            </div>
+          </div>
+          <Separator />
+          <div>
+            <Label htmlFor="map-style-select" className="text-base">Map Style</Label>
+            <Select 
+              value={triderAppSettings.mapStyle} 
+              onValueChange={(value: PassengerMapStyle) => setTriderAppSettings(s => ({...s, mapStyle: value}))}
+            >
+              <SelectTrigger id="map-style-select" className="mt-2">
+                <SelectValue placeholder="Select map style" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="streets">Streets</SelectItem>
+                <SelectItem value="satellite">Satellite</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={handleSaveTriderSettings} className="w-full">Save Settings</Button>
+        </CardFooter>
+      </Card>
+    </ScrollArea>
+  );
+
+  const renderPremiumView = () => (
+     <ScrollArea className="h-full p-4 md:p-6">
+      <Card className="shadow-lg">
+        <CardHeader className="items-center text-center">
+          <Star className="h-12 w-12 text-yellow-400 mb-2" />
+          <CardTitle className="text-2xl">TriGo Premium</CardTitle>
+          <CardDescription>
+            {triderSubscriptionStatus === 'premium' 
+              ? "You are a Premium Trider!" 
+              : "Unlock exclusive benefits with Premium."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-center">
+          {triderSubscriptionStatus === 'basic' && (
+            <Button 
+              onClick={() => { 
+                setTriderSubscriptionStatus('premium');
+                handleStatusToast("Welcome to Premium! (Mock)", "All premium features are now active.");
+              }} 
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
+              size="lg"
+            >
+              Upgrade to Premium Now (Mock)
+            </Button>
+          )}
+          <ul className="list-disc list-inside text-left space-y-1 text-sm text-muted-foreground">
+            <li>Priority in ride assignments</li>
+            <li>Lower commission rates (Coming Soon)</li>
+            <li>Access to exclusive TODA zones (Coming Soon)</li>
+            <li>Advanced analytics (Coming Soon)</li>
+            <li>24/7 Priority Support (Coming Soon)</li>
+          </ul>
+           {triderSubscriptionStatus === 'premium' && (
+            <Button 
+              onClick={() => {
+                 setTriderSubscriptionStatus('basic');
+                 handleStatusToast("Subscription Changed (Mock)", "You are now on the Basic plan.");
+              }} 
+              variant="outline"
+              className="w-full mt-4"
+            >
+              Downgrade to Basic (Mock)
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </ScrollArea>
+  );
+
+  const navItems = [
+    { view: 'dashboard' as TriderActiveView, label: 'Dashboard', icon: LayoutDashboard },
+    { view: 'wallet' as TriderActiveView, label: 'Wallet', icon: WalletIcon },
+    { view: 'settings' as TriderActiveView, label: 'Settings', icon: SettingsIcon },
+    { view: 'premium' as TriderActiveView, label: 'Premium', icon: Star },
+  ];
+
+  if (settingsLoading || !MAPBOX_TOKEN) {
+    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary mr-2" /><p>Loading Trider Dashboard...</p></div>;
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      <div className="flex-grow overflow-y-auto">
+        {activeTriderView === 'dashboard' && renderDashboardView()}
+        {activeTriderView === 'wallet' && renderWalletView()}
+        {activeTriderView === 'settings' && renderSettingsView()}
+        {activeTriderView === 'premium' && renderPremiumView()}
+      </div>
+
+      <nav className="border-t bg-card shadow-md">
+        <div className="max-w-md mx-auto grid grid-cols-4 gap-px">
+          {navItems.map(item => (
+            <Button
+              key={item.view}
+              variant="ghost"
+              onClick={() => setActiveTriderView(item.view)}
+              className={cn(
+                "flex flex-col items-center justify-center h-16 rounded-none text-xs hover:bg-accent hover:text-accent-foreground transition-colors",
+                activeTriderView === item.view ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground"
+              )}
+            >
+              <item.icon size={20} className="mb-0.5" />
+              {item.label}
+            </Button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
