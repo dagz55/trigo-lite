@@ -20,6 +20,8 @@ export interface TodaZone {
   center: Coordinates;
   radiusKm: number;
   boundary: Coordinates[];
+  terminalExitPoint?: Coordinates; // Managed via settings for now
+  terminalExitPointAddress?: string; // Managed via settings for now
 }
 
 export interface Trider {
@@ -151,7 +153,8 @@ export interface AppSettings {
   convenienceFee: number;
   todaBaseFares: Record<string, number>; 
   defaultBaseFare: number; 
-  perKmCharge: number; 
+  perKmCharge: number;
+  todaTerminalExitPoints: Record<string, { point: Coordinates; address: string } | undefined>;
 }
 
 export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings> = {

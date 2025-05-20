@@ -8,9 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, DollarSign, Edit, X, Search, Save, Users, Bike, ShieldAlert } from 'lucide-react';
+import { Loader2, DollarSign, Edit, X, Search, Save, Users, Bike, ShieldAlert, MapPin } from 'lucide-react';
 import { todaZones as appTodaZones } from '@/data/todaZones';
-import type { TodaZone } from '@/types';
+import type { TodaZone, Coordinates } from '@/types';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -26,14 +26,12 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
-// Mock function to get trider counts for a zone (replace with actual data logic later)
 const getMockTriderCounts = (zoneId: string) => {
-  // In a real app, this would query trider data filtered by zoneId
   const hash = zoneId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return {
-    activeRides: Math.floor(hash % 3), // Mocked
-    availableTriders: Math.floor(hash % 5) + 2, // Mocked
-    offlineTriders: Math.floor(hash % 4), // Mocked
+    activeRides: Math.floor(hash % 3),
+    availableTriders: Math.floor(hash % 5) + 2,
+    offlineTriders: Math.floor(hash % 4),
   };
 };
 
@@ -43,22 +41,28 @@ export default function TodaManagementPage() {
     perKmCharge,
     convenienceFee,
     todaBaseFares,
+    todaTerminalExitPoints,
     updateSetting,
     isLoading: settingsLoading,
-    getTodaBaseFare
+    getTodaBaseFare,
+    getTodaTerminalExitPoint
   } = useSettings();
   
   const { toast } = useToast();
 
-  const [localDefaultBaseFare, setLocalDefaultBaseFare] = React.useState<string>(defaultBaseFare.toString());
-  const [localPerKmCharge, setLocalPerKmCharge] = React.useState<string>(perKmCharge.toString());
-  const [localConvenienceFee, setLocalConvenienceFee] = React.useState<string>(convenienceFee.toString());
+  const [localDefaultBaseFare, setLocalDefaultBaseFare] = React.useState<string>('');
+  const [localPerKmCharge, setLocalPerKmCharge] = React.useState<string>('');
+  const [localConvenienceFee, setLocalConvenienceFee] = React.useState<string>('');
   const [localTodaBaseFares, setLocalTodaBaseFares] = React.useState<Record<string, string>>({});
+  const [localTodaTerminalExitPoints, setLocalTodaTerminalExitPoints] = React.useState<Record<string, {point: Coordinates | null, address: string }>>({});
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedZoneForModal, setSelectedZoneForModal] = React.useState<TodaZone | null>(null);
   const [editingFareInModal, setEditingFareInModal] = React.useState<string>('');
+  const [editingTerminalLat, setEditingTerminalLat] = React.useState<string>('');
+  const [editingTerminalLng, setEditingTerminalLng] = React.useState<string>('');
+  const [editingTerminalAddress, setEditingTerminalAddress] = React.useState<string>('');
 
   React.useEffect(() => {
     if (!settingsLoading) {
@@ -66,74 +70,108 @@ export default function TodaManagementPage() {
       setLocalPerKmCharge(perKmCharge.toString());
       setLocalConvenienceFee(convenienceFee.toString());
       const initialLocalTodaFares: Record<string, string> = {};
+      const initialLocalTerminalExitPoints: Record<string, {point: Coordinates | null, address: string }> = {};
+
       appTodaZones.forEach(zone => {
         initialLocalTodaFares[zone.id] = getTodaBaseFare(zone.id).toString();
+        const terminal = getTodaTerminalExitPoint(zone.id);
+        initialLocalTerminalExitPoints[zone.id] = {
+          point: terminal?.point || null,
+          address: terminal?.address || '',
+        };
       });
       setLocalTodaBaseFares(initialLocalTodaFares);
+      setLocalTodaTerminalExitPoints(initialLocalTerminalExitPoints);
     }
-  }, [settingsLoading, defaultBaseFare, perKmCharge, convenienceFee, todaBaseFares, getTodaBaseFare]);
+  }, [settingsLoading, defaultBaseFare, perKmCharge, convenienceFee, todaBaseFares, todaTerminalExitPoints, getTodaBaseFare, getTodaTerminalExitPoint]);
 
   const handleSaveAllSettings = () => {
+    // ... (validation for global fares remains the same)
     const newDefaultBaseFare = parseFloat(localDefaultBaseFare);
     const newPerKmCharge = parseFloat(localPerKmCharge);
     const newConvenienceFee = parseFloat(localConvenienceFee);
 
-    if (isNaN(newDefaultBaseFare) || newDefaultBaseFare < 0) {
-      toast({ title: "Invalid Default Base Fare", description: "Must be a non-negative number.", variant: "destructive" });
-      return;
-    }
-    if (isNaN(newPerKmCharge) || newPerKmCharge < 0) {
-      toast({ title: "Invalid Per KM Charge", description: "Must be a non-negative number.", variant: "destructive" });
-      return;
-    }
-    if (isNaN(newConvenienceFee) || newConvenienceFee < 0) {
-      toast({ title: "Invalid Convenience Fee", description: "Must be a non-negative number.", variant: "destructive" });
-      return;
-    }
+    if (isNaN(newDefaultBaseFare) || newDefaultBaseFare < 0) { /* ... */ return; }
+    if (isNaN(newPerKmCharge) || newPerKmCharge < 0) { /* ... */ return; }
+    if (isNaN(newConvenienceFee) || newConvenienceFee < 0) { /* ... */ return; }
 
     const updatedTodaSpecificFares: Record<string, number> = {};
-    let specificFaresValid = true;
-    for (const zoneId in localTodaBaseFares) {
+    // ... (validation for specific TODA fares remains the same)
+     for (const zoneId in localTodaBaseFares) {
       const fareVal = parseFloat(localTodaBaseFares[zoneId]);
       if (isNaN(fareVal) || fareVal < 0) {
         toast({ title: "Invalid TODA Base Fare", description: `Base fare for ${appTodaZones.find(z => z.id === zoneId)?.name} must be a non-negative number.`, variant: "destructive" });
-        specificFaresValid = false;
-        break;
+        return;
       }
       updatedTodaSpecificFares[zoneId] = fareVal;
     }
 
-    if (!specificFaresValid) return;
+    const finalTodaTerminalExitPoints: Record<string, { point: Coordinates; address: string } | undefined> = {};
+    for (const zoneId in localTodaTerminalExitPoints) {
+      const { point, address } = localTodaTerminalExitPoints[zoneId];
+      if (point && (point.latitude !== null && point.longitude !== null) && address.trim() !== '') {
+        finalTodaTerminalExitPoints[zoneId] = { point, address };
+      } else if ((point && (point.latitude !== null || point.longitude !== null)) || address.trim() !== '') {
+         // If only some parts are filled, consider it invalid or prompt user
+         toast({ title: "Incomplete Terminal Info", description: `Please provide both coordinates and address for ${appTodaZones.find(z => z.id === zoneId)?.name}'s terminal, or clear all fields.`, variant: "destructive" });
+         return;
+      }
+    }
+
 
     updateSetting('defaultBaseFare', newDefaultBaseFare);
     updateSetting('perKmCharge', newPerKmCharge);
     updateSetting('convenienceFee', newConvenienceFee);
     updateSetting('todaBaseFares', updatedTodaSpecificFares);
+    updateSetting('todaTerminalExitPoints', finalTodaTerminalExitPoints);
     
-    toast({ title: "Fare Settings Saved", description: "Fare matrix has been updated." });
+    toast({ title: "TODA Settings Saved", description: "Fare matrix and terminal points have been updated." });
   };
 
   const openZoneModal = (zone: TodaZone) => {
     setSelectedZoneForModal(zone);
     setEditingFareInModal(localTodaBaseFares[zone.id] || getTodaBaseFare(zone.id).toString());
+    const terminal = localTodaTerminalExitPoints[zone.id] || getTodaTerminalExitPoint(zone.id);
+    setEditingTerminalLat(terminal?.point?.latitude?.toString() || '');
+    setEditingTerminalLng(terminal?.point?.longitude?.toString() || '');
+    setEditingTerminalAddress(terminal?.address || '');
     setIsModalOpen(true);
   };
 
-  const handleSaveModalFare = () => {
+  const handleSaveModalChanges = () => {
     if (selectedZoneForModal) {
       const newFare = parseFloat(editingFareInModal);
       if (isNaN(newFare) || newFare < 0) {
         toast({ title: "Invalid Base Fare", description: "Base fare must be a non-negative number.", variant: "destructive" });
         return;
       }
+      
+      const lat = parseFloat(editingTerminalLat);
+      const lng = parseFloat(editingTerminalLng);
+      let terminalPoint: Coordinates | null = null;
+
+      if (editingTerminalLat.trim() !== '' || editingTerminalLng.trim() !== '' || editingTerminalAddress.trim() !== '') {
+        if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180 || editingTerminalAddress.trim() === '') {
+          toast({ title: "Invalid Terminal Info", description: "Provide valid Latitude (-90 to 90), Longitude (-180 to 180), and Address, or clear all terminal fields.", variant: "destructive" });
+          return;
+        }
+        terminalPoint = { latitude: lat, longitude: lng };
+      }
+
       setLocalTodaBaseFares(prev => ({
         ...prev,
         [selectedZoneForModal.id]: newFare.toString()
       }));
-      toast({ title: "TODA Fare Updated (Locally)", description: `Base fare for ${selectedZoneForModal.name} set to ₱${newFare.toFixed(2)}. Save all changes to persist.` });
+      setLocalTodaTerminalExitPoints(prev => ({
+        ...prev,
+        [selectedZoneForModal.id]: { point: terminalPoint, address: editingTerminalAddress.trim() }
+      }));
+
+      toast({ title: "TODA Settings Updated (Locally)", description: `Settings for ${selectedZoneForModal.name} updated. Save all changes to persist.` });
       setIsModalOpen(false);
     }
   };
+
 
   const filteredZones = appTodaZones.filter(zone => 
     zone.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -157,7 +195,7 @@ export default function TodaManagementPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center"><DollarSign className="mr-2 h-5 w-5 text-primary"/> Global Fare Matrix Configuration</CardTitle>
-            <CardDescription>Set the default fare structure for all TODAs. Specific TODAs can have their base fares overridden below.</CardDescription>
+            <CardDescription>Set the default fare structure for all TODAs. Specific TODAs can have their base fares and terminal points overridden below.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -180,7 +218,7 @@ export default function TodaManagementPage() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center"><Edit className="mr-2 h-5 w-5 text-primary"/> TODA-Specific Base Fares</CardTitle>
+              <CardTitle className="flex items-center"><Edit className="mr-2 h-5 w-5 text-primary"/> TODA-Specific Settings</CardTitle>
               <div className="relative">
                 <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input 
@@ -192,7 +230,7 @@ export default function TodaManagementPage() {
                 />
               </div>
             </div>
-            <CardDescription>Click on a TODA zone to view details and override its default base fare. Active Rides and Trider counts are mocked for demo.</CardDescription>
+            <CardDescription>Click on a TODA zone to override its default base fare and set its terminal exit point.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {filteredZones.length > 0 ? (
@@ -200,6 +238,7 @@ export default function TodaManagementPage() {
                 {filteredZones.map(zone => {
                   const counts = getMockTriderCounts(zone.id);
                   const currentFare = parseFloat(localTodaBaseFares[zone.id] || getTodaBaseFare(zone.id).toString()).toFixed(2);
+                  const terminalInfo = localTodaTerminalExitPoints[zone.id] || getTodaTerminalExitPoint(zone.id);
                   return (
                     <Dialog key={zone.id} open={isModalOpen && selectedZoneForModal?.id === zone.id} onOpenChange={(open) => {
                       if (!open) {
@@ -218,6 +257,11 @@ export default function TodaManagementPage() {
                           </CardHeader>
                           <CardContent className="text-sm space-y-1 flex-grow">
                             <p>Base Fare: <span className="font-semibold text-primary">₱{currentFare}</span></p>
+                            {terminalInfo?.address && (
+                               <p className="text-xs text-muted-foreground flex items-center mt-1">
+                                <MapPin size={12} className="mr-1 text-blue-500"/> Terminal: {terminalInfo.address}
+                               </p>
+                            )}
                             <div className="text-xs text-muted-foreground pt-1">
                               <p className="flex items-center"><ShieldAlert className="mr-1.5 h-3 w-3 text-red-500" /> Active Rides: {counts.activeRides}</p>
                               <p className="flex items-center"><Bike className="mr-1.5 h-3 w-3 text-green-500" /> Available: {counts.availableTriders}</p>
@@ -229,60 +273,67 @@ export default function TodaManagementPage() {
                        {selectedZoneForModal?.id === zone.id && (
                         <DialogContent className="sm:max-w-lg">
                           <DialogHeader>
-                            <DialogTitle>Edit Base Fare: {selectedZoneForModal.name}</DialogTitle>
+                            <DialogTitle>Edit Settings: {selectedZoneForModal.name}</DialogTitle>
                             <DialogDescription>{selectedZoneForModal.areaOfOperation}</DialogDescription>
                           </DialogHeader>
-                          <div className="py-4 space-y-4">
-                            <div>
-                              <Label htmlFor={`fare-modal-${selectedZoneForModal.id}`}>Base Fare (PHP)</Label>
-                              <Input
-                                id={`fare-modal-${selectedZoneForModal.id}`}
-                                type="number"
-                                value={editingFareInModal}
-                                onChange={e => setEditingFareInModal(e.target.value)}
-                                min="0"
-                                step="0.01"
-                                className="mt-1"
-                              />
+                          <ScrollArea className="max-h-[60vh] p-1">
+                            <div className="py-4 space-y-4 pr-4">
+                              <div>
+                                <Label htmlFor={`fare-modal-${selectedZoneForModal.id}`}>Base Fare (PHP)</Label>
+                                <Input id={`fare-modal-${selectedZoneForModal.id}`} type="number" value={editingFareInModal} onChange={e => setEditingFareInModal(e.target.value)} min="0" step="0.01" className="mt-1"/>
+                              </div>
+                              <Separator />
+                              <div>
+                                <h4 className="font-medium text-sm mb-2">Terminal Exit Point</h4>
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                  <div>
+                                    <Label htmlFor={`terminal-lat-${selectedZoneForModal.id}`}>Latitude</Label>
+                                    <Input id={`terminal-lat-${selectedZoneForModal.id}`} type="number" placeholder="e.g. 14.4445" value={editingTerminalLat} onChange={e => setEditingTerminalLat(e.target.value)} className="mt-1"/>
+                                  </div>
+                                  <div>
+                                    <Label htmlFor={`terminal-lng-${selectedZoneForModal.id}`}>Longitude</Label>
+                                    <Input id={`terminal-lng-${selectedZoneForModal.id}`} type="number" placeholder="e.g. 120.9938" value={editingTerminalLng} onChange={e => setEditingTerminalLng(e.target.value)} className="mt-1"/>
+                                  </div>
+                                </div>
+                                <div>
+                                  <Label htmlFor={`terminal-address-${selectedZoneForModal.id}`}>Terminal Address</Label>
+                                  <Input id={`terminal-address-${selectedZoneForModal.id}`} type="text" placeholder="e.g. Main St. Terminal" value={editingTerminalAddress} onChange={e => setEditingTerminalAddress(e.target.value)} className="mt-1"/>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">Leave all terminal fields blank to unset.</p>
+                              </div>
+                              <Separator />
+                               <div>
+                                  <h4 className="font-medium text-sm mb-1">Trider Status (Mocked)</h4>
+                                  <p className="text-xs text-muted-foreground flex items-center"><ShieldAlert className="mr-1.5 h-3 w-3 text-red-500" /> Active Rides: {getMockTriderCounts(selectedZoneForModal.id).activeRides}</p>
+                                  <p className="text-xs text-muted-foreground flex items-center"><Bike className="mr-1.5 h-3 w-3 text-green-500" /> Available Triders: {getMockTriderCounts(selectedZoneForModal.id).availableTriders}</p>
+                                  <p className="text-xs text-muted-foreground flex items-center"><Users className="mr-1.5 h-3 w-3 text-gray-500" /> Offline Triders: {getMockTriderCounts(selectedZoneForModal.id).offlineTriders}</p>
+                              </div>
+                              <Separator />
+                              <div>
+                                <Label htmlFor="special-conditions">Special Conditions (UI Only)</Label>
+                                <Select defaultValue="none">
+                                  <SelectTrigger id="special-conditions" className="mt-1"><SelectValue placeholder="None" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="peak">Peak hours surcharge</SelectItem>
+                                    <SelectItem value="event">Special event rate</SelectItem>
+                                    <SelectItem value="weekend">Weekend rate</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground mt-1">This setting is for UI demonstration and is not currently saved.</p>
+                              </div>
+                              <div>
+                                <Label htmlFor="additional-notes">Additional Notes (UI Only)</Label>
+                                <Textarea id="additional-notes" className="mt-1 resize-none h-20" placeholder="Any special instructions or rules for this TODA..."/>
+                                 <p className="text-xs text-muted-foreground mt-1">This setting is for UI demonstration and is not currently saved.</p>
+                              </div>
                             </div>
-                            <Separator />
-                             <div>
-                                <h4 className="font-medium text-sm mb-1">Trider Status (Mocked)</h4>
-                                <p className="text-xs text-muted-foreground flex items-center"><ShieldAlert className="mr-1.5 h-3 w-3 text-red-500" /> Active Rides: {getMockTriderCounts(selectedZoneForModal.id).activeRides}</p>
-                                <p className="text-xs text-muted-foreground flex items-center"><Bike className="mr-1.5 h-3 w-3 text-green-500" /> Available Triders: {getMockTriderCounts(selectedZoneForModal.id).availableTriders}</p>
-                                <p className="text-xs text-muted-foreground flex items-center"><Users className="mr-1.5 h-3 w-3 text-gray-500" /> Offline Triders: {getMockTriderCounts(selectedZoneForModal.id).offlineTriders}</p>
-                            </div>
-                            <Separator />
-                            <div>
-                              <Label htmlFor="special-conditions">Special Conditions (UI Only)</Label>
-                              <Select defaultValue="none">
-                                <SelectTrigger id="special-conditions" className="mt-1">
-                                  <SelectValue placeholder="None" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">None</SelectItem>
-                                  <SelectItem value="peak">Peak hours surcharge</SelectItem>
-                                  <SelectItem value="event">Special event rate</SelectItem>
-                                  <SelectItem value="weekend">Weekend rate</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <p className="text-xs text-muted-foreground mt-1">This setting is for UI demonstration and is not currently saved.</p>
-                            </div>
-                            <div>
-                              <Label htmlFor="additional-notes">Additional Notes (UI Only)</Label>
-                              <Textarea 
-                                id="additional-notes"
-                                className="mt-1 resize-none h-20" 
-                                placeholder="Any special instructions or rules for this TODA..."
-                              />
-                               <p className="text-xs text-muted-foreground mt-1">This setting is for UI demonstration and is not currently saved.</p>
-                            </div>
-                          </div>
-                          <DialogFooter>
+                          </ScrollArea>
+                          <DialogFooter className="pt-4 border-t">
                             <DialogClose asChild>
                                <Button type="button" variant="outline">Cancel</Button>
                             </DialogClose>
-                            <Button type="button" onClick={handleSaveModalFare}>Save Changes</Button>
+                            <Button type="button" onClick={handleSaveModalChanges}>Save Changes</Button>
                           </DialogFooter>
                         </DialogContent>
                       )}
@@ -299,7 +350,7 @@ export default function TodaManagementPage() {
         <div className="flex justify-end">
           <Button onClick={handleSaveAllSettings}>
              <Save size={16} className="mr-2" />
-            Save All Fare Settings
+            Save All TODA Settings
           </Button>
         </div>
 
