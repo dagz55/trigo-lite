@@ -5,19 +5,24 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 
 ## Features
 
+- **Homepage (`/`):**
+  - Dynamic, glassmorphic landing page with an animated background.
+  - Central triangular TriGo logo (auto-rickshaw SVG) that flips and has an electric aura effect on hover, linking to `https://trigo.live`.
+  - Role selection cards (Passenger, Trider, Dispatcher, Admin) with unique icons and color themes, linking to respective demo/dashboard pages.
 - **Dispatch Dashboard (`/dispatcher`):**
   - Live map visualization of triders and ride requests using Mapbox.
   - TODA (Tricycle Operators and Drivers' Association) zone boundaries displayed on the map.
   - Real-time (mocked) updates for trider locations and incoming ride requests.
-  - Selection of triders and ride requests for dispatch.
+  - Selection of triders and ride requests for dispatch; triders are dynamically filtered based on the selected ride's TODA zone.
   - Route calculation (shortest distance among alternatives) and ETA preview using Mapbox Directions API.
   - Manual dispatch functionality (triders can only serve pickups within their assigned TODA zone).
   - Heatmap overlay for ride request density.
   - AI-driven insights and alerts (currently mocked).
+  - **View Switcher:** Toggle between "Dispatch Control" (lists, forms) and "Map View".
 - **Trider Management (`/dispatcher/triders`):**
-  - Comprehensive list of all triders with details: name, TODA zone, vehicle type, status.
+  - Comprehensive list of all triders with details: name, body number, TODA zone, vehicle type, status.
   - Filtering options: by name, TODA zone, status.
-  - Sorting functionality by name, TODA zone, or status.
+  - Sorting functionality by name, body number, TODA zone, or status.
   - Detailed Trider panel:
     - Live GPS preview on a mini-map.
     - Status controls (force online/offline, ping trider, suspend/unsuspend).
@@ -26,46 +31,51 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
     - TODA Zone change request approval/rejection.
   - Dispatcher-to-Trider chat functionality (mocked, UI in place).
 - **Passenger Role Simulation (`/passenger`):**
-  - Interface for passengers to request rides.
-  - Map view to select pickup and dropoff locations.
-  - Initial pickup suggestion via geolocation.
-  - "Locate Me" button in pickup input for easy geolocation.
-  - Address input with autocomplete/suggestions using Mapbox Geocoding API.
-  - Simulation of trider assignment, movement to pickup (following Mapbox route), and trip to destination (following Mapbox route).
-  - Displays trider's live location and ETA on the map, with distinct route colors.
-  - Red Hat inspired theme (white background, black header, red accents).
-  - Glassmorphism countdown timer for ETA with visual cues.
-  - **"Pick Me Up Now" Feature:**
+  - **New Landing Page:** Initial view for passengers featuring "Ride Before", "Ride Now", "Ride Later" options, with a background image and themed elements.
+  - **Requesting Ride:**
+    - Map view to select pickup and dropoff locations.
+    - Initial pickup suggestion via geolocation. "Locate Me" button inside pickup input field.
+    - Address input with autocomplete/suggestions using Mapbox Geocoding API.
+  - **Ride In Progress:**
+    - Simulation of trider assignment, movement to pickup (following Mapbox route), and trip to destination (following Mapbox route).
+    - Displays trider's live location and ETA on the map, with distinct route colors (trider-to-pickup: accent green, pickup-to-dropoff: passenger theme orange).
+    - Orange-themed header, white page background.
+    - Glassmorphism countdown timer card with neon green text for ETA, visual cues for final 10 seconds. Timer is recomputed periodically for accuracy.
+    - Ride Ticket ID display.
+    - Ride receipt dialog displayed upon ride completion (data logged to console, not DB).
+  - **"Pick Me Up Now" Feature (from `confirmingRide` state):**
     - A prominent button allows passengers to quickly request a ride from their current location to their selected destination.
-    - The system automatically identifies the nearest available (online) trider within the passenger's TODA zone.
-    - If the nearest trider does not accept within 10 seconds, the request is automatically forwarded to the next nearest available trider.
-    - This sequential alerting continues until a trider accepts the ride request or all eligible triders have been alerted.
-  - Ride Ticket ID display and ride receipt dialog upon completion.
+    - The system automatically identifies the nearest available (online) trider within the passenger's TODA zone (mocked).
+    - If the nearest trider does not accept within 10 seconds, the request is automatically forwarded to the next nearest available trider (simulated by assigning a random trider).
   - Customizable map style (streets, satellite, dark) per passenger, saved in `localStorage`.
 - **Trider Role Simulation (`/trider`):**
-  - Dashboard for triders to manage their status (online/offline).
-  - Geolocation on going online to set initial position.
-  - View and accept incoming ride requests within their TODA zone.
-  - Map view showing current location, active ride details (pickup/dropoff), and route.
-  - Simulation of movement to pickup and then to dropoff, following Mapbox routes.
+  - **Bottom Navigation:** Dashboard, Wallet, Settings, Premium views.
+  - **Dashboard:** Manage status (online/offline). Geolocation on going online. View and accept incoming ride requests within their TODA zone. Map view showing current location, active ride details, and route. Simulation of movement following Mapbox routes.
+  - **Wallet (Mocked):** View balance, send/add mock "TriCoin", view mock transaction history.
+  - **Settings (Mocked):** Toggle notification preferences, select map style (saved to localStorage).
+  - **Premium (Mocked):** View subscription status, mock upgrade/downgrade.
   - Ability to request a change to a different TODA zone.
 - **Application Settings (`/dispatcher/settings`):**
   - Customizable theme (light, dark, system).
   - Configuration for default map zoom and center coordinates.
   - Toggle for heatmap visibility on the dispatch map.
   - Adjustable intervals for mock data simulation (new rides, trider updates, AI insights).
-  - Configuration for global convenience fee (PIN-protected for demo) and per-TODA base fares (if not set on TODA Management page).
+  - Configuration for global convenience fee (PIN-protected for demo) and per-TODA base fares.
 - **TODA Zones Management (`/dispatcher/toda-management`):**
   - Dedicated page to configure the fare matrix.
   - Set global default base fare and per KM charge.
-  - Modal-based editing to override base fares for specific TODA zones.
-  - Search functionality for TODA zones when configuring fares.
-  - Placeholders for future TODA/Trider/Passenger CRUD operations.
+  - Modal-based editing to override base fares and set Terminal Exit Points (coordinates & address) for specific TODA zones.
+  - Search functionality for TODA zones.
+  - Placeholder sections for future TODA/Trider/Passenger CRUD operations.
+- **Admin Dashboard (`/dispatcher/admin-dashboard`):**
+  - Modern UI with real-time (mocked) metrics: Total Users, Triders, Weekly Revenue, Completed Rides with animated counters.
+  - Platform Activity line chart (simulated active sessions).
+  - Performance metrics panel with progress bars and update effects.
+  - Live scrolling notification feed for recent system activities.
+  - Quick access buttons grid with glassmorphism style and hover effects.
 - **Authentication:** (Currently Removed)
-  - Authentication was previously handled by Clerk but has been removed for streamlined testing.
-  - Sign-in (`/sign-in`) and Sign-up (`/sign-up`) pages are now placeholders, with a role switcher to access demo pages.
-  - The sign-in page also allows selecting a specific TODA zone and passenger profile to launch a tailored demo.
-  - Protected routes are currently accessible without login.
+  - Sign-in (`/sign-in`) page features a Role Switcher and Passenger Profile Selector.
+  - Sign-up (`/sign-up`) page is a placeholder.
 
 ## Getting Started
 
@@ -108,7 +118,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
     # or
     yarn dev
     ```
-    The application will be available at `http://localhost:9002` by default (or the port you configured). Access the dispatcher dashboard at `/dispatcher`.
+    The application will be available at `http://localhost:9002` by default.
 
 5.  **(Optional) Run Genkit development server (if using AI features):**
     In a separate terminal:
@@ -125,6 +135,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 - **Styling:** Tailwind CSS, ShadCN UI
 - **Mapping:** Mapbox GL JS, react-map-gl
 - **State Management:** React Context (for settings), React Hooks (for page-level state)
+- **Charts:** Recharts
 - **Linting/Formatting:** ESLint, Prettier (via Next.js defaults)
 - **AI (Optional):** Genkit
 
@@ -138,40 +149,31 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 │   │   │   ├── layout.tsx          # Layout for dispatcher section (sidebar, header)
 │   │   │   ├── page.tsx            # Main dispatch dashboard page
 │   │   │   ├── triders/            # Trider management section
-│   │   │   │   └── page.tsx        # Trider management dashboard page
 │   │   │   ├── settings/           # Application settings page
-│   │   │   │   └── page.tsx        # Settings page UI
-│   │   │   └── toda-management/    # TODA Zone and fare management page
-│   │   │       └── page.tsx        # TODA management UI
+│   │   │   ├── toda-management/    # TODA Zone and fare management page
+│   │   │   └── admin-dashboard/    # Admin overview dashboard
 │   │   ├── passenger/              # Passenger role simulation
-│   │   │   └── page.tsx            # Passenger page UI and logic
 │   │   ├── trider/                 # Trider role simulation
-│   │   │   └── page.tsx            # Trider page UI and logic
-│   │   ├── sign-in/                # Placeholder sign-in page with Role Switcher & profile selection
-│   │   ├── sign-up/                # Placeholder sign-up page
+│   │   ├── (sign-in|sign-up)/      # Placeholder auth pages with Role Switcher
 │   │   ├── globals.css             # Global styles and Tailwind directives
 │   │   └── layout.tsx              # Root layout
-│   ├── ai/                         # Genkit AI flows and configurations
 │   ├── components/                 # UI components
 │   │   ├── dispatch/               # Components specific to the dispatch dashboard
 │   │   ├── map/                    # Map-related components
 │   │   ├── passenger/              # Components specific to the passenger demo
 │   │   ├── triders/                # Components for the trider management dashboard
-│   │   ├── ui/                     # ShadCN UI components (button, card, etc.)
-│   │   └── RoleSwitcher.tsx        # Component for role selection
+│   │   ├── ui/                     # ShadCN UI components
+│   │   └── RoleSwitcher.tsx        # Component for role selection on sign-in
 │   ├── contexts/                   # React Contexts (e.g., SettingsContext)
-│   ├── data/                       # Static data (e.g., TODA zone definitions, mock passenger profiles)
-│   ├── hooks/                      # Custom React hooks
-│   ├── lib/                        # Utility functions and libraries
-│   │   ├── geoUtils.ts             # Geolocation utility functions
-│   │   └── utils.ts                # General utility functions (e.g., cn for Tailwind)
-│   ├── middleware.ts               # Next.js middleware (currently minimal)
+│   ├── data/                       # Static data (TODA zones, mock passenger profiles)
+│   ├── hooks/                      # Custom React hooks (use-mobile, use-toast)
+│   ├── lib/                        # Utility functions (geoUtils, utils)
+│   ├── middleware.ts               # Next.js middleware (minimal)
 │   └── types/                      # TypeScript type definitions
 ├── public/                         # Static assets
-├── .env.local                      # Environment variables (ignored by Git)
+├── .env.local                      # Environment variables
 ├── next.config.ts                  # Next.js configuration
-├── package.json
-└── tsconfig.json
+└── ...
 ```
 
 ## Available Scripts
@@ -191,4 +193,3 @@ Please refer to contributing guidelines if available. For now, ensure code quali
 ## License
 
 This project is licensed under [Specify License Here - e.g., MIT License].
-
