@@ -1,8 +1,8 @@
 
 "use client";
 
-import * as React from 'react';
-import Link from 'next/link';
+import * as React from "react";
+import Link from "next/link";
 import { User, Bike, Phone, Settings as AdminIconSettings, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -38,10 +38,47 @@ const TriGoCentralLogo = () => (
                       group-hover:scale-95 
                       relative z-10 
                       pt-3">
-        <Bike 
-          className="w-16 h-16 text-white" 
-          data-ai-hint="tricycle logo"
-        />
+        {/* SVG from PickMeUpIcon.tsx, with black background removed and size adjusted */}
+        <svg width="512" height="512" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20">
+          <defs>
+            <linearGradient id="homepageAutoGradient" x1="0.5" y1="0" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+              <stop offset="0%" stopColor="#46E8BD"/>
+              <stop offset="30%" stopColor="#30F0A0"/>
+              <stop offset="60%" stopColor="#10FF70"/>
+              <stop offset="100%" stopColor="#00FF00"/>
+            </linearGradient>
+
+            <filter id="homepageNeonGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.8" result="coloredBlur"/>
+            </filter>
+
+            <g id="homepage-auto-rickshaw-shapes" strokeLinecap="round" strokeLinejoin="round" fill="none">
+                {/* Main Body Outline */}
+                <path d="M 60 130 L 60 100 Q 65 90 75 90 L 125 90 Q 135 90 140 100 L 150 100 L 155 105 L 155 125 Q 155 135 145 140 L 80 140 Q 70 140 65 130 Z" />
+                {/* Roof Line */}
+                <path d="M 75 90 Q 100 87 125 90" />
+                {/* Window Separator (Front Post / A-pillar) */}
+                <path d="M 95 90 L 95 140" />
+                {/* Window Separator (Door Post / B-pillar) */}
+                <path d="M 125 90 L 125 140" />
+                {/* Door Handle */}
+                <line x1="130" y1="115" x2="134" y2="115" />
+                {/* Rear Wheel */}
+                <circle cx="80" cy="142" r="13" />
+                <circle cx="80" cy="142" r="5" /> {/* Inner circle of rear wheel */}
+                {/* Front Wheel */}
+                <circle cx="150" cy="142" r="11" />
+                {/* Front structure (fork/headlight mount) */}
+                <path d="M 140 100 L 148 115 L 150 131" />
+                {/* Headlight */}
+                <circle cx="143" cy="102" r="3" />
+            </g>
+          </defs>
+          <g transform="translate(20.5, 5.5)">
+            <use href="#homepage-auto-rickshaw-shapes" stroke="url(#homepageAutoGradient)" strokeWidth="6" filter="url(#homepageNeonGlow)"/>
+            <use href="#homepage-auto-rickshaw-shapes" stroke="url(#homepageAutoGradient)" strokeWidth="2"/>
+          </g>
+        </svg>
       </div>
     </div>
   </a>
@@ -67,29 +104,18 @@ const RoleCard: React.FC<RoleCardProps> = ({
   href,
   iconColorClass,
   buttonColorClass,
-  openInNewTab = true,
+  openInNewTab = false, // Default to false for dispatcher/admin
 }) => {
   const handleClick = () => {
-    // For regular links, use Next.js Link or simple anchor if opening new tab
     if (openInNewTab) {
       window.open(href, '_blank');
     } else {
-      // If you want to navigate within the app, use Next.js Link (or router for programmatic nav)
-      // This example assumes button directly handles window.open or is wrapped by <Link> if same-tab nav
-      // For simplicity, direct window.open for all button clicks handled here
-      if (href.startsWith('/')) { // Basic check for internal links
-         window.open(href, '_blank'); // Defaulting to new tab for all for now
-      } else {
-         window.open(href, '_blank');
-      }
+      // For Next.js internal navigation, ideally use <Link> component or router.push
+      // For simplicity in this button, directly navigating if not new tab
+      window.location.href = href;
     }
   };
   
-  // If we want to use Next/Link for same-tab navigation, the button should be wrapped by it,
-  // or the onClick handler should use Next's router.
-  // For this component, we'll stick to window.open for new tabs as per original design.
-  const actualHref = href.startsWith('/') && !openInNewTab ? href : '#'; // Prepare for Link if needed
-
   const cardButton = (
      <Button
         onClick={handleClick}
@@ -99,7 +125,6 @@ const RoleCard: React.FC<RoleCardProps> = ({
         <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/button:translate-x-1" />
       </Button>
   );
-
 
   return (
     <div 
@@ -217,7 +242,7 @@ export default function HomePage() {
           href="/dispatcher/admin-dashboard" 
           iconColorClass="text-emerald-400"
           buttonColorClass="bg-emerald-600 hover:bg-emerald-500"
-          openInNewTab={true} 
+          openInNewTab={false} 
         />
       </div>
 
@@ -258,7 +283,7 @@ export default function HomePage() {
           100% { transform: translateX(120%) skewX(-30deg); opacity: 0.1; }
         }
         .animate-card-shine {
-          animation: card-shine 1s ease-in-out;
+          /* Re-enable if desired, currently handled by electric-pulse for logo */
         }
 
         @keyframes sparkle {
@@ -294,14 +319,22 @@ export default function HomePage() {
               0 0 6px rgba(200, 225, 255, 0.7), 
               0 0 12px rgba(100, 180, 255, 0.6), 
               0 0 20px rgba(0, 150, 255, 0.5),
-              0 0 30px rgba(0, 150, 255, 0.4);
+              0 0 30px rgba(0, 150, 255, 0.4),
+              /* Greenish/Blueish Tones */
+              0 0 8px rgba(60, 200, 220, 0.7),
+              0 0 15px rgba(40, 180, 200, 0.6),
+              0 0 25px rgba(20, 160, 180, 0.5);
           }
           50% { 
             box-shadow: 
               0 0 10px rgba(225, 255, 255, 0.9), 
               0 0 20px rgba(150, 200, 255, 0.8), 
               0 0 35px rgba(50, 180, 255, 0.7),
-              0 0 50px rgba(50, 180, 255, 0.6);
+              0 0 50px rgba(50, 180, 255, 0.6),
+              /* Greenish/Blueish Tones - Brighter */
+              0 0 12px rgba(80, 220, 240, 0.9),
+              0 0 25px rgba(60, 200, 220, 0.8),
+              0 0 40px rgba(40, 180, 200, 0.7);
           }
         }
         .electric-animation {
@@ -312,3 +345,6 @@ export default function HomePage() {
     </div>
   );
 }
+
+
+    
