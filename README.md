@@ -74,7 +74,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/dagz55/trigo-lite.git
     cd trigo-lite
     ```
 
