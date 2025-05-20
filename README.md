@@ -1,5 +1,5 @@
 
-# TriGo Dispatch Lite - Firebase Studio
+# TriGo Lite
 
 This is a Next.js application for TriGo Dispatch Lite, a real-time trider monitoring and dispatching system. Built with Next.js, TypeScript, Tailwind CSS, ShadCN UI components, and Mapbox GL JS.
 
