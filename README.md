@@ -35,6 +35,11 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - Displays trider's live location and ETA on the map, with distinct route colors.
   - Red Hat inspired theme (white background, black header, red accents).
   - Glassmorphism countdown timer for ETA with visual cues.
+  - **"Pick Me Up Now" Feature:**
+    - A prominent button allows passengers to quickly request a ride from their current location to their selected destination.
+    - The system automatically identifies the nearest available (online) trider within the passenger's TODA zone.
+    - If the nearest trider does not accept within 10 seconds, the request is automatically forwarded to the next nearest available trider.
+    - This sequential alerting continues until a trider accepts the ride request or all eligible triders have been alerted.
   - Ride Ticket ID display and ride receipt dialog upon completion.
   - Customizable map style (streets, satellite, dark) per passenger, saved in `localStorage`.
 - **Trider Role Simulation (`/trider`):**

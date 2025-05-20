@@ -46,6 +46,7 @@ const initialTalonKuatroTridersData: Omit<Trider, 'todaZoneName' | 'currentPath'
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
     todaZoneId: TALON_KUATRO_ZONE_ID,
+    isOnline: status !== 'offline',
   };
 });
 
@@ -64,6 +65,7 @@ const initialTeptodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | '
     status: status,
     vehicleType: index % 2 === 0 ? 'E-Bike' : 'Tricycle',
     todaZoneId: TEPTODA_ZONE_ID,
+    isOnline: status !== 'offline',
   };
 });
 
@@ -82,6 +84,7 @@ const initialP1TodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'p
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
     todaZoneId: P1TODA_ZONE_ID,
+    isOnline: status !== 'offline',
   };
 });
 

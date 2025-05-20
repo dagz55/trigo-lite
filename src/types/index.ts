@@ -19,18 +19,20 @@ export interface TodaZone {
   areaOfOperation: string;
   center: Coordinates;
   radiusKm: number;
+  boundary: Coordinates[];
 }
 
 export interface Trider {
   id:string;
   name: string;
   location: Coordinates;
-  status: TriderStatus;
+  status: TriderExtendedStatus;
   vehicleType?: string;
   todaZoneId: string;
   todaZoneName?: string;
-  currentPath: RoutePath | null; 
-  pathIndex: number; 
+  currentPath: RoutePath | null;
+  pathIndex: number;
+  isOnline: boolean;
 }
 
 export type RideRequestStatus = 'pending' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'searching';
@@ -171,7 +173,8 @@ export interface PassengerSettings {
 export interface MockPassengerProfile {
   id: string;
   name: string;
-  todaZoneId: string; 
+  todaZoneId: string;
   todaZoneName: string;
   settings?: PassengerSettings;
+  profilePictureUrl?: string;
 }
