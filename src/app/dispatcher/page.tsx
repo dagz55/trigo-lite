@@ -31,6 +31,12 @@ if (!talonKuatroZone) throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_
 if (!teptodaZone) throw new Error(`TEPTODA zone with ID ${TEPTODA_ZONE_ID} not found.`);
 if (!p1TodaZone) throw new Error(`P1TODA zone with ID ${P1TODA_ZONE_ID} not found.`);
 
+let bodyNumberCounter = 0;
+const generateBodyNumber = () => {
+  bodyNumberCounter++;
+  return bodyNumberCounter.toString().padStart(3, '0');
+};
+
 const initialTalonKuatroTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'pathIndex'>[] = [
   "Peter", "Andrew", "James Z.", "John", "Philip", "Bartholomew", "Thomas", "Matthew", "James A.", "Thaddaeus"
 ].map((name, index) => {
@@ -42,6 +48,7 @@ const initialTalonKuatroTridersData: Omit<Trider, 'todaZoneName' | 'currentPath'
   return {
     id: `trider-dispatch-tk-${index + 1}`,
     name: name,
+    bodyNumber: generateBodyNumber(),
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
@@ -61,6 +68,7 @@ const initialTeptodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | '
   return {
     id: `trider-dispatch-tep-${index + 1}`,
     name: name,
+    bodyNumber: generateBodyNumber(),
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'E-Bike' : 'Tricycle',
@@ -80,6 +88,7 @@ const initialP1TodaTridersData: Omit<Trider, 'todaZoneName' | 'currentPath' | 'p
   return {
     id: `trider-dispatch-p1-${index + 1}`,
     name: name,
+    bodyNumber: generateBodyNumber(),
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
@@ -137,7 +146,7 @@ const initialRideRequests: RideRequest[] = [
     pickupAddress: `${talonKuatroZone.areaOfOperation} area`, 
     dropoffAddress: 'Robinsons Place Las Piñas', 
     status: 'assigned', 
-    assignedTriderId: initialTriders.find(t => t.todaZoneId === TALON_KUATRO_ZONE_ID && t.status !== 'offline')?.id || initialTriders[0].id,
+    assignedTriderId: initialTriders.find(t => t.todaZoneId === TALON_KUATRO_ZONE_ID && t.status === 'available')?.id || initialTriders[0].id,
     fare: 55.00, 
     requestedAt: new Date(Date.now() - 8 * 60 * 1000),
     pickupTodaZoneId: TALON_KUATRO_ZONE_ID,
@@ -387,7 +396,7 @@ export default function DispatcherPage() {
   const handleSelectTrider = React.useCallback((trider: Trider | null) => {
     if (!trider) {
       setSelectedTrider(null);
-      if (!selectedRideRequest) setRouteGeoJson(null); // Clear route only if no ride is selected
+      if (!selectedRideRequest) setRouteGeoJson(null);
       return;
     }
   
@@ -397,17 +406,17 @@ export default function DispatcherPage() {
         setSelectedTrider(trider);
         fetchRouteAndUpdateTrider(trider, selectedRideRequest.pickupLocation, selectedRideRequest.dropoffLocation);
       } else {
-        setSelectedTrider(trider); // Still select the trider
+        setSelectedTrider(trider); 
         toast({
           title: "Zone Mismatch",
-          description: `Trider ${trider.name} (${trider.todaZoneName}) is in a different zone than the ride request (${todaZones.find(z => z.id === ridePickupZoneId)?.name || 'N/A'}). Dispatch will be disabled.`,
+          description: `Trider ${trider.name} (#${trider.bodyNumber}, ${trider.todaZoneName}) is in a different zone than the ride request (${todaZones.find(z => z.id === ridePickupZoneId)?.name || 'N/A'}). Dispatch will be disabled.`,
           variant: "destructive"
         });
-        setRouteGeoJson(null); // Clear route due to mismatch
+        setRouteGeoJson(null);
       }
     } else {
-      setSelectedTrider(trider); // No ride request selected, just select the trider
-      setRouteGeoJson(null); // Clear any existing route
+      setSelectedTrider(trider);
+      setRouteGeoJson(null); 
     }
   }, [selectedRideRequest, getTodaZoneForLocation, fetchRouteAndUpdateTrider, todaZones, toast]);
   
@@ -415,7 +424,7 @@ export default function DispatcherPage() {
     if (!request) {
       setSelectedRideRequest(null);
       setCandidateTriders(triders.filter(t => t.status === 'available'));
-      if (!selectedTrider) setRouteGeoJson(null); // Clear route only if no trider is selected
+      if (!selectedTrider) setRouteGeoJson(null); 
       return;
     }
   
@@ -440,7 +449,7 @@ export default function DispatcherPage() {
       } else {
         toast({
           title: "Zone Mismatch",
-          description: `Previously selected trider ${selectedTrider.name} (${selectedTrider.todaZoneName}) is not in the ride's zone (${todaZones.find(z => z.id === pickupZoneId)?.name || 'N/A'}). Please select a trider from the updated list.`,
+          description: `Previously selected trider ${selectedTrider.name} (#${selectedTrider.bodyNumber}, ${selectedTrider.todaZoneName}) is not in the ride's zone (${todaZones.find(z => z.id === pickupZoneId)?.name || 'N/A'}). Please select a trider from the updated list.`,
           variant: "destructive"
         });
         setSelectedTrider(null); 
@@ -473,14 +482,14 @@ export default function DispatcherPage() {
       return;
     }
     if (selectedTrider.todaZoneId !== ridePickupZoneId) {
-      toast({ title: "Dispatch Error", description: `Trider ${selectedTrider.name} (${selectedTrider.todaZoneName}) cannot service rides in ${todaZones.find(z => z.id === ridePickupZoneId)?.name || 'a different zone'}.`, variant: "destructive" });
+      toast({ title: "Dispatch Error", description: `Trider ${selectedTrider.name} (#${selectedTrider.bodyNumber}, ${selectedTrider.todaZoneName}) cannot service rides in ${todaZones.find(z => z.id === ridePickupZoneId)?.name || 'a different zone'}.`, variant: "destructive" });
       return;
     }
 
     setTriders(prev => prev.map(t => t.id === selectedTrider!.id ? { ...t, status: 'assigned' } : t));
     setRideRequests(prev => prev.map(r => r.id === selectedRideRequest!.id ? { ...r, status: 'assigned', assignedTriderId: selectedTrider!.id } : r));
     
-    toast({ title: "Ride Dispatched! (Mock)", description: `${selectedTrider!.name} assigned to ${selectedRideRequest!.passengerName}.` });
+    toast({ title: "Ride Dispatched! (Mock)", description: `${selectedTrider!.name} (#${selectedTrider!.bodyNumber}) assigned to ${selectedRideRequest!.passengerName}.` });
     
     const updatedCandidateTriders = candidateTriders.filter(t => t.id !== selectedTrider!.id);
     setCandidateTriders(updatedCandidateTriders);
@@ -548,7 +557,7 @@ export default function DispatcherPage() {
               </CardHeader>
               <CardContent>
                 {selectedRideRequest && <p className="text-sm mb-1">Ride: <span className="font-medium">{selectedRideRequest.passengerName}</span> (Zone: {todaZones.find(z=>z.id === selectedRideRequest.pickupTodaZoneId)?.name || 'N/A'})</p>}
-                {selectedTrider && <p className="text-sm mb-2">Trider: <span className="font-medium">{selectedTrider.name}</span> ({selectedTrider.status}, Zone: {selectedTrider.todaZoneName})</p>}
+                {selectedTrider && <p className="text-sm mb-2">Trider: <span className="font-medium">{selectedTrider.name} (#{selectedTrider.bodyNumber})</span> ({selectedTrider.status}, Zone: {selectedTrider.todaZoneName})</p>}
                 {!selectedRideRequest && !selectedTrider && <p className="text-sm text-muted-foreground">No ride or trider selected.</p>}
               </CardContent>
               <CardFooter>

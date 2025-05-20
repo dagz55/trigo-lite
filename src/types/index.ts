@@ -25,6 +25,7 @@ export interface TodaZone {
 export interface Trider {
   id:string;
   name: string;
+  bodyNumber: string; // Added bodyNumber
   location: Coordinates;
   status: TriderExtendedStatus;
   vehicleType?: string;
@@ -95,6 +96,7 @@ export interface TriderWallet {
 export type TodaZoneChangeRequestStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
 export interface TriderProfile extends Trider {
+  // bodyNumber is inherited from Trider
   status: TriderExtendedStatus; // More specific status for profile view
   wallet: TriderWallet;
   contactNumber?: string;

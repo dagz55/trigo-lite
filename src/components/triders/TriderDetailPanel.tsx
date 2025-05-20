@@ -61,7 +61,7 @@ export function TriderDetailPanel({
     <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-xl">{trider.name}</CardTitle>
+          <CardTitle className="text-xl">{trider.name} (#{trider.bodyNumber})</CardTitle>
           <CardDescription>ID: {trider.id}</CardDescription>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close panel">

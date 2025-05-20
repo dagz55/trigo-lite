@@ -29,19 +29,30 @@ interface MapboxMapProps {
   showHeatmap: boolean; 
 }
 
-const triderStatusColors: Record<Trider['status'], string> = {
-  available: 'text-accent-foreground bg-accent', 
-  busy: 'text-destructive-foreground bg-destructive', 
-  offline: 'text-muted-foreground bg-muted',
-  assigned: 'text-primary-foreground bg-primary',
-};
-
 const rideRequestStatusColors: Record<RideRequest['status'], string> = {
   pending: 'bg-yellow-500 text-white',
   assigned: 'bg-blue-500 text-white',
   'in-progress': 'bg-purple-500 text-white',
   completed: 'bg-green-600 text-white',
   cancelled: 'bg-gray-500 text-white',
+};
+
+const purpleShades: string[] = [
+  'hsl(262, 78%, 59%)', // Base purple (from passenger accent)
+  'hsl(262, 70%, 50%)', // Darker
+  'hsl(262, 85%, 68%)', // Lighter
+  'hsl(270, 75%, 60%)', // Slight hue shift 1
+  'hsl(255, 70%, 65%)', // Slight hue shift 2
+  'hsl(280, 65%, 55%)', // Another variation
+];
+
+const getTriderColor = (triderId: string, index: number): string => {
+  // Simple hash function for consistent color based on ID, or cycle if index is reliable
+  let hash = 0;
+  for (let i = 0; i < triderId.length; i++) {
+    hash = triderId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return purpleShades[Math.abs(hash) % purpleShades.length];
 };
 
 
@@ -120,17 +131,17 @@ export function MapboxMap({
       const backgroundColorVar = computedStyles.getPropertyValue('--background').trim();
       setResolvedBackgroundColor(backgroundColorVar ? parseHslString(backgroundColorVar) : 'hsl(220, 13%, 7%)');
     }
-  }, []); // This effect runs once on mount. If theme changes, CSS vars change, but these states don't re-run unless theme is a dep.
+  }, []); 
 
   const handleTriderClick = (trider: Trider) => {
     onSelectTrider(trider);
     setPopupInfo({
       longitude: trider.location.longitude,
       latitude: trider.location.latitude,
-      title: `Trider: ${trider.name}`,
+      title: `Trider: ${trider.name} (#${trider.bodyNumber})`,
       details: (
         <>
-          <p>Status: <span className={`px-2 py-0.5 rounded-full text-xs ${triderStatusColors[trider.status]}`}>{trider.status}</span></p>
+          <p>Status: <span className={`px-2 py-0.5 rounded-full text-xs ${trider.status === 'available' ? 'bg-accent text-accent-foreground' : trider.status === 'offline' ? 'bg-muted text-muted-foreground' : trider.status === 'assigned' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground' }`}>{trider.status}</span></p>
           <p>Vehicle: {trider.vehicleType || 'N/A'}</p>
           <p>TODA Zone: {trider.todaZoneName || 'N/A'}</p>
         </>
@@ -198,7 +209,7 @@ export function MapboxMap({
     },
   }), [resolvedPrimaryColor]);
   
-  const heatmapLayer: any = { // Heatmap layer definition is static, colors are predefined
+  const heatmapLayer: any = { 
     id: 'heatmap',
     type: 'heatmap',
     source: 'heatmap-data',
@@ -228,7 +239,7 @@ export function MapboxMap({
     source: 'toda-zones-source',
     paint: {
       'fill-color': resolvedPrimaryColor,
-      'fill-opacity': 0.2, // Increased opacity
+      'fill-opacity': 0.2, 
       'fill-outline-color': resolvedPrimaryColor,
     }
   }), [resolvedPrimaryColor]);
@@ -247,7 +258,7 @@ export function MapboxMap({
     paint: {
       'text-color': resolvedForegroundColor,
       'text-halo-color': resolvedBackgroundColor,
-      'text-halo-width': 1.5, // Increased halo width
+      'text-halo-width': 1.5, 
     }
   }), [resolvedForegroundColor, resolvedBackgroundColor]);
 
@@ -281,7 +292,7 @@ export function MapboxMap({
         <Layer {...todaZoneLabelLayer} />
       </Source>
 
-      {triders.map(trider => (
+      {triders.map((trider, index) => (
         <Marker
           key={`trider-${trider.id}`}
           longitude={trider.location.longitude}
@@ -289,7 +300,13 @@ export function MapboxMap({
           onClick={() => handleTriderClick(trider)}
           style={{ cursor: 'pointer' }}
         >
-          <div className={`p-1.5 rounded-full shadow-md ${triderStatusColors[trider.status]}`}>
+          <div 
+            className={`p-1.5 rounded-full shadow-md`}
+            style={{
+              backgroundColor: getTriderColor(trider.id, index), 
+              color: 'white' // Assuming white icon color looks good on all purples
+            }}
+          >
             <Bike size={20} strokeWidth={2.5}/>
           </div>
         </Marker>
@@ -356,4 +373,3 @@ export function MapboxMap({
     </Map>
   );
 }
-

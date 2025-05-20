@@ -27,16 +27,24 @@ if (!talonKuatroZone) throw new Error(`Talon Kuatro zone with ID ${TALON_KUATRO_
 if (!teptodaZone) throw new Error(`TEPTODA zone with ID ${TEPTODA_ZONE_ID} not found.`);
 if (!p1TodaZone) throw new Error(`P1TODA zone with ID ${P1TODA_ZONE_ID} not found.`);
 
+let bodyNumberCounter = 0;
+const generateBodyNumber = () => {
+  bodyNumberCounter++;
+  return bodyNumberCounter.toString().padStart(3, '0');
+};
+
 const initialTalonKuatroTriders: TriderProfile[] = [
-  "Peter", "Andrew", "James Z.", "John", "Philip" 
+  "Peter", "Andrew", "James Z.", "John", "Philip", 
+  "Bartholomew", "Thomas", "Matthew", "James A.", "Thaddaeus"
 ].map((name, index) => {
   const randomLocationInZone = getRandomPointInCircle(talonKuatroZone!.center, talonKuatroZone!.radiusKm * 0.8);
-  const statuses: TriderExtendedStatus[] = ['available', 'en-route', 'offline', 'suspended', 'assigned'];
+  const statuses: TriderExtendedStatus[] = ['available', 'en-route', 'offline', 'suspended', 'assigned', 'busy'];
   const status = statuses[index % statuses.length];
 
   return {
     id: `trider-tk-profile-${index + 1}`,
     name: name,
+    bodyNumber: generateBodyNumber(),
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
@@ -64,7 +72,7 @@ const initialTalonKuatroTriders: TriderProfile[] = [
 });
 
 const initialTeptodaTriders: TriderProfile[] = [
-  "Bartholomew", "Thomas", "Matthew", "James A.", "Thaddaeus"
+  "Judas Iscariot", "Simon Peter", "John the Baptist", "Mary Magdalene", "Lazarus"
 ].map((name, index) => {
   const randomLocationInZone = getRandomPointInCircle(teptodaZone!.center, teptodaZone!.radiusKm * 0.8);
   const statuses: TriderExtendedStatus[] = ['available', 'offline', 'en-route', 'assigned', 'suspended']; // Different status distribution
@@ -73,6 +81,7 @@ const initialTeptodaTriders: TriderProfile[] = [
   return {
     id: `trider-tep-profile-${index + 1}`,
     name: `${name} (TEP)`,
+    bodyNumber: generateBodyNumber(),
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'E-Bike' : 'Tricycle',
@@ -109,6 +118,7 @@ const initialP1TodaTriders: TriderProfile[] = [
   return {
     id: `trider-p1-profile-${index + 1}`,
     name: `${name} (P1)`,
+    bodyNumber: generateBodyNumber(),
     location: randomLocationInZone,
     status: status,
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
@@ -220,8 +230,8 @@ export default function TridersPage() {
     }
     setChatTargetTrider(trider);
     setChatMessages([
-      { id: 'msg1', senderId: trider.id, receiverId: 'dispatcher', content: `Hello, Dispatch! Reporting from ${trider.todaZoneName}.`, timestamp: new Date(Date.now() - 5*60*1000)},
-      { id: 'msg2', senderId: 'dispatcher', receiverId: trider.id, content: `Hi ${trider.name}, acknowledged. Stay safe in ${trider.todaZoneName}!`, timestamp: new Date(Date.now() - 4*60*1000)},
+      { id: 'msg1', senderId: trider.id, receiverId: 'dispatcher', content: `Hello, Dispatch! Reporting from ${trider.todaZoneName}. Body #: ${trider.bodyNumber}`, timestamp: new Date(Date.now() - 5*60*1000)},
+      { id: 'msg2', senderId: 'dispatcher', receiverId: trider.id, content: `Hi ${trider.name} (#${trider.bodyNumber}), acknowledged. Stay safe in ${trider.todaZoneName}!`, timestamp: new Date(Date.now() - 4*60*1000)},
     ]);
     setIsChatSheetOpen(true);
   };
@@ -420,4 +430,3 @@ export default function TridersPage() {
     </div>
   );
 }
-

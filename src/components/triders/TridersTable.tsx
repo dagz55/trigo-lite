@@ -21,7 +21,7 @@ interface TridersTableProps {
   todaZones: TodaZone[]; 
 }
 
-type SortKey = 'name' | 'todaZoneName' | 'status';
+type SortKey = 'name' | 'bodyNumber' | 'todaZoneName' | 'status';
 type SortDirection = 'ascending' | 'descending';
 
 interface SortConfig {
@@ -102,6 +102,9 @@ export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpen
                   <TableHead onClick={() => requestSort('name')} className="cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center">Name {getSortIndicator('name')}</div>
                   </TableHead>
+                  <TableHead onClick={() => requestSort('bodyNumber')} className="hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center">Body # {getSortIndicator('bodyNumber')}</div>
+                  </TableHead>
                   <TableHead onClick={() => requestSort('todaZoneName')} className="hidden md:table-cell cursor-pointer hover:bg-muted/50 transition-colors">
                      <div className="flex items-center">TODA Zone {getSortIndicator('todaZoneName')}</div>
                   </TableHead>
@@ -147,7 +150,7 @@ export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpen
                           <div>
                             <div className="font-medium">{trider.name}</div>
                             <div className="text-xs text-muted-foreground md:hidden">
-                              {trider.todaZoneName || 'N/A'}
+                              #{trider.bodyNumber} - {trider.todaZoneName || 'N/A'}
                               {trider.todaZoneChangeRequestStatus === 'pending' && requestedZoneName && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -162,6 +165,7 @@ export function TridersTable({ triders, selectedTriderId, onSelectTrider, onOpen
                           </div>
                         </div>
                       </TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">{trider.bodyNumber}</TableCell>
                       <TableCell className="hidden md:table-cell">
                         {trider.todaZoneName || 'N/A'}
                         {trider.todaZoneChangeRequestStatus === 'pending' && requestedZoneName && (

@@ -30,6 +30,7 @@ if (!talonKuatroZone) {
 const selfTriderProfileInitial: TriderProfile = {
   id: 'trider-self-sim-tk',
   name: 'Juan Dela Cruz (You)',
+  bodyNumber: "999", // Default body number for self-simulated trider
   location: getRandomPointInCircle(talonKuatroZone.center, talonKuatroZone.radiusKm * 0.3),
   status: 'offline',
   vehicleType: 'E-Bike',
@@ -40,6 +41,7 @@ const selfTriderProfileInitial: TriderProfile = {
   wallet: { currentBalance: 250.75, totalEarnedAllTime: 1250.50, todayTotalRides: 0, todayTotalFareCollected: 0, todayNetEarnings: 0, todayTotalCommission: 0, paymentLogs: [], recentRides: [] },
   currentPath: null,
   pathIndex: 0,
+  isOnline: false, // Ensure this aligns with status
   requestedTodaZoneId: undefined,
   todaZoneChangeRequestStatus: 'none',
 };
@@ -131,8 +133,12 @@ export default function TriderPage() {
 
         const pickupLocation = getRandomPointInCircle(currentTriderZone.center, currentTriderZone.radiusKm * 0.8);
         
-        const randomDropoffZoneIndex = Math.floor(Math.random() * appTodaZones.length);
-        const randomDropoffZone = appTodaZones[randomDropoffZoneIndex];
+        // For trider demo, dropoff is also within their zone for simplicity, or a nearby one.
+        let randomDropoffZone = currentTriderZone;
+        if (Math.random() > 0.7 && appTodaZones.length > 1) { // Occasionally pick a different (nearby) zone
+            const otherZones = appTodaZones.filter(z => z.id !== currentTriderZone.id);
+            if (otherZones.length > 0) randomDropoffZone = otherZones[Math.floor(Math.random() * otherZones.length)];
+        }
 
         if (!randomDropoffZone) {
             console.error("Failed to select a random dropoff zone. Skipping ride generation.");
@@ -225,7 +231,7 @@ export default function TriderPage() {
             longitude: position.coords.longitude,
           };
           setTriderState(prev => ({ ...prev, status: 'onlineAvailable', currentLocation: coords }));
-          setTriderProfile(prev => ({ ...prev, location: coords, status: 'available' })); 
+          setTriderProfile(prev => ({ ...prev, location: coords, status: 'available', isOnline: true })); 
           setViewState(prev => ({ ...prev, ...coords, zoom: 16 }));
           setIsGeolocating(false);
           handleStatusToast("You are Online!", `Waiting for ride requests in ${triderProfile.todaZoneName}.`);
@@ -234,7 +240,7 @@ export default function TriderPage() {
           console.warn("Error getting geolocation for trider:", error.message);
           const currentTodaZoneCenter = appTodaZones.find(z => z.id === triderProfile.todaZoneId)?.center || selfTriderProfileInitial.location;
           setTriderState(prev => ({ ...prev, status: 'onlineAvailable', currentLocation: currentTodaZoneCenter }));
-          setTriderProfile(prev => ({ ...prev, location: currentTodaZoneCenter, status: 'available' }));
+          setTriderProfile(prev => ({ ...prev, location: currentTodaZoneCenter, status: 'available', isOnline: true }));
           setViewState(prev => ({ ...prev, ...currentTodaZoneCenter, zoom: 15 }));
           setIsGeolocating(false);
           handleStatusToast("You are Online!", `Using default ${triderProfile.todaZoneName} location. Waiting for ride requests.`);
@@ -247,7 +253,7 @@ export default function TriderPage() {
         return;
       }
       setTriderState(prev => ({ ...prev, status: 'offline', availableRideRequests: [], activeRideRequest: null, currentPath: null, currentPathIndex: 0 }));
-      setTriderProfile(prev => ({ ...prev, status: 'offline' }));
+      setTriderProfile(prev => ({ ...prev, status: 'offline', isOnline: false }));
       handleStatusToast("You are Offline", "");
     }
   };
@@ -388,7 +394,7 @@ export default function TriderPage() {
     <div className="flex flex-col h-screen bg-background">
       <header className="p-4 border-b shadow-sm flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-primary flex items-center">
-          <Bike className="mr-2" /> {triderProfile.todaZoneName} Trider
+          <Bike className="mr-2" /> {triderProfile.todaZoneName} Trider (#{triderProfile.bodyNumber})
         </h1>
         <div className="flex items-center space-x-2">
           <Label htmlFor="online-toggle" className={triderState.status !== 'offline' ? "text-accent" : "text-muted-foreground"}>
@@ -469,7 +475,7 @@ export default function TriderPage() {
           
           <Card className="shadow-lg mt-auto">
              <CardHeader>
-                <CardTitle className="text-md flex items-center"><UserCircle className="mr-2"/>{triderProfile.name}</CardTitle>
+                <CardTitle className="text-md flex items-center"><UserCircle className="mr-2"/>{triderProfile.name} (#{triderProfile.bodyNumber})</CardTitle>
                 <CardDescription>Current TODA: {triderProfile.todaZoneName} - {triderProfile.vehicleType}</CardDescription>
              </CardHeader>
              <CardContent className="text-sm space-y-3">
