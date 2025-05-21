@@ -36,12 +36,13 @@ import { format } from 'date-fns';
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2';
 
-const PASSENGER_PAGE_ACCENT_COLOR_HSL = 'hsl(262, 78%, 59%)'; // Purple
+const PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING = 'hsl(280, 80%, 80%)';
 const PASSENGER_HEADER_BG = 'black';
 const PASSENGER_HEADER_TEXT = 'white';
 const PASSENGER_INPUT_TEXT_COLOR = 'text-neutral-100';
 const PASSENGER_PLACEHOLDER_TEXT_COLOR = 'placeholder:text-neutral-400';
 const PASSENGER_PAGE_OVERLAY_BG = 'bg-black/50';
+const NEON_GREEN_TEXT = 'text-lime-400'; // Adjusted from 500 for bit more pop
 
 const DEFAULT_PASSENGER_MAP_STYLE: PassengerMapStyle = 'streets';
 
@@ -98,7 +99,7 @@ function formatCountdown(seconds: number | null): string {
 
 const TriGoPassengerLogoInHeader = () => (
   <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
-    <circle cx="16" cy="16" r="13" stroke={PASSENGER_PAGE_ACCENT_COLOR_HSL} strokeWidth="1.5"/>
+    <circle cx="16" cy="16" r="13" stroke={PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING} strokeWidth="1.5"/>
     <path d="M9.5 20V14C9.5 12.8954 10.3954 12 11.5 12H17.5C18.6046 12 19.5 12.8954 19.5 14V20" stroke={PASSENGER_HEADER_TEXT} strokeWidth="1.2" fill="none"/>
     <path d="M M9.5 12 Q16 8 22.5 12 L19.5 12" stroke={PASSENGER_HEADER_TEXT} strokeWidth="1.2" fill="none" />
     <path d="M19.5 13H21.5C22.0523 13 22.5 13.4477 22.5 14V17C22.5 17.5523 22.0523 18 21.5 18H19.5" stroke={PASSENGER_HEADER_TEXT} strokeWidth="1.2" fill="none"/>
@@ -126,7 +127,7 @@ export default function PassengerPage() {
   const [currentPassengerSettings, setCurrentPassengerSettings] = React.useState<PassengerSettings>({ mapStyle: DEFAULT_PASSENGER_MAP_STYLE });
   const [mapStyleUrl, setMapStyleUrl] = React.useState('mapbox://styles/mapbox/streets-v12');
   const [isRefreshingEta, setIsRefreshingEta] = React.useState(false);
-  
+
   const toastShownForStatus = React.useRef<Record<string, boolean>>({});
 
   const [viewState, setViewState] = React.useState({
@@ -138,7 +139,7 @@ export default function PassengerPage() {
 
   const [rideState, setRideState] = React.useState<PassengerRideState>({
     status: 'idle',
-    passengerName: 'Michelle', 
+    passengerName: 'Michelle',
     pickupLocation: null,
     dropoffLocation: null,
     pickupAddress: '',
@@ -154,7 +155,7 @@ export default function PassengerPage() {
     estimatedDurationSeconds: null,
     completionTime: undefined,
   });
-  const [rideUpdates, setRideUpdates] = React.useState<string[]>([]); // New state for updates
+  const [rideUpdates, setRideUpdates] = React.useState<string[]>([]);
 
   const [triderSimLocation, setTriderSimLocation] = React.useState<Coordinates | null>(null);
   const [isGeolocating, setIsGeolocating] = React.useState(false);
@@ -166,8 +167,8 @@ export default function PassengerPage() {
   const [dropoffSuggestions, setDropoffSuggestions] = React.useState<MapboxGeocodingFeature[]>([]);
   const [activeSuggestionBox, setActiveSuggestionBox] = React.useState<'pickup' | 'dropoff' | null>(null);
 
-  const [triderToPickupRouteColor, setTriderToPickupRouteColor] = React.useState('hsl(90, 90%, 50%)'); 
-  const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(PASSENGER_PAGE_ACCENT_COLOR_HSL);
+  const [triderToPickupRouteColor, setTriderToPickupRouteColor] = React.useState('hsl(90, 90%, 50%)');
+  const [pickupToDropoffRouteColor, setPickupToDropoffRouteColor] = React.useState(PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING);
 
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = React.useState(false);
   const [completedRideDetails, setCompletedRideDetails] = React.useState<PassengerRideState | null>(null);
@@ -175,7 +176,7 @@ export default function PassengerPage() {
   const mapRef = React.useRef<MapRef | null>(null);
 
    const addRideUpdate = React.useCallback((update: string) => {
-    setRideUpdates(prev => [update, ...prev]); // Add new updates to the top
+    setRideUpdates(prev => [update, ...prev.slice(0, 4)]);
   }, []);
 
 
@@ -197,8 +198,8 @@ export default function PassengerPage() {
             return hslString;
         };
         const accentColorVar = computedStyles.getPropertyValue('--accent').trim();
-        setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'hsl(120, 70%, 50%)');
-        setPickupToDropoffRouteColor(PASSENGER_PAGE_ACCENT_COLOR_HSL);
+        setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'hsl(120, 70%, 50%)'); // Lime green
+        setPickupToDropoffRouteColor(PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING); // Purple
     }
   }, []);
 
@@ -232,7 +233,7 @@ export default function PassengerPage() {
       estimatedDurationSeconds: null,
       completionTime: undefined,
     });
-    setRideUpdates([]); // Reset updates
+    setRideUpdates([]);
     setPickupInput('');
     setDropoffInput('');
     setPickupSuggestions([]);
@@ -242,8 +243,8 @@ export default function PassengerPage() {
     setIsGeolocating(false);
     setIsSearchingAddress(false);
     toastShownForStatus.current = {};
-  }, [loadedPassengerProfile]);
-  
+  }, [loadedPassengerProfile?.name]);
+
   const calculateEstimatedFare = React.useCallback((pickupLoc: Coordinates, dropoffLoc: Coordinates, pickupZoneId: string | null): number => {
     if (settingsLoading || !pickupLoc || !dropoffLoc || !pickupZoneId) return 0;
     const distance = calculateDistance(pickupLoc, dropoffLoc);
@@ -266,7 +267,7 @@ export default function PassengerPage() {
           chosenRoute = data.routes.reduce((shortest: any, current: any) =>
             current.distance < shortest.distance ? current : shortest
           );
-           if (showToastFeedback) handleStatusToast("Route Updated (Shortest Distance)", `Using shortest of ${data.routes.length} alternatives.`);
+           if (showToastFeedback && routeType !== 'confirmation') handleStatusToast("Route Updated (Shortest Distance)", `Using shortest of ${data.routes.length} alternatives.`);
         } else {
           chosenRoute = data.routes[0];
         }
@@ -278,7 +279,7 @@ export default function PassengerPage() {
           setRideState(prev => ({
             ...prev,
             triderToPickupPath: routeGeometry,
-            pickupToDropoffPath: null, 
+            pickupToDropoffPath: null,
             estimatedDurationSeconds: durationSeconds,
             countdownSeconds: durationSeconds
           }));
@@ -286,18 +287,18 @@ export default function PassengerPage() {
           setRideState(prev => ({
             ...prev,
             pickupToDropoffPath: routeGeometry,
-            triderToPickupPath: null, 
+            triderToPickupPath: null,
             estimatedDurationSeconds: durationSeconds,
             countdownSeconds: durationSeconds
           }));
-        } else if (routeType === 'confirmation') { 
+        } else if (routeType === 'confirmation') {
           addRideUpdate(`Estimated route duration: ${formatCountdown(durationSeconds)}`);
            setRideState(prev => ({
              ...prev,
-             pickupToDropoffPath: routeGeometry, 
+             pickupToDropoffPath: routeGeometry,
              triderToPickupPath: null,
              estimatedDurationSeconds: durationSeconds,
-             countdownSeconds: null
+             countdownSeconds: null // No active countdown yet
            }));
         }
         if (showToastFeedback && routeType !== 'confirmation' && chosenRoute) {
@@ -309,7 +310,7 @@ export default function PassengerPage() {
 
       } else {
         setRideState(prev => ({ ...prev, triderToPickupPath: null, pickupToDropoffPath: null, estimatedDurationSeconds: null, countdownSeconds: null }));
-        if (showToastFeedback) handleStatusToast("Route Not Found", "Could not calculate route for the selected points.", "destructive");
+        if (showToastFeedback) handleStatusToast("Route Not Found", data.message || "Could not calculate route for the selected points.", "destructive");
       }
     } catch (error) {
       console.error("Error fetching route for passenger map:", error);
@@ -317,7 +318,7 @@ export default function PassengerPage() {
       if (showToastFeedback) handleStatusToast("Route Error", "Failed to fetch route information.", "destructive");
     }
     return null;
-  }, [MAPBOX_TOKEN, handleStatusToast]);
+  }, [MAPBOX_TOKEN, handleStatusToast, addRideUpdate]);
 
   const performGeolocation = React.useCallback(async (setAsPickup = true) => {
     if (settingsLoading) {
@@ -349,7 +350,7 @@ export default function PassengerPage() {
             const terminal = pickupZone ? getTodaTerminalExitPoint(pickupZone.id) : undefined;
             const newDropoffLocation = terminal?.point || null;
             const newDropoffAddress = terminal?.address || '';
-            
+
             setRideState(prev => ({
                 ...prev,
                 pickupLocation: coords,
@@ -363,9 +364,9 @@ export default function PassengerPage() {
             if (newDropoffLocation) setDropoffInput(newDropoffAddress);
             addRideUpdate(`Pickup location set to your current location: ${address}`);
             if (pickupZone?.name) addRideUpdate(`Identified pickup zone: ${pickupZone.name}`);
-            
+
             let toastDesc = `Zone: ${pickupZone?.name || 'N/A'}.`;
-            if (newDropoffLocation && coords && !settingsLoading) { // check coords is not null
+            if (newDropoffLocation && coords && !settingsLoading) {
                 const fare = calculateEstimatedFare(coords, newDropoffLocation, pickupZone?.id || null);
                 await fetchRoute(coords, newDropoffLocation, 'confirmation', false);
                 setRideState(prev => ({...prev, estimatedFare: fare}));
@@ -397,37 +398,68 @@ export default function PassengerPage() {
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
-  }, [getTodaZoneForLocation, handleStatusToast, getTodaTerminalExitPoint, calculateEstimatedFare, fetchRoute, settingsLoading]);
+  }, [settingsLoading, MAPBOX_TOKEN, handleStatusToast, getTodaZoneForLocation, getTodaTerminalExitPoint, calculateEstimatedFare, fetchRoute, addRideUpdate]);
 
   React.useEffect(() => {
     let storedProfile = null;
+    let selectedZoneIdFromStorage: string | null = null;
+    let selectedRoleFromStorage: string | null = null;
+
     try {
-      storedProfile = localStorage.getItem('selectedPassengerProfile');
-      if (storedProfile) {
-        const passenger: MockPassengerProfile = JSON.parse(storedProfile);
-        setLoadedPassengerProfile(passenger);
-        setRideState(prev => ({ ...prev, passengerName: passenger.name, status: 'idle' }));
+      selectedZoneIdFromStorage = localStorage.getItem('selectedTodaZoneId_TriGo');
+      selectedRoleFromStorage = localStorage.getItem('selectedRole_TriGo');
 
-        const storedPassengerSettings = localStorage.getItem(`passengerSettings_${passenger.id}`);
-        let pSettings: PassengerSettings = passenger.settings || { mapStyle: DEFAULT_PASSENGER_MAP_STYLE };
-        if (storedPassengerSettings) {
-          pSettings = { ...pSettings, ...JSON.parse(storedPassengerSettings) };
+      if (selectedZoneIdFromStorage && selectedRoleFromStorage === 'passenger') {
+         // If launched from ZoneLauncher, we might not have a full "passenger profile"
+         // but we have the zone and role.
+        const zone = appTodaZones.find(z => z.id === selectedZoneIdFromStorage);
+        if (zone) {
+          setLoadedPassengerProfile({ // Create a temporary profile
+            id: `temp-pass-${Date.now()}`,
+            name: 'Valued Passenger', // Generic name
+            todaZoneId: zone.id,
+            todaZoneName: zone.name,
+            settings: { mapStyle: DEFAULT_PASSENGER_MAP_STYLE } // Default settings
+          });
+          setRideState(prev => ({ ...prev, passengerName: 'Valued Passenger', pickupTodaZoneId: zone.id, status: 'selectingPickup' }));
+          setViewState(prev => ({ ...prev, ...zone.center, zoom: 15 }));
+          if (currentView === 'requestingRide' && !settingsLoading) performGeolocation();
         }
-        setCurrentPassengerSettings(pSettings);
+      } else {
+        // Fallback to checking for detailed passenger profile (from sign-in page)
+        storedProfile = localStorage.getItem('selectedPassengerProfile');
+        if (storedProfile) {
+          const passenger: MockPassengerProfile = JSON.parse(storedProfile);
+          setLoadedPassengerProfile(passenger);
+          setRideState(prev => ({ ...prev, passengerName: passenger.name, pickupTodaZoneId: passenger.todaZoneId, status: 'selectingPickup' }));
 
-        const passengerZone = appTodaZones.find(z => z.id === passenger.todaZoneId);
-        if (passengerZone) {
-          setViewState(prev => ({ ...prev, ...passengerZone.center, zoom: 15 }));
+          const storedPassengerSettings = localStorage.getItem(`passengerSettings_${passenger.id}`);
+          let pSettings: PassengerSettings = passenger.settings || { mapStyle: DEFAULT_PASSENGER_MAP_STYLE };
+          if (storedPassengerSettings) {
+            pSettings = { ...pSettings, ...JSON.parse(storedPassengerSettings) };
+          }
+          setCurrentPassengerSettings(pSettings);
+
+          const passengerZone = appTodaZones.find(z => z.id === passenger.todaZoneId);
+          if (passengerZone) {
+            setViewState(prev => ({ ...prev, ...passengerZone.center, zoom: 15 }));
+          }
+          if (currentView === 'requestingRide' && !settingsLoading) performGeolocation();
+        } else if (currentView === 'requestingRide' && !settingsLoading) {
+           // No profile, no zone from launcher, just geolocate
+           performGeolocation();
         }
-        localStorage.removeItem('selectedPassengerProfile');
-      } else if (currentView === 'requestingRide' && !settingsLoading) { 
-        performGeolocation();
       }
+      // Clear these specific launcher keys after attempting to use them
+      localStorage.removeItem('selectedTodaZoneId_TriGo');
+      localStorage.removeItem('selectedTodaZoneName_TriGo');
+      localStorage.removeItem('selectedRole_TriGo');
+      localStorage.removeItem('selectedPassengerProfile'); // Also clear this if set by sign-in
     } catch (error) {
-      console.error("Error loading passenger profile/settings from localStorage:", error);
+      console.error("Error loading passenger/zone info from localStorage:", error);
       if (currentView === 'requestingRide' && !settingsLoading) performGeolocation();
     }
-  }, [currentView, performGeolocation, settingsLoading]); 
+  }, [currentView, performGeolocation, settingsLoading]);
 
   React.useEffect(() => {
     switch (currentPassengerSettings.mapStyle) {
@@ -491,15 +523,15 @@ export default function PassengerPage() {
         const targetLocation = rideState.status === 'triderAssigned' ? rideState.pickupLocation! : rideState.dropoffLocation!;
 
         if (!currentPath || !targetLocation || rideState.currentTriderPathIndex === undefined) return prevLoc;
-        
+
         const atDestinationOfSegment = rideState.currentTriderPathIndex >= currentPath.coordinates.length - 1;
 
         if (atDestinationOfSegment) {
             if (prevLoc.longitude !== targetLocation.longitude || prevLoc.latitude !== targetLocation.latitude) {
-                setRideState(prevRideState => ({ ...prevRideState, countdownSeconds: 0 })); 
-                return targetLocation; 
+                setRideState(prev => ({ ...prev, countdownSeconds: 0 }));
+                return targetLocation;
             }
-            setRideState(prevRideState => ({ ...prevRideState, countdownSeconds: 0 }));
+            setRideState(prev => ({ ...prev, countdownSeconds: 0 }));
             return prevLoc;
         }
 
@@ -508,7 +540,7 @@ export default function PassengerPage() {
           longitude: currentPath.coordinates[nextIndex][0],
           latitude: currentPath.coordinates[nextIndex][1],
         };
-        setRideState(prevRideState => ({ ...prevRideState, currentTriderPathIndex: nextIndex }));
+        setRideState(prev => ({ ...prev, currentTriderPathIndex: nextIndex }));
         return newCoords;
       });
     };
@@ -535,7 +567,7 @@ export default function PassengerPage() {
     const prevStatus = prevRideStatusRef.current;
     const rideId = rideState.currentRideId || 'ride';
 
-    if (prevStatus === currentStatus) return; 
+    if (prevStatus === currentStatus) return;
 
     const showToastForStatus = (statusKey: string, title: string, description: string) => {
       const toastKey = `${statusKey}-${rideId}`;
@@ -553,7 +585,7 @@ export default function PassengerPage() {
         addRideUpdate("Ride completed. Thank you for using TriGo!");
     }
     prevRideStatusRef.current = currentStatus;
-  }, [rideState.status, rideState.currentRideId, rideState.assignedTrider, rideState.passengerName, handleStatusToast]);
+  }, [rideState.status, rideState.currentRideId, rideState.assignedTrider, rideState.passengerName, handleStatusToast, addRideUpdate]);
 
 
   React.useEffect(() => {
@@ -563,14 +595,12 @@ export default function PassengerPage() {
 
     if (currentStatus === 'triderAssigned' && atDestinationOfSegment) {
         setRideState(prev => ({ ...prev, countdownSeconds: 0 }));
-         addRideUpdate("TriDer arrived at pickup location.");
         if (rideState.dropoffLocation && rideState.pickupLocation) {
             setRideState(prev => ({ ...prev, status: 'inProgress', currentTriderPathIndex: 0, triderToPickupPath: null }));
             fetchRoute(rideState.pickupLocation, rideState.dropoffLocation, 'pickupToDropoff', true);
         }
     } else if (currentStatus === 'inProgress' && atDestinationOfSegment) {
         setRideState(prev => ({ ...prev, countdownSeconds: 0 }));
-         addRideUpdate("Arrived at dropoff location.");
         const now = new Date();
         const finalRideState: PassengerRideState = {...rideState, status: 'completed' as const, pickupToDropoffPath: null, completionTime: now};
         setRideState(finalRideState);
@@ -589,7 +619,7 @@ export default function PassengerPage() {
       const response = await fetch(url);
       const data = await response.json();
       if (data.routes && data.routes.length > 0) {
-         const chosenRoute = data.routes.length > 1 
+         const chosenRoute = data.routes.length > 1
             ? data.routes.reduce((shortest: any, current: any) => current.distance < shortest.distance ? current : shortest)
             : data.routes[0];
         return Math.round(chosenRoute.duration);
@@ -611,7 +641,7 @@ export default function PassengerPage() {
         const atDestinationOfSegment = currentPath && rideState.currentTriderPathIndex !== undefined && rideState.currentTriderPathIndex >= currentPath.coordinates.length - 1;
 
         if (atDestinationOfSegment) {
-            return; 
+            return;
         }
 
         setIsRefreshingEta(true);
@@ -623,7 +653,7 @@ export default function PassengerPage() {
           const newDuration = await getRouteDuration(triderSimLocation, targetForEta);
           if (newDuration !== null) {
             setRideState(prev => {
-              
+
               const stillEnRouteThisSegment = prev.currentTriderPathIndex !== undefined &&
                                    ((prev.status === 'triderAssigned' && prev.triderToPickupPath && prev.currentTriderPathIndex < prev.triderToPickupPath.coordinates.length -1) ||
                                    (prev.status === 'inProgress' && prev.pickupToDropoffPath && prev.currentTriderPathIndex < prev.pickupToDropoffPath.coordinates.length -1));
@@ -631,11 +661,10 @@ export default function PassengerPage() {
               if(stillEnRouteThisSegment) {
                 return {
                   ...prev,
-                 // estimatedDurationSeconds: newDuration, // Keep the initial estimate unless a major reroute happens
                   countdownSeconds: newDuration,
                 }
               }
-              return prev; 
+              return prev;
             });
           }
         }
@@ -643,23 +672,23 @@ export default function PassengerPage() {
     };
 
     if ( (rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && triderSimLocation) {
-      etaRefreshIntervalId = setInterval(refreshEta, 7000); 
+      etaRefreshIntervalId = setInterval(refreshEta, 7000);
     }
 
     return () => {
       clearInterval(etaRefreshIntervalId);
-      if (isRefreshingEta) setIsRefreshingEta(false); 
-    }; 
+      if (isRefreshingEta) setIsRefreshingEta(false);
+    };
   }, [
     rideState.status,
     triderSimLocation,
     rideState.pickupLocation,
     rideState.dropoffLocation,
-    isRefreshingEta, 
+    isRefreshingEta,
     getRouteDuration,
     rideState.triderToPickupPath,
     rideState.pickupToDropoffPath,
-    rideState.currentTriderPathIndex 
+    rideState.currentTriderPathIndex
   ]);
 
   const handleGeocodeSearch = async (searchText: string, type: 'pickup' | 'dropoff') => {
@@ -702,7 +731,7 @@ export default function PassengerPage() {
        addRideUpdate(`Pickup location set to: ${suggestion.place_name}`);
       if (selectedZone?.name) addRideUpdate(`Identified pickup zone: ${selectedZone.name}`);
        handleStatusToast("Pickup Set", `Zone: ${selectedZone?.name || 'N/A'}. ${newDropoffLocation ? `Default dropoff to ${selectedZone?.name || ''} Terminal.` : 'Select dropoff.'}`);
-      if (newDropoffLocation && location && !settingsLoading) { 
+      if (newDropoffLocation && location && !settingsLoading) {
         const fare = calculateEstimatedFare(location, newDropoffLocation, selectedZone?.id || null);
         await fetchRoute(location, newDropoffLocation, 'confirmation', false);
         setRideState(prev => ({...prev, estimatedFare: fare}));
@@ -721,7 +750,7 @@ export default function PassengerPage() {
     }
     setViewState(prev => ({ ...prev, ...location, zoom: 15 }));
     setActiveSuggestionBox(null);
-  }, [getTodaZoneForLocation, handleStatusToast, calculateEstimatedFare, fetchRoute, rideState.pickupLocation, rideState.dropoffLocation, rideState.pickupTodaZoneId, getTodaTerminalExitPoint, settingsLoading]);
+  }, [getTodaZoneForLocation, handleStatusToast, calculateEstimatedFare, fetchRoute, rideState.pickupLocation, rideState.dropoffLocation, rideState.pickupTodaZoneId, getTodaTerminalExitPoint, settingsLoading, addRideUpdate]);
 
 
   const handleMapClick = React.useCallback((event: mapboxgl.MapLayerMouseEvent) => {
@@ -736,11 +765,11 @@ export default function PassengerPage() {
       const newDropoffLocation = terminal?.point || null;
       const newDropoffAddress = terminal?.address || '';
 
-      setRideState(prev => ({ 
-          ...prev, 
-          status: newDropoffLocation ? 'confirmingRide' : 'selectingDropoff', 
-          pickupLocation: newLocation, 
-          pickupAddress: newAddress, 
+      setRideState(prev => ({
+          ...prev,
+          status: newDropoffLocation ? 'confirmingRide' : 'selectingDropoff',
+          pickupLocation: newLocation,
+          pickupAddress: newAddress,
           pickupTodaZoneId: clickedZone?.id || null,
           dropoffLocation: newDropoffLocation,
           dropoffAddress: newDropoffAddress
@@ -752,7 +781,7 @@ export default function PassengerPage() {
        if (clickedZone?.name) addRideUpdate(`Identified pickup zone: ${clickedZone.name}`);
 
       let toastDesc = `Zone: ${clickedZone?.name || 'N/A'}.`;
-      if (newDropoffLocation && newLocation && !settingsLoading){ 
+      if (newDropoffLocation && newLocation && !settingsLoading){
             const fare = calculateEstimatedFare(newLocation, newDropoffLocation, clickedZone?.id || null);
             fetchRoute(newLocation, newDropoffLocation, 'confirmation', false);
             setRideState(prev => ({...prev, estimatedFare: fare}));
@@ -763,7 +792,7 @@ export default function PassengerPage() {
       handleStatusToast("Pickup Set by Map Click", toastDesc);
 
     } else if (!rideState.dropoffLocation || rideState.status === 'selectingDropoff') {
-      if (!rideState.pickupLocation || settingsLoading || !newLocation) return; 
+      if (!rideState.pickupLocation || settingsLoading || !newLocation) return;
       const fare = calculateEstimatedFare(rideState.pickupLocation, newLocation, rideState.pickupTodaZoneId);
       setRideState(prev => ({ ...prev, status: 'confirmingRide', dropoffLocation: newLocation, dropoffAddress: newAddress, estimatedFare: fare }));
       setDropoffInput(newAddress);
@@ -772,7 +801,7 @@ export default function PassengerPage() {
        if(rideState.pickupLocation) fetchRoute(rideState.pickupLocation, newLocation, 'confirmation', false);
       handleStatusToast("Dropoff Set by Map Click", "Confirm your ride details.");
     } else if (rideState.status === 'confirmingRide') {
-      if (!rideState.pickupLocation || settingsLoading || !newLocation) return; 
+      if (!rideState.pickupLocation || settingsLoading || !newLocation) return;
       const fare = calculateEstimatedFare(rideState.pickupLocation!, newLocation, rideState.pickupTodaZoneId);
       setRideState(prev => ({ ...prev, dropoffLocation: newLocation, dropoffAddress: newAddress, estimatedFare: fare }));
       setDropoffInput(newAddress);
@@ -781,11 +810,11 @@ export default function PassengerPage() {
        if(rideState.pickupLocation) fetchRoute(rideState.pickupLocation, newLocation, 'confirmation', false);
       handleStatusToast("Dropoff Updated by Map Click", "Confirm your ride details.");
     }
-  }, [isSearchingAddress, rideState.status, rideState.pickupLocation, rideState.dropoffLocation, getTodaZoneForLocation, handleStatusToast, calculateEstimatedFare, fetchRoute, getTodaTerminalExitPoint, rideState.pickupTodaZoneId, settingsLoading]);
+  }, [isSearchingAddress, rideState.status, rideState.pickupLocation, rideState.dropoffLocation, getTodaZoneForLocation, handleStatusToast, calculateEstimatedFare, fetchRoute, getTodaTerminalExitPoint, rideState.pickupTodaZoneId, settingsLoading, addRideUpdate]);
 
   const handlePickMeUpNow = React.useCallback(async () => {
      if (rideState.status === 'confirmingRide' && rideState.pickupLocation && rideState.dropoffLocation && rideState.estimatedFare !== null && rideState.pickupTodaZoneId) {
-         toastShownForStatus.current = {}; // Reset toasts for new ride
+         toastShownForStatus.current = {};
          const newRideId = `TKT-${Date.now()}-${Math.random().toString(16).slice(2,8)}`;
          setRideState(prev => ({ ...prev, status: 'searching', assignedTrider: null, currentRideId: newRideId }));
          handleStatusToast("Searching for TriDer...", "Looking for available triders near your pickup location.");
@@ -800,31 +829,30 @@ export default function PassengerPage() {
 
          setTimeout(async () => {
              const assignedTrider = mockTridersForDemo[Math.floor(Math.random() * mockTridersForDemo.length)];
-             const rideId = rideState.currentRideId || `ride-${Date.now()}`; 
-             setTriderSimLocation(assignedTrider.location); // Initialize trider location
-             await fetchRoute(assignedTrider.location, rideState.pickupLocation!, 'triderToPickup'); 
-             
-             handleStatusToast("TriDer Assigned!", `TriDer ${assignedTrider.name} is on their way.`);
-             addRideUpdate(`TriDer ${assignedTrider.name} (${assignedTrider.bodyNumber}) assigned. En route to pickup.`);
+             setTriderSimLocation(assignedTrider.location);
+             await fetchRoute(assignedTrider.location, rideState.pickupLocation!, 'triderToPickup');
+
+             handleStatusToast("TriDer Assigned!", `TriDer ${assignedTrider.name} (#${assignedTrider.bodyNumber}) is on their way.`);
+             addRideUpdate(`TriDer ${assignedTrider.name} (#${assignedTrider.bodyNumber}) assigned. En route to pickup.`);
              setRideState(prev => ({ ...prev, status: 'triderAssigned', assignedTrider, currentTriderPathIndex: 0, completionTime: undefined }));
          }, 3000);
      }
-  }, [rideState, fetchRoute, handleStatusToast]);
+  }, [rideState, fetchRoute, handleStatusToast, addRideUpdate]);
 
   const handleSimulateDropoffForPickMeUp = React.useCallback(async () => {
     if (settingsLoading || !rideState.pickupLocation || !rideState.pickupTodaZoneId) {
         handleStatusToast("Cannot Simulate Dropoff", "Pickup location or zone information is missing, or settings are still loading.", "destructive");
         return;
     }
-    if (rideState.dropoffLocation) { 
+    if (rideState.dropoffLocation) {
         setRideState(prev => ({ ...prev, status: 'confirmingRide', currentRideId: `TKT-${Date.now()}-${Math.random().toString(16).slice(2,6)}` }));
         handleStatusToast("Dropoff Already Set", "Proceed to confirm your ride details.");
         return;
     }
-    
+
     const pickupZone = appTodaZones.find(z => z.id === rideState.pickupTodaZoneId);
     const terminal = pickupZone ? getTodaTerminalExitPoint(pickupZone.id) : undefined;
-    
+
     let simulatedDropoff: Coordinates;
     let simulatedDropoffAddress: string;
 
@@ -838,8 +866,8 @@ export default function PassengerPage() {
         handleStatusToast("Cannot Simulate Dropoff", "Pickup zone information is missing.", "destructive");
         return;
     }
-    
-    if(rideState.pickupLocation && !settingsLoading){ 
+
+    if(rideState.pickupLocation && !settingsLoading){
         const fare = calculateEstimatedFare(rideState.pickupLocation, simulatedDropoff, rideState.pickupTodaZoneId);
         await fetchRoute(rideState.pickupLocation, simulatedDropoff, 'confirmation', false);
         setRideState(prev => ({
@@ -854,13 +882,13 @@ export default function PassengerPage() {
        addRideUpdate(`Simulated dropoff location set: ${simulatedDropoffAddress}`);
        handleStatusToast("Simulated Dropoff Set", "Review details and confirm.");
     }
-        
-  }, [rideState.pickupLocation, rideState.pickupTodaZoneId, rideState.dropoffLocation, calculateEstimatedFare, fetchRoute, handleStatusToast, getTodaTerminalExitPoint, settingsLoading]);
+
+  }, [rideState.pickupLocation, rideState.pickupTodaZoneId, rideState.dropoffLocation, calculateEstimatedFare, fetchRoute, handleStatusToast, getTodaTerminalExitPoint, settingsLoading, addRideUpdate]);
 
 
-  const mainButtonColorClass = `bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL}] hover:bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL}]/90`;
-  const countdownColorStyle = { color: PASSENGER_HEADER_TEXT }; // White
-  const countdownPulseClass = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 ? 'font-bold animate-pulse' : 'font-bold'; 
+  const mainButtonColorClass = `bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}] hover:bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}]/90`;
+  const countdownColorStyle = { color: PASSENGER_HEADER_TEXT };
+  const countdownPulseClass = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 ? `font-bold animate-pulse ${NEON_GREEN_TEXT}` : `font-bold ${NEON_GREEN_TEXT}`;
 
 
   if (settingsLoading || !MAPBOX_TOKEN) {
@@ -882,17 +910,17 @@ export default function PassengerPage() {
     return (
       <div className="relative flex flex-col h-screen bg-cover bg-center text-white" style={{ backgroundImage: "url('https://placehold.co/1080x1920.png?text=Street+Scene')", backgroundPosition: 'center', backgroundSize: 'cover' }} data-ai-hint="street traffic blur">
         <div className={cn("absolute inset-0", PASSENGER_PAGE_OVERLAY_BG, "z-0")}></div>
-        
+
         <div className="relative z-10 flex flex-col h-full p-6 pt-4">
-          <header className="flex justify-end"> 
+          <header className="flex justify-end">
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
               <MenuIcon size={28} />
               <span className="sr-only">Menu</span>
             </Button>
           </header>
 
-          <div className="flex-grow flex flex-col items-center justify-center text-center -mt-12 sm:-mt-16"> 
-            <h1 className="text-7xl sm:text-8xl font-bold mb-2" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>
+          <div className="flex-grow flex flex-col items-center justify-center text-center -mt-12 sm:-mt-16">
+            <h1 className="text-7xl sm:text-8xl font-bold mb-2" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}}>
               TriGo
             </h1>
             <p className="text-xl sm:text-2xl text-white/80">
@@ -900,7 +928,7 @@ export default function PassengerPage() {
             </p>
           </div>
 
-          <div className="pb-4"> 
+          <div className="pb-4">
             <div className="grid grid-cols-3 gap-4 mb-6 sm:mb-8 max-w-xs sm:max-w-sm mx-auto">
               {[{ label: "Ride", subLabel: "Before", icon: History, action: () => toast({title: "Ride Before", description: "This feature is coming soon!"}) },
                { label: "Ride", subLabel: "Now", icon: Bike, action: () => { setCurrentView('requestingRide'); if(!settingsLoading && !rideState.pickupLocation) { performGeolocation(); } } },
@@ -912,9 +940,9 @@ export default function PassengerPage() {
                   className="flex flex-col items-center justify-center h-24 w-24 rounded-full p-0 border-2 transition-all duration-200 ease-in-out hover:scale-105 focus:scale-105 active:scale-95"
                   style={{
                       backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                      borderColor: PASSENGER_PAGE_ACCENT_COLOR_HSL,
-                      color: PASSENGER_PAGE_ACCENT_COLOR_HSL,
-                      boxShadow: `0 0 10px ${PASSENGER_PAGE_ACCENT_COLOR_HSL}33`
+                      borderColor: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING,
+                      color: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING,
+                      boxShadow: `0 0 10px ${PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}33`
                   }}
                   onClick={item.action}
                 >
@@ -926,7 +954,7 @@ export default function PassengerPage() {
             </div>
             <footer className="text-center text-sm text-white/70">
               <p className="flex items-center justify-center">
-                Selected Payment: <CreditCard size={16} className="mx-1.5" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}/> Apple Pay <span className="ml-1" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>&gt;</span>
+                Selected Payment: <CreditCard size={16} className="mx-1.5" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}}/> Apple Pay <span className="ml-1" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}}>&gt;</span>
               </p>
             </footer>
           </div>
@@ -940,7 +968,7 @@ export default function PassengerPage() {
       <div style={{ backgroundColor: PASSENGER_HEADER_BG, color: PASSENGER_HEADER_TEXT }} className="p-4 flex items-center justify-between shadow-md z-20 relative">
         <div className="flex items-center space-x-2">
           <TriGoPassengerLogoInHeader />
-          <h1 className="text-xl font-bold" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>TriGo Passenger</h1>
+          <h1 className="text-xl font-bold" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}}>TriGo Passenger</h1>
         </div>
         <div className="flex items-center space-x-2">
           {rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && (
@@ -965,7 +993,7 @@ export default function PassengerPage() {
                 <SettingsIconLucide size={20} />
               </AccordionTrigger>
               <AccordionContent className="absolute right-0 mt-2 w-64 bg-white text-black rounded-md shadow-lg p-4 z-20">
-                <h3 className="text-lg font-semibold mb-2 text-neutral-700">Settings</h3>
+                <h3 className="text-lg font-semibold mb-2 text-neutral-700">My Settings</h3>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="mapStyle" className="text-neutral-600">Map Style</Label>
@@ -980,7 +1008,7 @@ export default function PassengerPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={handleSavePassengerSettings} className={`w-full bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL}] text-white hover:bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL}]/90`}>Save My Settings</Button>
+                  <Button onClick={handleSavePassengerSettings} className={`w-full bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}] text-white hover:bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}]/90`}>Save My Settings</Button>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -994,7 +1022,7 @@ export default function PassengerPage() {
           ref={mapRef}
           {...viewState}
           onMove={evt => setViewState(evt.viewState)}
-          style={{ width: '100%', height: 'calc(100vh - 72px)' }} 
+          style={{ width: '100%', height: 'calc(100vh - 72px)' }}
           mapStyle={mapStyleUrl}
           mapboxAccessToken={MAPBOX_TOKEN}
           onClick={handleMapClick}
@@ -1018,8 +1046,8 @@ export default function PassengerPage() {
               type="fill"
               paint={{
                 'fill-color': ['match', ['get', 'id'],
-                  rideState.pickupTodaZoneId ?? "", `hsla(33, 100%, 50%, 0.2)`, 
-                  'hsla(210, 50%, 60%, 0.1)' 
+                  rideState.pickupTodaZoneId ?? "", `hsla(33, 100%, 50%, 0.2)`,
+                  'hsla(210, 50%, 60%, 0.1)'
                 ],
                 'fill-outline-color': ['match', ['get', 'id'],
                    rideState.pickupTodaZoneId ?? "", `hsla(33, 100%, 50%, 0.5)`,
@@ -1042,7 +1070,7 @@ export default function PassengerPage() {
 
           {rideState.pickupLocation && (
             <Marker longitude={rideState.pickupLocation.longitude} latitude={rideState.pickupLocation.latitude} anchor="bottom">
-              <MapPin size={30} style={{ color: PASSENGER_PAGE_ACCENT_COLOR_HSL }} fill={PASSENGER_PAGE_ACCENT_COLOR_HSL} />
+              <MapPin size={30} style={{ color: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING }} fill={PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING} />
             </Marker>
           )}
 
@@ -1133,9 +1161,9 @@ export default function PassengerPage() {
         </div>
 
         {(rideState.status === 'confirmingRide' || rideState.status === 'searching' || rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && (
-           <Alert 
-             className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-sm p-4 bg-black/70 backdrop-blur-sm shadow-xl rounded-xl" 
-             style={{ borderColor: PASSENGER_PAGE_ACCENT_COLOR_HSL }}
+           <Alert
+             className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-sm p-4 bg-black/80 backdrop-blur-md shadow-xl rounded-xl"
+             style={{ borderColor: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING }}
            >
              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
@@ -1148,9 +1176,9 @@ export default function PassengerPage() {
                     </AlertTitle>
                 </div>
                 {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.countdownSeconds !== null && (
-                    <div 
-                        className={`text-2xl ${countdownPulseClass}`} 
-                        style={countdownColorStyle} 
+                    <div
+                        className={`text-2xl ${countdownPulseClass}`}
+                        style={{color: NEON_GREEN_TEXT}} // Use neon green for timer
                     >
                         {formatCountdown(rideState.countdownSeconds)}
                         {isRefreshingEta && <Loader2 className="inline-block h-4 w-4 ml-1 animate-spin" />}

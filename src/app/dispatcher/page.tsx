@@ -156,7 +156,7 @@ const initialRideRequests: RideRequest[] = [
 
 const initialAiInsights: AiInsight[] = [
   { id: 'ai-dispatch-1', title: 'High Demand Alert', description: `Increased ride requests near ${talonKuatroZone.name}. Consider deploying more triders.`, severity: 'warning', timestamp: new Date(Date.now() - 2 * 60 * 1000), relatedLocation: talonKuatroZone.center },
-  { id: 'ai-dispatch-2', title: 'Route Optimization Available', description: `Trider ${initialTriders[0]?.name} can take a faster route.`, severity: 'info', timestamp: new Date(Date.now() - 15 * 60 * 1000) },
+  { id: 'ai-dispatch-2', title: 'Route Optimization Available', description: `Trider ${initialTriders[0]?.name} (#${initialTriders[0]?.bodyNumber}) can take a faster route.`, severity: 'info', timestamp: new Date(Date.now() - 15 * 60 * 1000) },
   { id: 'ai-dispatch-tep-1', title: 'Moderate Demand in TEPTODA', description: `Consider rebalancing if triders are idle elsewhere.`, severity: 'info', timestamp: new Date(Date.now() - 5 * 60 * 1000), relatedLocation: teptodaZone.center },
 ];
 
@@ -174,9 +174,9 @@ export default function DispatcherPage() {
     triderUpdateIntervalMs,
     aiInsightIntervalMs,
     isLoading: settingsLoading,
-    getTodaBaseFare, 
-    perKmCharge,     
-    convenienceFee   
+    getTodaBaseFare,
+    perKmCharge,
+    convenienceFee
   } = useSettings();
 
   const [triders, setTriders] = React.useState<Trider[]>(initialTriders);
@@ -528,7 +528,7 @@ export default function DispatcherPage() {
           onClick={() => setActiveView('control')}
           className={cn(
             "flex-1 justify-center px-4 py-2 text-sm font-medium rounded-sm",
-            activeView === 'control' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            activeView === 'control' ? "bg-blue-600 text-white hover:bg-blue-700" : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
         >
           <ListChecks className="mr-2 h-4 w-4" />
@@ -539,7 +539,7 @@ export default function DispatcherPage() {
           onClick={() => setActiveView('map')}
           className={cn(
             "flex-1 justify-center px-4 py-2 text-sm font-medium rounded-sm",
-            activeView === 'map' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            activeView === 'map' ? "bg-blue-600 text-white hover:bg-blue-700" : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
         >
           <Map className="mr-2 h-4 w-4" />
@@ -549,8 +549,8 @@ export default function DispatcherPage() {
 
       <div className="flex-grow grid grid-cols-1 overflow-hidden">
         {activeView === 'control' && (
-           <div className="flex flex-col gap-4 h-full"> {/* Main container for control view */}
-            <Card className="flex-shrink-0"> {/* Dispatch Control Card */}
+           <div className="flex flex-col gap-4 h-full">
+            <Card className="flex-shrink-0">
               <CardHeader>
                 <CardTitle className="text-lg">Dispatch Control</CardTitle>
                 <CardDescription>Select a ride and an available trider from the same TODA zone to dispatch. All data is mocked.</CardDescription>
@@ -564,7 +564,7 @@ export default function DispatcherPage() {
                 <Button 
                   onClick={handleDispatchRide} 
                   disabled={isDispatchDisabled}
-                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {isFetchingRoute && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Dispatch Ride
@@ -573,7 +573,6 @@ export default function DispatcherPage() {
               </CardFooter>
             </Card>
 
-            {/* This div will contain the two lists and should grow to fill available space */}
             <div className="flex-grow grid md:grid-cols-2 gap-4 min-h-0"> 
               <TriderList 
                 triders={selectedRideRequest ? candidateTriders : triders.filter(t => t.status === 'available')}
@@ -588,7 +587,7 @@ export default function DispatcherPage() {
               />
             </div>
             
-            <div className="flex-shrink-0 mt-4"> {/* AI Insights at the bottom */}
+            <div className="flex-shrink-0 mt-4">
                <AiInsights insights={aiInsights} />
             </div>
           </div>
