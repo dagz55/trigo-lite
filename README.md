@@ -79,6 +79,62 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - Sign-in (`/sign-in`) page features a Role Switcher and Passenger Profile Selector.
   - Sign-up (`/sign-up`) page is a placeholder.
 
+## Recent Updates
+
+- **Route Restructuring:**
+  - Dispatcher related pages (Dashboard, Triders, Settings) moved under `/dispatcher` route.
+  - `/passenger` and `/trider` routes remain top-level for role simulation.
+- **Passenger Role Simulation (`/passenger`):**
+  - **New Landing Page:** Initial view for passengers featuring "Ride Before", "Ride Now", "Ride Later" options, with a background image and themed elements.
+  - **"Pick Me Up Now" Feature:** Core passenger ride request flow implemented. Passengers can request a ride via a button. The system alerts the nearest available triders sequentially at 10-second intervals until accepted.
+  - Mock ride request flow: searching, trider assignment, trider en route, ride completion.
+  - Map display of assigned trider's live location (simulated) and ETA, with trider accurately following Mapbox-calculated route.
+  - Distinct route colors for trider-to-pickup and pickup-to-dropoff segments.
+  - Geolocation for initial pickup suggestion. "Locate Me" button added inside pickup input field.
+  - Address input fields with Mapbox Geocoding API for autocomplete/suggestions.
+  - Orange-themed header (was Red Hat inspired, then purple, now orange accents).
+  - Glassmorphism countdown timer card with neon green text for ETA, with visual cues for final 10 seconds.
+  - Ride Ticket ID display.
+  - Ride receipt dialog displayed upon ride completion (data logged to console, not DB).
+  - Per-passenger map style settings (streets, satellite, dark) saved to localStorage.
+- **Trider Role Simulation (`/trider`):**
+  - UI for trider to go online/offline. Geolocation on going online to set initial position.
+  - View and accept mock ride requests within their TODA zone.
+  - Map display of current location, active ride details, and route.
+  - Simulation of trider movement along Mapbox-calculated routes.
+  - TODA Zone Change Request feature.
+  - **New Sections & Bottom Navigation:** Added Wallet, Settings, and Premium Subscription views with a bottom navigation bar. Functionality is mocked.
+- **Functional Application Settings Page (`/dispatcher/settings`):**
+  - UI for theme selection (light, dark, system).
+  - Configuration for default map zoom and center.
+  - Toggle for heatmap layer visibility on dispatch map.
+  - Inputs to adjust mock data simulation intervals (new rides, trider updates, AI insights).
+  - Settings are saved to and loaded from `localStorage`.
+  - Reset to default settings functionality.
+  - Configuration for global convenience fee (PIN-protected for demo) and per-TODA base fares.
+- **TODA Zones Management Page (`/dispatcher/toda-management`):**
+  - New page for managing fare matrix.
+  - Inputs for global default base fare, per KM charge, and convenience fee.
+  - Modal-based editing for overriding base fares for each specific TODA zone.
+  - Modal includes fields for setting TODA Terminal Exit Point (coordinates and address).
+  - Search functionality for TODA zones when configuring fares.
+  - Placeholder sections for future TODA, Trider-in-TODA, and Passenger CRUD.
+- **Settings Context (`SettingsContext.tsx`):**
+  - Manages application settings state.
+  - Applies theme changes dynamically.
+  - Manages fare settings (convenience fee, per-TODA base fares, global default base fare, per KM charge, TODA terminal exit points).
+- **Role Switcher Component (`RoleSwitcher.tsx`):**
+  - Card UI on `/sign-in` page to launch Passenger or Trider roles in new windows.
+  - Includes icons and responsive design.
+  - Dropdowns to select a specific TODA zone and then a specific passenger profile from that zone to launch a tailored demo.
+- **Clerk Authentication Removal:**
+  - Removed `@clerk/nextjs` dependency.
+  - Deleted Clerk sign-in and sign-up pages (replaced with placeholders and Role Switcher).
+  - Removed Clerk UI components from layouts.
+  - Removed Clerk middleware.
+  - Removed `ClerkProvider` from root layout.
+  - Routes previously protected by Clerk are now publicly accessible.
+
 ## Getting Started
 
 ### Prerequisites
