@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -7,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import BottomNavBar from '@/components/passenger/BottomNavBar'; // Import the new component
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -884,8 +884,8 @@ export default function PassengerPage() {
         <div className={cn("absolute inset-0", PASSENGER_PAGE_OVERLAY_BG, "z-0")}></div>
         
         <div className="relative z-10 flex flex-col h-full p-6 pt-4">
-          <header className="flex justify-end"> 
-            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+          <header className="flex justify-end">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" title="Menu">
               <MenuIcon size={28} />
               <span className="sr-only">Menu</span>
             </Button>
@@ -917,6 +917,7 @@ export default function PassengerPage() {
                       boxShadow: `0 0 10px ${PASSENGER_PAGE_ACCENT_COLOR_HSL}33`
                   }}
                   onClick={item.action}
+                  title={`${item.label} ${item.subLabel}`} // Add tooltip here
                 >
                   <item.icon size={20} className="mb-1"/>
                   <span className="text-sm font-medium">{item.label}</span>
@@ -926,7 +927,7 @@ export default function PassengerPage() {
             </div>
             <footer className="text-center text-sm text-white/70">
               <p className="flex items-center justify-center">
-                Selected Payment: <CreditCard size={16} className="mx-1.5" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}/> Apple Pay <span className="ml-1" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>&gt;</span>
+                Selected Payment: <CreditCard size={16} className="mx-1.5" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}/> Apple Pay <span className="ml-1" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>></span>
               </p>
             </footer>
           </div>
@@ -957,11 +958,11 @@ export default function PassengerPage() {
               <span className="font-medium text-sm hidden sm:inline text-white">{loadedPassengerProfile.name}</span>
             </div>
           )}
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white"><Search size={18}/></Button>
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white"><Globe size={18}/></Button>
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white" title="Search"><Search size={18}/></Button>
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white" title="Change Map Style"><Globe size={18}/></Button>
           <Accordion type="single" collapsible className="w-auto text-white">
             <AccordionItem value="settings" className="border-b-0">
-              <AccordionTrigger className="p-1.5 hover:no-underline hover:bg-white/20 rounded">
+              <AccordionTrigger className="p-1.5 hover:no-underline hover:bg-white/20 rounded" title="Settings">
                 <SettingsIconLucide size={20} />
               </AccordionTrigger>
               <AccordionContent className="absolute right-0 mt-2 w-64 bg-white text-black rounded-md shadow-lg p-4 z-20">
@@ -985,7 +986,7 @@ export default function PassengerPage() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white"><LogInIcon size={18} /></Button>
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white" title="Login/Logout"><LogInIcon size={18} /></Button>
         </div>
       </div>
 
@@ -1000,7 +1001,7 @@ export default function PassengerPage() {
           onClick={handleMapClick}
           interactiveLayerIds={['toda-zones-fill']}
         >
-          <NavigationControl position="top-left" />
+          <NavigationControl position="bottom-left" />
 
           <Source id="toda-zones" type="geojson" data={{
             type: 'FeatureCollection',
@@ -1018,8 +1019,8 @@ export default function PassengerPage() {
               type="fill"
               paint={{
                 'fill-color': ['match', ['get', 'id'],
-                  rideState.pickupTodaZoneId ?? "", `hsla(33, 100%, 50%, 0.2)`, 
-                  'hsla(210, 50%, 60%, 0.1)' 
+                  rideState.pickupTodaZoneId ?? "", `hsla(33, 100%, 50%, 0.2)`,
+                  'hsla(210, 50%, 60%, 0.1)'
                 ],
                 'fill-outline-color': ['match', ['get', 'id'],
                    rideState.pickupTodaZoneId ?? "", `hsla(33, 100%, 50%, 0.5)`,
@@ -1088,7 +1089,7 @@ export default function PassengerPage() {
                     onFocus={() => setActiveSuggestionBox('pickup')}
                     className={`w-full bg-white shadow-sm ${PASSENGER_INPUT_TEXT_COLOR} ${PASSENGER_PLACEHOLDER_TEXT_COLOR} pr-10 border-neutral-300`}
                     disabled={rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff' && rideState.status !== 'confirmingRide'} />
-                  <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8" onClick={() => performGeolocation(true)} disabled={isGeolocating}>
+                  <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8" onClick={() => performGeolocation(true)} disabled={isGeolocating} title="Use Current Location">
                     {isGeolocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crosshair size={18} className="text-neutral-500" />}
                   </Button>
                   {isSearchingAddress && activeSuggestionBox === 'pickup' && (
@@ -1177,7 +1178,7 @@ export default function PassengerPage() {
                 )}
              </AlertDescription>
              {rideState.status === 'confirmingRide' && (
-                <Button className={`w-full mt-4 ${mainButtonColorClass} text-white`} onClick={handlePickMeUpNow} disabled={!rideState.pickupLocation || !rideState.dropoffLocation || rideState.estimatedFare === null}>
+                <Button className={`w-full mt-4 ${mainButtonColorClass} text-white`} onClick={handlePickMeUpNow} disabled={!rideState.pickupLocation || !rideState.dropoffLocation || rideState.estimatedFare === null} title="Request TriGo Now">
                     Request TriGo Now
                 </Button>
              )}
@@ -1185,7 +1186,7 @@ export default function PassengerPage() {
         )}
 
         {rideUpdates.length > 0 && (rideState.status !== 'confirmingRide' && rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff') && (
-          <Card className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-sm bg-black/70 backdrop-blur-sm shadow-xl rounded-xl text-white max-h-[150px] overflow-y-auto">
+          <Card className="absolute top-24 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-sm bg-black/70 backdrop-blur-sm shadow-xl rounded-xl text-white max-h-[150px] overflow-y-auto">
             <CardContent className="p-3 text-xs space-y-1">
               <div className="flex items-center text-white/80 mb-1">
                  <History size={14} className="mr-1" />
@@ -1208,7 +1209,7 @@ export default function PassengerPage() {
 
          {rideState.status === 'completed' && (
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xs px-4">
-                <Button className={`w-full ${mainButtonColorClass} text-white`} onClick={() => { resetRideState(); setIsReceiptDialogOpen(false); }}>
+                <Button className={`w-full ${mainButtonColorClass} text-white`} onClick={() => { resetRideState(); setIsReceiptDialogOpen(false); }} title="Book Another Ride">
                     Book Another Ride
                 </Button>
             </div>
@@ -1225,6 +1226,9 @@ export default function PassengerPage() {
         rideDetails={completedRideDetails}
       />
     )}
+
+    {/* Bottom Navigation Bar */}
+    <BottomNavBar />
 
   </div>
 );
