@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@radix-ui/react-label";
 import Map, { Marker, Source, Layer, NavigationControl, MapRef } from 'react-map-gl';
 import type {
   Coordinates,
@@ -22,6 +22,7 @@ import type {
   PassengerSettings,
   PassengerMapStyle
 } from "@/types";
+import { motion, AnimatePresence } from "framer-motion"
 import { todaZones as appTodaZones } from "@/data/todaZones";
 import { getRandomPointInCircle, calculateDistance, isPointInCircle } from "@/lib/geoUtils";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -32,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "
 import { RideReceiptDialog } from '@/components/passenger/RideReceiptDialog';
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
+import { useRide } from "@/contexts/RideContext";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2';
@@ -1328,6 +1330,20 @@ export default function PassengerPage() {
                     )}
                 </AlertDescription>
               </Alert>
+
+              {/* Share Ride Button */}
+              <AnimatePresence>
+                {rideState.status === "inProgress" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.1 }}
+                  >
+                     <Button className="fixed bottom-4 right-4 z-20" variant="secondary" size="sm" onClick={handleShareRide} style={{ backgroundColor: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING, color: 'white' }}> <Share2 className="mr-2 h-4 w-4" /> Share ride </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 

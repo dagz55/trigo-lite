@@ -3,10 +3,12 @@
 
 import * as React from 'react';
 import { useParams } from 'next/navigation';
+import { format } from 'date-fns';
 import Map, { Marker, Source, Layer, NavigationControl } from 'react-map-gl';
 import type { Coordinates, RoutePath } from '@/types'; // Assuming RoutePath is defined
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, MapPin, Bike, Clock, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { todaZones } from '@/data/todaZones'; // For fallback center
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -229,7 +231,7 @@ export default function ShareRidePage() {
       <header className="p-4 bg-card border-b border-border shadow-sm">
         <h1 className="text-xl font-semibold text-primary flex items-center">
           <MapPin className="mr-2 h-6 w-6" /> TriGo Ride Share
-        </h1>
+        </h1> 
         <p className="text-xs text-muted-foreground">Ticket ID: {rideDetails.rideId}</p>
       </header>
 
@@ -276,7 +278,7 @@ export default function ShareRidePage() {
       <footer className="p-4 bg-card border-t border-border shadow-sm">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">
+            <CardTitle className="text-lg flex items-center justify-between">
               {rideDetails.status === 'enRouteToPickup' ? "Trider En Route to Pickup" :
                rideDetails.status === 'enRouteToDropoff' ? "Ride In Progress to Destination" :
                rideDetails.status === 'completed' ? "Ride Completed" :
@@ -284,7 +286,9 @@ export default function ShareRidePage() {
                "Tracking Ride..."}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm space-y-1">
+ <CardContent className="text-sm space-y-1">
+ {/* Simple message indicating this is the shared view */}
+ <p className="text-xs text-yellow-500 italic mb-2">You are viewing a shared ride in read-only mode.</p>
             <p className="flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground" /> Trider: {rideDetails.triderName} (#{rideDetails.triderBodyNumber}) - {rideDetails.triderVehicleType}</p>
             <p className="flex items-center"><MapPin className="mr-2 h-4 w-4 text-green-400" /> From: {rideDetails.pickupAddress}</p>
             <p className="flex items-center"><MapPin className="mr-2 h-4 w-4 text-red-400" /> To: {rideDetails.dropoffAddress}</p>
