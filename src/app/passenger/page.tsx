@@ -36,17 +36,17 @@ import { format } from 'date-fns';
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2';
 
-const PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING = 'hsl(280, 80%, 70%)'; // Light Purple/Pinkish
+const PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING = 'hsl(262, 78%, 59%)'; // Primary Purple
 const PASSENGER_HEADER_BG = 'black';
 const PASSENGER_HEADER_TEXT = 'white';
-const PASSENGER_INPUT_TEXT_COLOR = 'text-neutral-100'; // For dark inputs on light cards
-const PASSENGER_PLACEHOLDER_TEXT_COLOR = 'placeholder:text-neutral-400'; // For dark inputs
+const PASSENGER_INPUT_TEXT_COLOR = 'text-neutral-100';
+const PASSENGER_PLACEHOLDER_TEXT_COLOR = 'placeholder:text-neutral-400';
 const PASSENGER_FLOATING_CARD_BG_DARK_GLASS = 'bg-black/70 backdrop-blur-md';
 const PASSENGER_FLOATING_CARD_BORDER_DARK_GLASS = 'border-slate-700/50';
 const PASSENGER_FLOATING_CARD_SHADOW_DARK_GLASS = 'shadow-2xl shadow-primary/20';
 
 const NEON_GREEN_TEXT_TIMER = 'text-lime-400';
-const NEON_GREEN_TEXT_TIMER_PULSE = 'text-lime-300';
+const NEON_GREEN_TEXT_TIMER_PULSE = 'text-lime-300 font-bold';
 
 const DEFAULT_PASSENGER_MAP_STYLE: PassengerMapStyle = 'streets';
 
@@ -202,7 +202,7 @@ export default function PassengerPage() {
             return hslString;
         };
         const accentColorVar = computedStyles.getPropertyValue('--accent').trim();
-        setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'hsl(120, 70%, 50%)');
+        setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'hsl(120, 70%, 50%)'); // default green
         setPickupToDropoffRouteColor(PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING);
     }
   }, []);
@@ -253,7 +253,7 @@ export default function PassengerPage() {
           setRideState(prev => ({
             ...prev,
             triderToPickupPath: routeGeometry,
-            pickupToDropoffPath: null,
+            pickupToDropoffPath: null, // Ensure only one main route is active visually
             estimatedDurationSeconds: durationSeconds,
             countdownSeconds: durationSeconds
           }));
@@ -261,7 +261,7 @@ export default function PassengerPage() {
           setRideState(prev => ({
             ...prev,
             pickupToDropoffPath: routeGeometry,
-            triderToPickupPath: null,
+            triderToPickupPath: null, // Clear previous leg path
             estimatedDurationSeconds: durationSeconds,
             countdownSeconds: durationSeconds
           }));
@@ -269,10 +269,10 @@ export default function PassengerPage() {
            addRideUpdate(`Estimated route duration: ${formatCountdown(durationSeconds)}`);
            setRideState(prev => ({
              ...prev,
-             pickupToDropoffPath: routeGeometry,
+             pickupToDropoffPath: routeGeometry, // Show this during confirmation
              triderToPickupPath: null,
              estimatedDurationSeconds: durationSeconds,
-             countdownSeconds: null
+             countdownSeconds: null // No active countdown yet
            }));
         }
         if (showToastFeedback && routeType !== 'confirmation' && chosenRoute) {
@@ -577,46 +577,43 @@ export default function PassengerPage() {
     rideState.currentTriderPathIndex,
     rideState.pickupLocation,
     rideState.dropoffLocation,
-    rideState.countdownSeconds // Added to re-evaluate if countdown hits zero externally
+    rideState.countdownSeconds
   ]);
 
 
-  const prevRideStatusRef = React.useRef<PassengerRideState['status']>();
   React.useEffect(() => {
     const currentStatus = rideState.status;
+    // Do not destructure rideState here to ensure latest state is used in the effect logic
     const prevStatus = prevRideStatusRef.current;
 
-    // Only show toast if status changed and for current ride
-    if (prevStatus === currentStatus && rideState.currentRideId) {
-      return;
-    }
-
-    const showToastForThisStatus = (title: string, description: string) => {
+    if (prevStatus !== currentStatus || (currentStatus === 'triderAssigned' && rideState.currentRideId && !toastShownForStatus.current[`${currentStatus}-${rideState.currentRideId}`])) {
       const toastKey = `${currentStatus}-${rideState.currentRideId || 'ride'}`;
-      if (!toastShownForStatus.current[toastKey]) {
-        handleStatusToast(title, description);
-        toastShownForStatus.current[toastKey] = true;
-      }
-    };
 
-    switch (currentStatus) {
-      case 'triderAssigned':
-        if (prevStatus === 'searching') {
-          showToastForThisStatus("TriDer Assigned!", `TriDer ${rideState.assignedTrider?.name} (#${rideState.assignedTrider?.bodyNumber}) is on their way.`);
+      if (!toastShownForStatus.current[toastKey]) {
+        let title = "";
+        let description = "";
+
+        switch (currentStatus) {
+          case 'triderAssigned':
+            title = "TriDer Assigned!";
+            description = `TriDer ${rideState.assignedTrider?.name} (#${rideState.assignedTrider?.bodyNumber}) is on their way.`;
+            break;
+          case 'inProgress':
+            title = "Trider Arrived for Pickup!";
+            description = `${rideState.assignedTrider?.name || 'Your trider'} is here. Heading to destination.`;
+            addRideUpdate(`TriDer ${rideState.assignedTrider?.name || ''} arrived at your pickup location.`);
+            break;
+          case 'completed':
+            title = "Ride Completed!";
+            description = `You've arrived. Thank you for using TriGo, ${rideState.passengerName || 'Passenger'}!`;
+            addRideUpdate("Ride completed. Thank you for using TriGo!");
+            break;
         }
-        break;
-      case 'inProgress':
-        if (prevStatus === 'triderAssigned') {
-          showToastForThisStatus("Trider Arrived for Pickup!", `${rideState.assignedTrider?.name || 'Your trider'} is here. Heading to destination.`);
-          addRideUpdate(`TriDer ${rideState.assignedTrider?.name || ''} arrived at your pickup location.`);
+        if (title && description) {
+          handleStatusToast(title, description);
+          toastShownForStatus.current[toastKey] = true;
         }
-        break;
-      case 'completed':
-        if (prevStatus === 'inProgress') {
-          showToastForThisStatus("Ride Completed!", `You've arrived. Thank you for using TriGo, ${rideState.passengerName || 'Passenger'}!`);
-          addRideUpdate("Ride completed. Thank you for using TriGo!");
-        }
-        break;
+      }
     }
     prevRideStatusRef.current = currentStatus;
   }, [rideState.status, rideState.currentRideId, rideState.assignedTrider, rideState.passengerName, handleStatusToast, addRideUpdate]);
@@ -647,8 +644,7 @@ export default function PassengerPage() {
       rideState.pickupToDropoffPath,
       rideState.pickupLocation,
       rideState.dropoffLocation,
-      fetchRoute,
-      addRideUpdate
+      fetchRoute
   ]);
 
 
@@ -713,7 +709,7 @@ export default function PassengerPage() {
 
     return () => {
       clearInterval(etaRefreshIntervalId);
-      if (isRefreshingEta) setIsRefreshingEta(false);
+      if (isRefreshingEta) setIsRefreshingEta(false); // Reset on cleanup too
     };
   }, [
     rideState.status,
@@ -853,7 +849,7 @@ export default function PassengerPage() {
      if (rideState.status === 'confirmingRide' && rideState.pickupLocation && rideState.dropoffLocation && rideState.estimatedFare !== null && rideState.pickupTodaZoneId) {
          toastShownForStatus.current = {};
          const newRideId = `TKT-${Date.now()}-${Math.random().toString(16).slice(2,8)}`;
-         setRideState(prev => ({ ...prev, status: 'searching', assignedTrider: null, currentRideId: newRideId, shareToken: null })); // Reset shareToken
+         setRideState(prev => ({ ...prev, status: 'searching', assignedTrider: null, currentRideId: newRideId, shareToken: null }));
 
          addRideUpdate(`Ride request sent. Searching for TriDer (Ticket ID: ${newRideId})...`);
          console.log("Simulating: Searching for trider with request:", {
@@ -937,8 +933,7 @@ export default function PassengerPage() {
 
     let tokenToShare = rideState.shareToken;
     if (!tokenToShare) {
-      // Simulate token generation (replace with actual Supabase Edge Function call)
-      tokenToShare = Math.random().toString(36).substring(2, 12); // Mock 10-char token
+      tokenToShare = Math.random().toString(36).substring(2, 12);
       setRideState(prev => ({ ...prev, shareToken: tokenToShare }));
       console.log(`Simulating Supabase Edge Function call 'generate_share_token' for ride ID: ${rideState.currentRideId}. Generated mock token: ${tokenToShare}`);
     }
@@ -963,7 +958,6 @@ export default function PassengerPage() {
       console.log("share_ride_clicked", { rideId: rideState.currentRideId, token: tokenToShare });
     } catch (err) {
       console.error("Share failed:", err);
-      // Fallback to clipboard if navigator.share fails (e.g. user cancels)
       try {
         await navigator.clipboard.writeText(shareUrl);
         handleStatusToast("Link Copied!", "Sharing failed, link copied to clipboard instead.");
@@ -975,8 +969,9 @@ export default function PassengerPage() {
     }
   };
 
+  const prevRideStatusRef = React.useRef<PassengerRideState['status']>();
 
-  const countdownColorStyle = { color: PASSENGER_HEADER_TEXT };
+  const countdownColorStyle = { color: PASSENGER_HEADER_TEXT }; // White for text
   const countdownPulseClass = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 ? `font-bold animate-pulse ${NEON_GREEN_TEXT_TIMER_PULSE}` : `font-bold ${NEON_GREEN_TEXT_TIMER}`;
 
 
@@ -1196,7 +1191,7 @@ export default function PassengerPage() {
 
           {/* Bottom Floating Input Card */}
           {(rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') && (
-            <div className={cn(
+             <div className={cn(
                 "fixed bottom-0 left-0 right-0 sm:bottom-4 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:max-w-md z-10",
                 "p-3 pb-safe",
                 "bg-white/80 dark:bg-slate-900/60 backdrop-blur-lg",
@@ -1204,7 +1199,6 @@ export default function PassengerPage() {
                 "rounded-t-xl sm:rounded-xl shadow-2xl",
                 "shadow-[0_0_20px_hsl(var(--primary)_/_0.3),_0_0_40px_hsl(var(--primary)_/_0.2)] dark:shadow-[0_0_20px_hsl(var(--primary)_/_0.3),_0_0_40px_hsl(var(--primary)_/_0.2)]"
               )}
-              style={{ '--input-card-height': (rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide' || rideState.status === 'selectingPickup' ? '140px' : '80px') } as React.CSSProperties}
             >
               <Card className="bg-transparent border-none shadow-none">
                 <CardContent className="p-0 space-y-2">
@@ -1242,7 +1236,7 @@ export default function PassengerPage() {
                         onChange={(e) => { setDropoffInput(e.target.value); handleGeocodeSearch(e.target.value, 'dropoff'); }}
                         onFocus={() => setActiveSuggestionBox('dropoff')}
                         className={cn(`w-full shadow-sm pr-10 bg-white border-neutral-300 placeholder:text-neutral-500`, PASSENGER_INPUT_TEXT_COLOR, PASSENGER_PLACEHOLDER_TEXT_COLOR)}
-                        disabled={rideState.status !== 'selectingDropoff' && rideState.status !== 'confirmingRide' && rideState.dropoffLocation !== null} />
+                        disabled={rideState.status !== 'selectingDropoff' && rideState.status !== 'confirmingRide'} />
                       <MapPin size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500" />
 
                       {isSearchingAddress && activeSuggestionBox === 'dropoff' && dropoffInput.length > 0 && ( <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-neutral-500" /> )}
@@ -1264,15 +1258,14 @@ export default function PassengerPage() {
           )}
 
           {rideState.status === 'selectingDropoff' && rideState.pickupLocation && !rideState.dropoffLocation && !settingsLoading && (
-            <div className="fixed bottom-[calc(var(--input-card-height,100px)_+_1rem)] left-1/2 transform -translate-x-1/2 z-20">
+             <div className="fixed bottom-[calc(var(--input-card-height)_+_1rem)] left-1/2 transform -translate-x-1/2 z-20">
                 <NeonTrikeCtaButton onClick={handleSimulateDropoffForPickMeUp} />
             </div>
           )}
 
           {(rideState.status === 'confirmingRide' || rideState.status === 'searching' || rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && (
-            <div
-              className="fixed bottom-[calc(var(--input-card-height,140px)_+_1rem)] sm:bottom-4 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-sm px-4 sm:px-0"
-              style={{ '--status-card-height': (rideState.status === 'confirmingRide' ? '220px' : '200px') } as React.CSSProperties }
+             <div
+              className="fixed bottom-[calc(var(--input-card-height)_+_1rem)] sm:bottom-4 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-sm px-4 sm:px-0"
             >
               <Alert
                 className={cn(
@@ -1295,7 +1288,7 @@ export default function PassengerPage() {
                     {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.countdownSeconds !== null && (
                         <div
                             className={`text-2xl ${countdownPulseClass}`}
-                            style={{color: PASSENGER_HEADER_TEXT }}
+                            style={countdownColorStyle }
                         >
                             {formatCountdown(rideState.countdownSeconds)}
                             {isRefreshingEta && <Loader2 className="inline-block h-4 w-4 ml-1 animate-spin" />}
@@ -1347,7 +1340,6 @@ export default function PassengerPage() {
               style={{
                 bottom: 'calc(var(--status-card-height, 180px) + var(--input-card-height, 120px) + 2rem)',
                 borderColor: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING, borderWidth: '1px',
-                '--ride-updates-card-height': '150px'
               } as React.CSSProperties}
             >
               <CardContent className="p-3 text-xs space-y-1">
@@ -1385,40 +1377,44 @@ export default function PassengerPage() {
 
       <style jsx global>{`
           :root {
-            --bottom-nav-height: 0px;
+            --bottom-nav-height: 0px; /* For future mobile bottom nav bar */
             --input-card-height: ${
-              rideState.status === 'selectingDropoff' ||
+              (rideState.status === 'selectingDropoff' ||
               rideState.status === 'confirmingRide' ||
-              rideState.status === 'selectingPickup'
-                ? '140px'
-                : '80px'
+              rideState.status === 'selectingPickup') && currentView === 'requestingRide'
+                ? '140px' /* Height when both inputs are visible */
+                : rideState.status === 'selectingPickup' && currentView === 'requestingRide'
+                  ? '80px'  /* Height when only pickup input is visible */
+                  : '0px'   /* Hidden or not applicable */
             };
             --status-card-height: ${
-              rideState.status === 'triderAssigned' || rideState.status === 'inProgress'
+              (rideState.status === 'triderAssigned' || rideState.status === 'inProgress')
                 ? '200px'
                 : rideState.status === 'confirmingRide'
                   ? '220px'
-                  : '0px'
+                  : '0px' /* Hidden or not applicable */
             };
-            --ride-updates-card-height: 150px;
+            --ride-updates-card-height: 150px; /* Fixed height for ride updates card */
           }
           @media (max-width: 640px) { /* sm breakpoint */
             :root {
               --input-card-height: ${
-                rideState.status === 'selectingDropoff' ||
+                (rideState.status === 'selectingDropoff' ||
                 rideState.status === 'confirmingRide' ||
-                rideState.status === 'selectingPickup'
+                rideState.status === 'selectingPickup') && currentView === 'requestingRide'
                   ? '120px'
-                  : '60px'
+                  : rideState.status === 'selectingPickup' && currentView === 'requestingRide'
+                    ? '60px'
+                    : '0px'
               };
               --status-card-height: ${
-                rideState.status === 'triderAssigned' || rideState.status === 'inProgress'
+                (rideState.status === 'triderAssigned' || rideState.status === 'inProgress')
                   ? '180px'
                   : rideState.status === 'confirmingRide'
                     ? '200px'
                     : '0px'
               };
-              --ride-updates-card-height: 120px;
+               --ride-updates-card-height: 120px;
             }
           }
         `}</style>
