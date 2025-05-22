@@ -53,7 +53,7 @@ export interface RideRequest {
   assignedTriderId?: string | null;
   pickupTodaZoneId: string | null;
   passengerId?: string;
-  ticketId?: string; 
+  ticketId?: string;
 }
 
 export interface AiInsight {
@@ -112,7 +112,7 @@ export interface TriderAppSettings {
     newRequests: boolean;
     chatMessages: boolean;
   };
-  mapStyle: PassengerMapStyle; 
+  mapStyle: PassengerMapStyle;
 }
 
 export interface TriderProfile extends Trider {
@@ -120,12 +120,12 @@ export interface TriderProfile extends Trider {
   wallet: TriderWallet;
   contactNumber?: string;
   profilePictureUrl?: string;
-  dataAiHint?: string; 
+  dataAiHint?: string;
   lastSeen?: Date;
   requestedTodaZoneId?: string;
   todaZoneChangeRequestStatus?: TodaZoneChangeRequestStatus;
   // New fields for Trider page expansion
-  walletBalance?: number; 
+  walletBalance?: number;
   transactions?: TriderWalletTransaction[];
   appSettings?: TriderAppSettings;
   subscriptionStatus?: 'basic' | 'premium';
@@ -151,8 +151,8 @@ export interface AppSettings {
   triderUpdateIntervalMs: number;
   aiInsightIntervalMs: number;
   convenienceFee: number;
-  todaBaseFares: Record<string, number>; 
-  defaultBaseFare: number; 
+  todaBaseFares: Record<string, number>;
+  defaultBaseFare: number;
   perKmCharge: number;
   todaTerminalExitPoints: Record<string, { point: Coordinates; address: string } | undefined>;
 }
@@ -164,21 +164,22 @@ export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings
 
 export interface PassengerRideState {
   status: 'idle' | 'selectingPickup' | 'selectingDropoff' | 'confirmingRide' | 'searching' | 'triderAssigned' | 'inProgress' | 'completed' | 'cancelled';
-  passengerName: string; 
+  passengerName: string;
   pickupLocation: Coordinates | null;
   dropoffLocation: Coordinates | null;
-  pickupAddress: string; 
-  dropoffAddress: string; 
+  pickupAddress: string;
+  dropoffAddress: string;
   estimatedFare: number | null;
   assignedTrider: TriderProfile | null;
   currentRideId: string | null;
-  triderToPickupPath: RoutePath | null; 
-  pickupToDropoffPath: RoutePath | null; 
-  currentTriderPathIndex?: number; 
+  triderToPickupPath: RoutePath | null;
+  pickupToDropoffPath: RoutePath | null;
+  currentTriderPathIndex?: number;
   pickupTodaZoneId: string | null;
   countdownSeconds: number | null;
   estimatedDurationSeconds: number | null;
-  completionTime?: Date; 
+  completionTime?: Date;
+  shareToken?: string | null; // New field for share token
 }
 
 export type TriderRideStatus = 'onlineAvailable' | 'onlineBusyEnRouteToPickup' | 'onlineBusyEnRouteToDropoff' | 'offline';
@@ -188,8 +189,8 @@ export interface TriderSimState {
   currentLocation: Coordinates;
   activeRideRequest: RideRequest | null;
   availableRideRequests: RideRequest[];
-  currentPath: RoutePath | null; 
-  currentPathIndex: number; 
+  currentPath: RoutePath | null;
+  currentPathIndex: number;
 }
 
 export interface PassengerSettings {
@@ -202,4 +203,5 @@ export interface MockPassengerProfile {
   todaZoneName: string;
   settings?: PassengerSettings;
   profilePictureUrl?: string;
+  paymentMethod?: string; // Added for landing page display
 }
