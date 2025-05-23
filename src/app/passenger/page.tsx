@@ -1,9 +1,9 @@
 "use client";
 
-import * as React from 'react';
 import {
   MapPin, Search, Bike, User, ArrowRight, CircleDollarSign, Clock, Loader2, Ticket, SettingsIcon as SettingsIconLucide, Crosshair, Globe, Grid, LogIn as LogInIcon, XCircle, Menu as MenuIcon, History, CalendarCheck2, CreditCard
 } from 'lucide-react';
+import * as React from 'react'; // Ensure React is imported for useState/useRef
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import BottomNavBar from '@/components/passenger/BottomNavBar'; // Import the new component
@@ -96,6 +96,8 @@ function formatCountdown(seconds: number | null): string {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+import { AlertCircle } from 'lucide-react'; // Import AlertCircle icon
+
 const TriGoPassengerLogoInHeader = () => (
   <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
     <circle cx="16" cy="16" r="13" stroke={PASSENGER_PAGE_ACCENT_COLOR_HSL} strokeWidth="1.5"/>
@@ -171,6 +173,11 @@ export default function PassengerPage() {
 
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = React.useState(false);
   const [completedRideDetails, setCompletedRideDetails] = React.useState<PassengerRideState | null>(null);
+
+  // Simulated state for premium status and daily emergency alerts
+  const [isPremium, setIsPremium] = React.useState(true); // Assume premium for demo
+  const [dailyAlertCount, setDailyAlertCount] = React.useState(0);
+  const MAX_DAILY_ALERTS = 12;
 
   const mapRef = React.useRef<MapRef | null>(null);
 
@@ -927,7 +934,7 @@ export default function PassengerPage() {
             </div>
             <footer className="text-center text-sm text-white/70">
               <p className="flex items-center justify-center">
-                Selected Payment: <CreditCard size={16} className="mx-1.5" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}/> Apple Pay <span className="ml-1" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>></span>
+                Selected Payment: <CreditCard size={16} className="mx-1.5" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}/> Apple Pay <span className="ml-1" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>{'>'}</span>
               </p>
             </footer>
           </div>
@@ -935,6 +942,29 @@ export default function PassengerPage() {
       </div>
     );
   }
+
+  const handleEmergencyAlert = React.useCallback(() => {
+    if (!isPremium) {
+      handleStatusToast("Premium Feature", "Emergency alerts are available for premium subscribers only.", "destructive");
+      return;
+    }
+    if (dailyAlertCount >= MAX_DAILY_ALERTS) {
+      handleStatusToast("Daily Limit Reached", `You have reached your daily limit of ${MAX_DAILY_ALERTS} emergency alerts.`, "destructive");
+      return;
+    }
+
+    // Simulate sending alert and making calls
+    console.log("EMERGENCY ALERT TRIGGERED!");
+    console.log("Simulating: Sending SOS alert to dispatchers, triders, family/friends...");
+    console.log("Simulating: Calling nearest police station, family members, friends...");
+
+    setDailyAlertCount(prev => prev + 1);
+    handleStatusToast("Emergency Alert Sent", `SOS alert triggered. Help is on the way. (${dailyAlertCount + 1}/${MAX_DAILY_ALERTS} today)`);
+    addRideUpdate(`EMERGENCY ALERT: SOS triggered. Alert count: ${dailyAlertCount + 1}/${MAX_DAILY_ALERTS}`);
+
+    // In a real app, this would involve API calls, push notifications, etc.
+  }, [isPremium, dailyAlertCount, handleStatusToast, addRideUpdate]);
+
 
   return (
     <div className="bg-white text-black flex flex-col h-screen">
@@ -944,6 +974,18 @@ export default function PassengerPage() {
           <h1 className="text-xl font-bold" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>TriGo Passenger</h1>
         </div>
         <div className="flex items-center space-x-2">
+           {/* Emergency Button */}
+           <Button
+             variant="ghost"
+             size="icon"
+             className="text-red-500 hover:bg-white/20 hover:text-red-600"
+             title="Emergency SOS"
+             onClick={handleEmergencyAlert}
+             disabled={!isPremium || dailyAlertCount >= MAX_DAILY_ALERTS}
+           >
+             <AlertCircle size={20} />
+           </Button>
+
           {rideState.status !== 'idle' && rideState.status !== 'selectingPickup' && (
              <Button variant="ghost" size="icon" onClick={resetRideState} title="Reset Ride" className="text-white hover:bg-white/20 hover:text-white">
                 <XCircle size={20} />

@@ -58,7 +58,7 @@ body {
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-[--border];
   }
   body {
     @apply bg-background text-foreground;
@@ -119,4 +119,3 @@ body {
 .mapboxgl-ctrl-geocoder--suggestion:hover {
   background-color: hsl(var(--muted)) !important;
 }
-
