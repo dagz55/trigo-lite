@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from "@/components/ui/progress"; // Import Progress component
 import { cn } from '@/lib/utils';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -208,7 +209,7 @@ export default function TriderPage() {
             clearInterval(requestIntervalId);
         }
     };
-  }, [triderState.status, triderProfile]); 
+  }, [triderState.status, triderProfile, triderProfile.todaZoneId]); 
   
   React.useEffect(() => {
     if(triderState.status === 'onlineAvailable' && triderState.availableRideRequests.length > 0) {
@@ -249,7 +250,7 @@ export default function TriderPage() {
       }, 2000); 
     }
     return () => clearInterval(moveIntervalId);
-  }, [triderState.status, triderState.activeRideRequest, triderState.currentPath]);
+  }, [triderState.status, triderState.activeRideRequest, triderState.currentPath, triderState.currentPathIndex]);
 
   const handleToggleOnline = (isOnline: boolean) => {
     if (isOnline) {
@@ -373,11 +374,8 @@ export default function TriderPage() {
     const earnings = fare * 0.8; 
     
     const newTransaction: TriderWalletTransaction = {
-      id: `tx-ride-${Date.now()}`,
-      type: 'received',
-      amount: earnings,
-      description: `Earnings from ride #${triderState.activeRideRequest.id.slice(-4)}`,
-      timestamp: new Date()
+      id: `tx-ride-${Date.now()}`, type: 'received', amount: earnings,
+      description: `Earnings from ride #${triderState.activeRideRequest.id.slice(-4)}`, timestamp: new Date()
     };
     setTriderTransactions(prev => [newTransaction, ...prev]);
     setTriderWalletBalance(prev => prev + earnings);
@@ -493,6 +491,11 @@ export default function TriderPage() {
     }
   }, [triderAppSettings.mapStyle]);
 
+  const currentPathForProgress = triderState.currentPath;
+  const progressValue = currentPathForProgress && triderState.currentPathIndex !== undefined && currentPathForProgress.coordinates.length > 0
+    ? (triderState.currentPathIndex / (currentPathForProgress.coordinates.length - 1)) * 100
+    : 0;
+
   const renderDashboardView = () => (
     <>
       <header className="p-4 border-b shadow-sm flex justify-between items-center">
@@ -530,6 +533,9 @@ export default function TriderPage() {
                   <p className="text-sm"><strong>From:</strong> {triderState.activeRideRequest.pickupAddress}</p>
                   <p className="text-sm"><strong>To:</strong> {triderState.activeRideRequest.dropoffAddress}</p>
                   <p className="text-sm"><strong>Est. Fare:</strong> ₱{triderState.activeRideRequest.fare?.toFixed(2)}</p>
+                  {currentPathForProgress && (triderState.status === 'onlineBusyEnRouteToPickup' || triderState.status === 'onlineBusyEnRouteToDropoff') && (
+                    <Progress value={progressValue} className="w-full h-1.5 my-2 bg-muted-foreground/20 [&>div]:bg-accent" />
+                  )}
                   {triderState.status === 'onlineBusyEnRouteToPickup' && 
                     <Button 
                         onClick={handlePickedUp} 
@@ -583,9 +589,9 @@ export default function TriderPage() {
              </CardHeader>
              <CardContent className="text-sm space-y-3">
                 <div>
-                    <p><CircleDollarSign className="inline mr-1 h-4 w-4"/>Balance: ₱{triderProfile.wallet.currentBalance.toFixed(2)}</p>
-                    <p>Today's Rides: {triderProfile.wallet.todayTotalRides}</p>
-                    <p>Today's Earnings: ₱{triderProfile.wallet.todayNetEarnings.toFixed(2)}</p>
+                    <p><CircleDollarSign className="inline mr-1 h-4 w-4"/>Balance: ₱{(triderProfile.wallet?.currentBalance || 0).toFixed(2)}</p>
+                    <p>Today's Rides: {triderProfile.wallet?.todayTotalRides || 0}</p>
+                    <p>Today's Earnings: ₱{(triderProfile.wallet?.todayNetEarnings || 0).toFixed(2)}</p>
                 </div>
                 <div className="space-y-2 pt-2 border-t">
                   <Label htmlFor="change-zone-select">Request TODA Zone Change</Label>

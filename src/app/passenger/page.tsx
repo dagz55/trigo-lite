@@ -31,24 +31,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
 import { RideReceiptDialog } from '@/components/passenger/RideReceiptDialog';
+import { Progress } from "@/components/ui/progress"; // Import Progress component
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2';
 
-const PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING = 'hsl(280, 80%, 70%)'; 
+const PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING = 'hsl(280, 80%, 70%)'; // Purple
 const PASSENGER_HEADER_BG = 'black';
 const PASSENGER_HEADER_TEXT = 'white';
 const PASSENGER_INPUT_TEXT_COLOR = 'text-neutral-100';
 const PASSENGER_PLACEHOLDER_TEXT_COLOR = 'placeholder:text-neutral-400';
 const PASSENGER_FLOATING_CARD_BG_DARK_GLASS = 'bg-black/70 backdrop-blur-md';
 const PASSENGER_FLOATING_CARD_BORDER_DARK_GLASS = 'border-slate-700/50';
-const PASSENGER_FLOATING_CARD_SHADOW_DARK_GLASS = 'shadow-2xl shadow-primary/20';
+const PASSENGER_FLOATING_CARD_SHADOW_DARK_GLASS = 'shadow-2xl shadow-purple-500/20';
 
 const NEON_GREEN_TEXT_TIMER = 'text-lime-400';
-const NEON_GREEN_TEXT_TIMER_PULSE = 'text-lime-300 font-bold animate-pulse';
-
 
 const DEFAULT_PASSENGER_MAP_STYLE: PassengerMapStyle = 'streets';
 
@@ -582,10 +581,11 @@ export default function PassengerPage() {
   React.useEffect(() => {
     const currentStatus = rideState.status;
     const prevStatus = prevRideStatusRef.current;
-
+  
     if (prevStatus !== currentStatus) {
-      const toastKey = `${currentStatus}-${rideState.currentRideId || 'ride'}`; 
-      
+      const toastKeyPrefix = rideState.currentRideId || 'ride';
+      const toastKey = `${currentStatus}-${toastKeyPrefix}`;
+  
       if (!toastShownForStatus.current[toastKey]) {
         let title = "";
         let description = "";
@@ -597,27 +597,27 @@ export default function PassengerPage() {
           case 'inProgress':
             title = "Trider Arrived for Pickup!";
             description = `${rideState.assignedTrider?.name || 'Your trider'} is here. Heading to destination.`;
-            if (!toastShownForStatus.current[`inProgressUpdate-${rideState.currentRideId}`]) {
-                addRideUpdate(`TriDer ${rideState.assignedTrider?.name || ''} arrived at your pickup location.`);
-                toastShownForStatus.current[`inProgressUpdate-${rideState.currentRideId}`] = true;
+            if (!toastShownForStatus.current[`inProgressUpdate-${toastKeyPrefix}`]) {
+              addRideUpdate(`TriDer ${rideState.assignedTrider?.name || ''} arrived at your pickup location.`);
+              toastShownForStatus.current[`inProgressUpdate-${toastKeyPrefix}`] = true;
             }
             break;
           case 'completed':
             title = "Ride Completed!";
             description = `You've arrived. Thank you for using TriGo, ${rideState.passengerName || 'Passenger'}!`;
-             if (!toastShownForStatus.current[`completedUpdate-${rideState.currentRideId}`]) {
-                addRideUpdate("Ride completed. Thank you for using TriGo!");
-                toastShownForStatus.current[`completedUpdate-${rideState.currentRideId}`] = true;
+            if (!toastShownForStatus.current[`completedUpdate-${toastKeyPrefix}`]) {
+              addRideUpdate("Ride completed. Thank you for using TriGo!");
+              toastShownForStatus.current[`completedUpdate-${toastKeyPrefix}`] = true;
             }
             break;
         }
         if (title && description) {
           handleStatusToast(title, description);
-          toastShownForStatus.current[toastKey] = true; 
+          toastShownForStatus.current[toastKey] = true;
         }
       }
     }
-    prevRideStatusRef.current = currentStatus; 
+    prevRideStatusRef.current = currentStatus;
   }, [rideState.status, rideState.currentRideId, rideState.assignedTrider, rideState.passengerName, handleStatusToast, addRideUpdate]);
 
 
@@ -977,8 +977,13 @@ export default function PassengerPage() {
 
   const mainButtonColorClass = `bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}] hover:bg-opacity-90 text-white`; 
   const countdownPulseClass = rideState.countdownSeconds !== null && rideState.countdownSeconds <= 10 
-    ? `font-bold animate-pulse text-white` 
-    : `font-bold text-white`;
+    ? `font-bold animate-pulse ${NEON_GREEN_TEXT_TIMER}` 
+    : `font-bold ${NEON_GREEN_TEXT_TIMER}`;
+
+  const currentPathForProgress = rideState.status === 'triderAssigned' ? rideState.triderToPickupPath : rideState.pickupToDropoffPath;
+  const progressValue = currentPathForProgress && rideState.currentTriderPathIndex !== undefined && currentPathForProgress.coordinates.length > 0
+    ? (rideState.currentTriderPathIndex / (currentPathForProgress.coordinates.length -1)) * 100
+    : 0;
 
 
   if (settingsLoading || !MAPBOX_TOKEN) {
@@ -1093,7 +1098,7 @@ export default function PassengerPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button onClick={handleSavePassengerSettings} className={mainButtonColorClass + " w-full"}>Save My Settings</Button>
+                    <Button onClick={handleSavePassengerSettings} className={`w-full bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING}] hover:bg-opacity-90 text-white`}>Save My Settings</Button>
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -1190,15 +1195,16 @@ export default function PassengerPage() {
             )}
           </Map>
 
-          {(rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') && (
-             <div className={cn(
-                "fixed bottom-0 left-0 right-0 sm:bottom-4 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:max-w-md z-10",
-                "p-3 pb-safe", PASSENGER_FLOATING_CARD_BG_DARK_GLASS, 
-                PASSENGER_FLOATING_CARD_BORDER_DARK_GLASS, "rounded-t-xl sm:rounded-xl",
-                PASSENGER_FLOATING_CARD_SHADOW_DARK_GLASS,
-                "shadow-[0_0_20px_hsl(var(--primary)_/_0.3),_0_0_40px_hsl(var(--primary)_/_0.2)] dark:shadow-[0_0_15px_rgba(120,81,169,0.2),_0_0_25px_rgba(120,81,169,0.15)]"
-              )}
-            >
+          <div className={cn(
+              "fixed bottom-0 left-0 right-0 sm:bottom-4 sm:left-1/2 sm:transform sm:-translate-x-1/2 sm:max-w-md z-10",
+              "p-4 pb-safe", 
+              PASSENGER_FLOATING_CARD_BG_DARK_GLASS, 
+              PASSENGER_FLOATING_CARD_BORDER_DARK_GLASS, 
+              "rounded-t-xl sm:rounded-xl",
+              PASSENGER_FLOATING_CARD_SHADOW_DARK_GLASS,
+              "shadow-[0_0_20px_hsl(var(--primary)_/_0.3),_0_0_40px_hsl(var(--primary)_/_0.2)] dark:shadow-[0_0_15px_rgba(120,81,169,0.2),_0_0_25px_rgba(120,81,169,0.15)]"
+            )}>
+            {(rideState.status === 'selectingPickup' || rideState.status === 'selectingDropoff' || rideState.status === 'confirmingRide') && (
               <Card className="bg-transparent border-none shadow-none">
                 <CardContent className="p-0 space-y-2">
                   <div className="relative">
@@ -1207,19 +1213,19 @@ export default function PassengerPage() {
                       type="text" placeholder="Enter Pickup Location" value={pickupInput}
                       onChange={(e) => { setPickupInput(e.target.value); handleGeocodeSearch(e.target.value, 'pickup'); }}
                       onFocus={() => setActiveSuggestionBox('pickup')}
-                      className={cn(`w-full shadow-sm pl-10 pr-10 bg-white text-black border-neutral-300 placeholder:text-neutral-500`, PASSENGER_PLACEHOLDER_TEXT_COLOR)}
+                      className={cn(`w-full shadow-sm pl-10 pr-10 bg-white/10 dark:bg-slate-800/50 border-neutral-300 dark:border-slate-700 placeholder:text-neutral-500 dark:placeholder:text-neutral-400`, PASSENGER_INPUT_TEXT_COLOR, PASSENGER_PLACEHOLDER_TEXT_COLOR)}
                       disabled={rideState.status !== 'selectingPickup' && rideState.status !== 'selectingDropoff' && rideState.status !== 'confirmingRide'} />
-                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 text-neutral-600 hover:bg-neutral-200" onClick={() => performGeolocation(true)} disabled={isGeolocating}>
+                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-slate-700" onClick={() => performGeolocation(true)} disabled={isGeolocating}>
                       {isGeolocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crosshair size={18} />}
                     </Button>
                     {isSearchingAddress && activeSuggestionBox === 'pickup' && pickupInput.length > 0 && (
-                      <Loader2 className="absolute right-10 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-neutral-500" />
+                      <Loader2 className="absolute right-10 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-neutral-500 dark:text-neutral-400" />
                     )}
                     {pickupSuggestions.length > 0 && activeSuggestionBox === 'pickup' && (
-                      <Card className="absolute bottom-full mb-1 w-full shadow-lg z-30 bg-white">
+                      <Card className="absolute bottom-full mb-1 w-full shadow-lg z-30 bg-white dark:bg-slate-800">
                         <CardContent className="p-0 max-h-48 overflow-y-auto">
                           {pickupSuggestions.map(suggestion => (
-                            <div key={suggestion.id} className={cn(`p-3 cursor-pointer hover:bg-neutral-100 border-b border-neutral-200 last:border-b-0 text-black`)} onClick={() => handleSuggestionSelect(suggestion, 'pickup')}>
+                            <div key={suggestion.id} className={cn(`p-3 cursor-pointer hover:bg-neutral-100 dark:hover:bg-slate-700 border-b border-neutral-200 dark:border-slate-700 last:border-b-0`, PASSENGER_INPUT_TEXT_COLOR)} onClick={() => handleSuggestionSelect(suggestion, 'pickup')}>
                               {suggestion.place_name}
                             </div> ))}
                         </CardContent>
@@ -1234,14 +1240,14 @@ export default function PassengerPage() {
                         type="text" placeholder="Enter Dropoff Location" value={dropoffInput}
                         onChange={(e) => { setDropoffInput(e.target.value); handleGeocodeSearch(e.target.value, 'dropoff'); }}
                         onFocus={() => setActiveSuggestionBox('dropoff')}
-                        className={cn(`w-full shadow-sm pl-10 pr-3 bg-white text-black border-neutral-300 placeholder:text-neutral-500`, PASSENGER_PLACEHOLDER_TEXT_COLOR)}
+                        className={cn(`w-full shadow-sm pl-10 pr-3 bg-white/10 dark:bg-slate-800/50 border-neutral-300 dark:border-slate-700 placeholder:text-neutral-500 dark:placeholder:text-neutral-400`, PASSENGER_INPUT_TEXT_COLOR, PASSENGER_PLACEHOLDER_TEXT_COLOR)}
                         disabled={rideState.status !== 'selectingDropoff' && rideState.status !== 'confirmingRide'} />
-                      {isSearchingAddress && activeSuggestionBox === 'dropoff' && dropoffInput.length > 0 && ( <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-neutral-500" /> )}
+                      {isSearchingAddress && activeSuggestionBox === 'dropoff' && dropoffInput.length > 0 && ( <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-neutral-500 dark:text-neutral-400" /> )}
                       {dropoffSuggestions.length > 0 && activeSuggestionBox === 'dropoff' && (
-                        <Card className="absolute bottom-full mb-1 w-full shadow-lg z-20 bg-white">
+                        <Card className="absolute bottom-full mb-1 w-full shadow-lg z-20 bg-white dark:bg-slate-800">
                           <CardContent className="p-0 max-h-48 overflow-y-auto">
                             {dropoffSuggestions.map(suggestion => (
-                              <div key={suggestion.id} className={cn(`p-3 cursor-pointer hover:bg-neutral-100 border-b border-neutral-200 last:border-b-0 text-black`)} onClick={() => handleSuggestionSelect(suggestion, 'dropoff')}>
+                              <div key={suggestion.id} className={cn(`p-3 cursor-pointer hover:bg-neutral-100 dark:hover:bg-slate-700 border-b border-neutral-200 dark:border-slate-700 last:border-b-0`, PASSENGER_INPUT_TEXT_COLOR)} onClick={() => handleSuggestionSelect(suggestion, 'dropoff')}>
                                 {suggestion.place_name}
                               </div> ))}
                           </CardContent>
@@ -1251,12 +1257,12 @@ export default function PassengerPage() {
                   )}
                 </CardContent>
               </Card>
-            </div>
-          )}
-
+            )}
+          </div>
+          
           {rideState.status === 'selectingDropoff' && rideState.pickupLocation && !rideState.dropoffLocation && !settingsLoading && (
-             <div className="fixed bottom-[calc(var(--input-card-height,100px)_+_1rem)] left-1/2 transform -translate-x-1/2 z-20">
-                <NeonTrikeCtaButton onClick={handleSimulateDropoffForPickMeUp} />
+            <div className="fixed bottom-[calc(var(--input-card-height,100px)_+_1rem)] left-1/2 transform -translate-x-1/2 z-20">
+               <NeonTrikeCtaButton onClick={handleSimulateDropoffForPickMeUp} />
             </div>
           )}
 
@@ -1285,13 +1291,16 @@ export default function PassengerPage() {
                         </AlertTitle>
                     </div>
                     {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && rideState.countdownSeconds !== null && (
-                         <div className={`text-5xl ${countdownPulseClass}`} style={{color: 'white'}}>
+                         <div className={`text-5xl ${countdownPulseClass}`} style={{color: NEON_GREEN_TEXT_TIMER}}>
                             {formatCountdown(rideState.countdownSeconds)}
                             {isRefreshingEta && <Loader2 className="inline-block h-5 w-5 ml-2 animate-spin" />}
                         </div>
                     )}
                 </div>
                 <AlertDescription className="space-y-1.5 text-white/90 text-sm">
+                    {(rideState.status === 'triderAssigned' || rideState.status === 'inProgress') && currentPathForProgress && rideState.currentTriderPathIndex !== undefined && (
+                      <Progress value={progressValue} className="w-full h-1.5 my-2 bg-slate-700 [&>div]:bg-lime-400" />
+                    )}
                     {rideState.status === 'confirmingRide' && (
                         <>
                             <p>From: {rideState.pickupAddress}</p>
@@ -1321,9 +1330,7 @@ export default function PassengerPage() {
             <div
               className={cn(
                 "fixed left-1/2 transform -translate-x-1/2 z-10 w-full max-w-sm px-4 sm:px-0",
-                // Position above status card on small screens, or just above input card on larger (sm breakpoint)
-                "sm:bottom-[calc(var(--status-card-height,200px)_+_1rem)]", 
-                "bottom-[calc(var(--status-card-height,200px)_+_var(--input-card-height,140px)_+_2rem)]" 
+                 "bottom-[calc(var(--status-card-height,180px)_+_var(--input-card-height,140px)_+_2rem)] sm:bottom-[calc(var(--status-card-height,180px)_+_1rem)]" 
               )}
             >
               <Card
@@ -1362,7 +1369,8 @@ export default function PassengerPage() {
                   variant="secondary" 
                   size="sm" 
                   onClick={handleShareRide} 
-                  style={{ backgroundColor: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING, color: 'white' }}
+                  style={{ backgroundColor: PASSENGER_PAGE_ACCENT_COLOR_HSL_STRING, color: PASSENGER_HEADER_TEXT }}
+                  className='shadow-lg'
                 >
                   <Share2 className="mr-2 h-4 w-4" /> Share ride
                 </Button>
@@ -1372,7 +1380,7 @@ export default function PassengerPage() {
 
           {rideState.status === 'completed' && (
               <div className="fixed bottom-[calc(var(--bottom-nav-height,0px)+1rem)] left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xs px-4">
-                  <Button className={mainButtonColorClass + " w-full"} onClick={() => { resetRideState(); setIsReceiptDialogOpen(false); }}>
+                  <Button className={`w-full ${mainButtonColorClass}`} onClick={() => { resetRideState(); setIsReceiptDialogOpen(false); }}>
                       Book Another Ride
                   </Button>
               </div>
@@ -1405,7 +1413,7 @@ export default function PassengerPage() {
             };
             --status-card-height: ${
               (rideState.status === 'triderAssigned' || rideState.status === 'inProgress')
-                ? '200px' 
+                ? '180px' 
                 : rideState.status === 'confirmingRide'
                   ? '220px' 
                   : '0px' 
@@ -1441,3 +1449,4 @@ export default function PassengerPage() {
     );
   }
 }
+
