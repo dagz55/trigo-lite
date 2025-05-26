@@ -23,6 +23,7 @@ const statusStyles: Record<RideRequest['status'], string> = {
   'in-progress': 'bg-purple-500 text-white',
   completed: 'bg-green-600 text-white',
   cancelled: 'bg-gray-500 text-white',
+  searching: 'bg-purple-500 text-white',
 };
 
 interface RideRequestItemProps {
@@ -116,4 +117,3 @@ export function RideRequestList({ rideRequests, selectedRideRequestId, onSelectR
     </Card>
   );
 }
-

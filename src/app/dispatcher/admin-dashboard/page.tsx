@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from 'react';
+import AdminChatManager from "@/components/chat/AdminChatManager";
 import {
   Users, Bike, DollarSign, CheckCircle, TrendingUp, Clock, Activity as ActivityIcon, ShieldCheck,
   Settings as SettingsIconLucide, FileText, Database, Bell, UserCircle2, ListFilter,
@@ -401,6 +402,10 @@ export default function AdminDashboardPage() {
             ))}
           </div>
         </section>
+        <AdminChatManager 
+          supabase={null} // Replace with actual Supabase instance
+          adminUser={null} // Replace with actual admin user
+        />
       </main>
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -416,4 +421,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-

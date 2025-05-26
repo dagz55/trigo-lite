@@ -19,6 +19,8 @@ const statusStyles: Record<Trider['status'], string> = {
   busy: 'bg-destructive text-destructive-foreground',
   offline: 'bg-muted text-muted-foreground',
   assigned: 'bg-primary text-primary-foreground',
+  'en-route': 'bg-blue-500 text-white',
+  suspended: 'bg-yellow-500 text-black',
 };
 
 export function TriderList({ triders, selectedTriderId, onSelectTrider }: TriderListProps) {
@@ -77,4 +79,3 @@ export function TriderList({ triders, selectedTriderId, onSelectTrider }: Trider
     </Card>
   );
 }
-

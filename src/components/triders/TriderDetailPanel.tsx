@@ -2,6 +2,7 @@
 "use client";
 
 import type { TriderProfile, TriderExtendedStatus, TodaZone, TodaZoneChangeRequestStatus } from '@/types';
+import TriGoChat from "../chat/TriGoChat";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -170,7 +171,13 @@ export function TriderDetailPanel({
             wallet={trider.wallet} 
             onSendPayout={(amount) => onSendPayout(trider, amount)} 
           />
-
+          <TriGoChat 
+            supabase={null} // Replace with actual Supabase instance
+            currentUser={null} // Replace with actual user
+            rideId="123" // Replace with actual ride ID
+            otherUser={null} // Replace with actual other user
+            isAdmin={false}
+          />
         </CardContent>
       </ScrollArea>
       <CardFooter>

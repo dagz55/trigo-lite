@@ -214,7 +214,7 @@ const TriderPage = () => {
               <RideRequestList
                 rideRequests={rideRequests}
                 selectedRideRequestId={selectedRideRequestId}
-                onSelectRideRequest={(request: RideRequest) => setSelectedRideRequestId(request.id)}
+                onSelectRideRequest={(request) => setSelectedRideRequestId(request.id)}
                 todaZones={todaZones}
               />
             </CardContent>

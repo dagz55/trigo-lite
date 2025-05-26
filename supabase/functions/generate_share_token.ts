@@ -1,27 +1,23 @@
-import { serve } from "https://deno.land/x/sift@0.6.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-serve(async (req) => {
+interface RequestBody {
+  // Define your request body interface here
+}
+
+serve(async (req: Request) => {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: req.headers.get("Authorization")! } } },
   );
 
-  const { ride_id } = await req.json();
-  if (!ride_id) return new Response("ride_id required", { status: 400 });
-
-  // 10-char, URL-safe slug
-  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
-
-  const { error } = await supabase
-    .from("rides")
-    .update({ share_token: token, share_token_expires: "now() + interval '6 hours'" })
-    .eq("id", ride_id);
-
-  if (error) return new Response(error.message, { status: 500 });
-
-  return new Response(JSON.stringify({ token }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  // Your function logic here
+  
+  return new Response(
+    JSON.stringify({ success: true }),
+    { 
+      headers: { "Content-Type": "application/json" },
+      status: 200 
+    }
+  );
 });

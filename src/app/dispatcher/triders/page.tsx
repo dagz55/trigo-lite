@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -50,6 +49,7 @@ const initialTalonKuatroTriders: TriderProfile[] = [
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
     todaZoneId: TALON_KUATRO_ZONE_ID,
     todaZoneName: talonKuatroZone!.name,
+    isOnline: status !== 'offline' && status !== 'suspended',
     contactNumber: `+63917${2000000 + index * 12345}`.slice(0,13),
     profilePictureUrl: `https://placehold.co/100x100.png?text=${name.charAt(0)}`,
     dataAiHint: "driver person",
@@ -87,6 +87,7 @@ const initialTeptodaTriders: TriderProfile[] = [
     vehicleType: index % 2 === 0 ? 'E-Bike' : 'Tricycle',
     todaZoneId: TEPTODA_ZONE_ID,
     todaZoneName: teptodaZone!.name,
+    isOnline: status !== 'offline' && status !== 'suspended',
     contactNumber: `+63920${3000000 + index * 54321}`.slice(0,13),
     profilePictureUrl: `https://placehold.co/100x100.png?text=${name.charAt(0)}P`,
     dataAiHint: "driver philippines",
@@ -124,6 +125,7 @@ const initialP1TodaTriders: TriderProfile[] = [
     vehicleType: index % 2 === 0 ? 'Tricycle' : 'E-Bike',
     todaZoneId: P1TODA_ZONE_ID,
     todaZoneName: p1TodaZone!.name,
+    isOnline: status !== 'offline' && status !== 'suspended',
     contactNumber: `+63922${4000000 + index * 67890}`.slice(0,13),
     profilePictureUrl: `https://placehold.co/100x100.png?text=${name.charAt(0)}1`,
     dataAiHint: "driver pinoy",

@@ -5,6 +5,7 @@ export const getMockTriders = (): Trider[] => {
     {
       id: 'trider-1',
       name: 'Michael Dela Cruz',
+      bodyNumber: 'TR001',
       location: { latitude: 14.5995, longitude: 120.9842 }, // Manila, Philippines
       isOnline: true,
       status: 'available',
@@ -15,6 +16,7 @@ export const getMockTriders = (): Trider[] => {
     {
       id: 'trider-2',
       name: 'Andres Sofia',
+      bodyNumber: 'TR002',
       location: { latitude: 14.6091, longitude: 121.0223 }, // Quezon City, Philippines
       isOnline: true,
       status: 'available',
@@ -25,6 +27,7 @@ export const getMockTriders = (): Trider[] => {
     {
       id: 'trider-3',
       name: 'Jose Manalo',
+      bodyNumber: 'TR003',
       location: { latitude: 14.5833, longitude: 120.9667 }, // Pasay, Philippines
       isOnline: false, // This trider is offline
       status: 'offline',
@@ -35,6 +38,7 @@ export const getMockTriders = (): Trider[] => {
     {
       id: 'trider-4',
       name: 'Gabrielle Archangel',
+      bodyNumber: 'TR004',
       location: { latitude: 14.6300, longitude: 120.9700 }, // Caloocan, Philippines
       isOnline: true,
       status: 'available',
