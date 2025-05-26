@@ -862,7 +862,7 @@ export default function PassengerPage() {
        handleStatusToast("Simulated Dropoff Set", "Review details and confirm.");
     }
         
-  }, [rideState.pickupLocation, rideState.pickupTodaZoneId, rideState.dropoffLocation, calculateEstimatedFare, fetchRoute, handleStatusToast, getTodaTerminalExitPoint, settingsLoading]);
+  }, [rideState, rideState.pickupLocation, rideState.pickupTodaZoneId, rideState.dropoffLocation, calculateEstimatedFare, fetchRoute, handleStatusToast, getTodaTerminalExitPoint, settingsLoading]);
 
 
   const mainButtonColorClass = `bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL}] hover:bg-[${PASSENGER_PAGE_ACCENT_COLOR_HSL}]/90`;
@@ -885,9 +885,31 @@ export default function PassengerPage() {
     );
   }
 
+  const handleEmergencyAlert = React.useCallback(() => {
+    if (!isPremium) {
+      handleStatusToast("Premium Feature", "Emergency alerts are available for premium subscribers only.", "destructive");
+      return;
+    }
+    if (dailyAlertCount >= MAX_DAILY_ALERTS) {
+      handleStatusToast("Daily Limit Reached", `You have reached your daily limit of ${MAX_DAILY_ALERTS} emergency alerts.`, "destructive");
+      return;
+    }
+
+    // Simulate sending alert and making calls
+    console.log("EMERGENCY ALERT TRIGGERED!");
+    console.log("Simulating: Sending SOS alert to dispatchers, triders, family/friends...");
+    console.log("Simulating: Calling nearest police station, family members, friends...");
+
+    setDailyAlertCount(prev => prev + 1);
+    handleStatusToast("Emergency Alert Sent", `SOS alert triggered. Help is on the way. (${dailyAlertCount + 1}/${MAX_DAILY_ALERTS} today)`);
+    addRideUpdate(`EMERGENCY ALERT: SOS triggered. Alert count: ${dailyAlertCount + 1}/${MAX_DAILY_ALERTS}`);
+
+    // In a real app, this would involve API calls, push notifications, etc.
+  }, [isPremium, dailyAlertCount, handleStatusToast, addRideUpdate]);
+
   if (currentView === 'landing') {
     return (
-      <div className="relative flex flex-col h-screen bg-cover bg-center text-white" style={{ backgroundImage: "url('https://placehold.co/1080x1920.png?text=Street+Scene')", backgroundPosition: 'center', backgroundSize: 'cover' }} data-ai-hint="street traffic blur">
+      <div className="relative flex flex-col h-screen text-white passenger-landing-bg" data-ai-hint="street traffic blur">
         <div className={cn("absolute inset-0", PASSENGER_PAGE_OVERLAY_BG, "z-0")}></div>
         
         <div className="relative z-10 flex flex-col h-full p-6 pt-4">
@@ -916,13 +938,8 @@ export default function PassengerPage() {
                 <Button
                   key={item.subLabel}
                   variant="outline"
-                  className="flex flex-col items-center justify-center h-24 w-24 rounded-full p-0 border-2 transition-all duration-200 ease-in-out hover:scale-105 focus:scale-105 active:scale-95"
-                  style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                      borderColor: PASSENGER_PAGE_ACCENT_COLOR_HSL,
-                      color: PASSENGER_PAGE_ACCENT_COLOR_HSL,
-                      boxShadow: `0 0 10px ${PASSENGER_PAGE_ACCENT_COLOR_HSL}33`
-                  }}
+                  className="flex flex-col items-center justify-center h-24 w-24 rounded-full p-0 border-2 transition-all duration-200 ease-in-out hover:scale-105 focus:scale-105 active:scale-95
+                             bg-white/15 border-passenger-button-border text-passenger-accent shadow-[0_0_10px_hsla(var(--passenger-button-shadow-color)/0.2)]"
                   onClick={item.action}
                   title={`${item.label} ${item.subLabel}`} // Add tooltip here
                 >
@@ -943,35 +960,12 @@ export default function PassengerPage() {
     );
   }
 
-  const handleEmergencyAlert = React.useCallback(() => {
-    if (!isPremium) {
-      handleStatusToast("Premium Feature", "Emergency alerts are available for premium subscribers only.", "destructive");
-      return;
-    }
-    if (dailyAlertCount >= MAX_DAILY_ALERTS) {
-      handleStatusToast("Daily Limit Reached", `You have reached your daily limit of ${MAX_DAILY_ALERTS} emergency alerts.`, "destructive");
-      return;
-    }
-
-    // Simulate sending alert and making calls
-    console.log("EMERGENCY ALERT TRIGGERED!");
-    console.log("Simulating: Sending SOS alert to dispatchers, triders, family/friends...");
-    console.log("Simulating: Calling nearest police station, family members, friends...");
-
-    setDailyAlertCount(prev => prev + 1);
-    handleStatusToast("Emergency Alert Sent", `SOS alert triggered. Help is on the way. (${dailyAlertCount + 1}/${MAX_DAILY_ALERTS} today)`);
-    addRideUpdate(`EMERGENCY ALERT: SOS triggered. Alert count: ${dailyAlertCount + 1}/${MAX_DAILY_ALERTS}`);
-
-    // In a real app, this would involve API calls, push notifications, etc.
-  }, [isPremium, dailyAlertCount, handleStatusToast, addRideUpdate]);
-
-
   return (
     <div className="bg-white text-black flex flex-col h-screen">
-      <div style={{ backgroundColor: PASSENGER_HEADER_BG, color: PASSENGER_HEADER_TEXT }} className="p-4 flex items-center justify-between shadow-md z-20 relative">
+      <div className="p-4 flex items-center justify-between shadow-md z-20 relative bg-passenger-header-bg text-passenger-header-text">
         <div className="flex items-center space-x-2">
           <TriGoPassengerLogoInHeader />
-          <h1 className="text-xl font-bold" style={{color: PASSENGER_PAGE_ACCENT_COLOR_HSL}}>TriGo Passenger</h1>
+          <h1 className="text-xl font-bold text-passenger-accent">TriGo Passenger</h1>
         </div>
         <div className="flex items-center space-x-2">
            {/* Emergency Button */}

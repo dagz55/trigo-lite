@@ -43,6 +43,12 @@ export default {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+            'passenger-accent': 'hsl(var(--passenger-accent))',
+            'passenger-header-bg': 'hsl(var(--passenger-header-bg))',
+            'passenger-header-text': 'hsl(var(--passenger-header-text))',
+            'passenger-button-bg': 'hsl(var(--passenger-button-bg))',
+            'passenger-button-border': 'hsl(var(--passenger-button-border))',
+            'passenger-button-shadow-color': 'hsl(var(--passenger-button-shadow-color))',
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

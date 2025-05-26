@@ -27,10 +27,8 @@ const TriGoCentralLogo = () => (
         transform-style-3d 
         group-hover:rotate-y-180 
         electric-animation 
+        clip-path-triangle
       "
-      style={{ 
-        clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-      }}
     >
       {/* Icon wrapper for consistent centering */}
       <div className="w-full h-full flex items-center justify-center 
@@ -149,17 +147,15 @@ const RoleCard: React.FC<RoleCardProps> = ({
 };
 
 
-const NetworkNode: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
+const NetworkNode: React.FC<{ style: { top: string; left: string } }> = ({ style }) => (
   <div 
-    className="absolute w-2 h-2 md:w-3 md:h-3 bg-blue-500/50 rounded-full animate-pulse-soft" 
-    style={style}
+    className={`absolute w-2 h-2 md:w-3 md:h-3 bg-blue-500/50 rounded-full animate-pulse-soft top-[${style.top}] left-[${style.left}]`} 
   ></div>
 );
 
-const NetworkLine: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
+const NetworkLine: React.FC<{ style: { top: string; left: string; width: string; transform: string } }> = ({ style }) => (
   <div 
-    className="absolute h-px bg-blue-400/30" 
-    style={{...style, animation: 'line-flow-animation 10s infinite linear'}}
+    className={`absolute h-px bg-blue-400/30 animate-line-flow top-[${style.top}] left-[${style.left}] w-[${style.width}] rotate-[${style.transform.match(/\d+/)?.[0] || '0'}deg]`}
   ></div>
 );
 
@@ -345,6 +341,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-
-    
