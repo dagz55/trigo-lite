@@ -1,12 +1,27 @@
-
 "use client";
 
-import * as React from "react";
-import Link from "next/link";
-import { User, Bike, Phone, Settings as AdminIconSettings, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from "@/lib/utils";
+import { Settings as AdminIconSettings, ArrowRight, Bike, Check, ChevronDown, CreditCard, Phone, Trash2, User } from 'lucide-react';
+import * as React from "react";
 
-// Updated TriGoCentralLogo
+import { Badge } from "@/components/ui/badge";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+// Updated TriGoCentralLogo with Circling Lights
 const TriGoCentralLogo = () => (
   <a
     href="https://trigo.live"
@@ -15,28 +30,34 @@ const TriGoCentralLogo = () => (
     className="inline-block mb-6 group perspective"
     aria-label="Visit TriGo Live"
   >
-    <div 
+    <div
       className="
-        bg-white/20 
-        backdrop-blur-md 
-        border border-white/20 
-        w-32 h-28 
-        flex items-center justify-center 
-        relative 
+        bg-white/20
+        backdrop-blur-md
+        border border-white/20
+        w-32 h-28
+        flex items-center justify-center
+        relative
         transition-all duration-500 ease-in-out
-        transform-style-3d 
-        group-hover:rotate-y-180 
-        electric-animation 
+        transform-style-3d
+        group-hover:rotate-y-180
+        electric-animation
       "
-      style={{ 
+      style={{
         clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
       }}
     >
+      {/* Circling Lights (Angels) */}
+      <div className="circle-light circle-light-1"></div>
+      <div className="circle-light circle-light-2"></div>
+      <div className="circle-light circle-light-3"></div>
+      <div className="circle-light circle-light-4"></div>
+
       {/* Icon wrapper for consistent centering */}
-      <div className="w-full h-full flex items-center justify-center 
-                      transform transition-transform duration-300 
-                      group-hover:scale-95 
-                      relative z-10 
+      <div className="w-full h-full flex items-center justify-center
+                      transform transition-transform duration-300
+                      group-hover:scale-95
+                      relative z-10
                       pt-3">
         {/* SVG from PickMeUpIcon.tsx, with black background removed and size adjusted */}
         <svg width="512" height="512" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20">
@@ -115,7 +136,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
       window.location.href = href;
     }
   };
-  
+
   const cardButton = (
      <Button
         onClick={handleClick}
@@ -127,11 +148,11 @@ const RoleCard: React.FC<RoleCardProps> = ({
   );
 
   return (
-    <div 
+    <div
       className="bg-slate-900/40 backdrop-blur-lg border border-slate-700/60 rounded-xl p-6 flex flex-col items-center text-center shadow-2xl w-full sm:w-72 h-80 justify-between transition-all duration-300 ease-in-out hover:scale-105 hover:border-slate-500/80 hover:shadow-blue-500/20 relative overflow-hidden group"
     >
       <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 group-hover:animate-card-shine group-hover:left-full transition-all duration-1000 opacity-0 group-hover:opacity-100"></div>
-      
+
       <div className="absolute top-2 left-2 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-70 group-hover:animate-sparkle delay-100"></div>
       <div className="absolute bottom-2 right-2 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-70 group-hover:animate-sparkle delay-200"></div>
       <div className="absolute top-3 right-3 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-60 group-hover:animate-sparkle delay-300"></div>
@@ -150,19 +171,125 @@ const RoleCard: React.FC<RoleCardProps> = ({
 
 
 const NetworkNode: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
-  <div 
-    className="absolute w-2 h-2 md:w-3 md:h-3 bg-blue-500/50 rounded-full animate-pulse-soft" 
+  <div
+    className="absolute w-2 h-2 md:w-3 md:h-3 bg-blue-500/50 rounded-full animate-pulse-soft"
     style={style}
   ></div>
 );
 
 const NetworkLine: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
-  <div 
-    className="absolute h-px bg-blue-400/30" 
+  <div
+    className="absolute h-px bg-blue-400/30"
     style={{...style, animation: 'line-flow-animation 10s infinite linear'}}
   ></div>
 );
 
+interface PaymentMethod {
+  id: string;
+  type: "visa" | "mastercard" | "amex" | "other";
+  last4: string;
+  expiryMonth: string;
+  expiryYear: string;
+  isDefault?: boolean;
+}
+
+interface PaymentMethodsProps {
+  methods: PaymentMethod[];
+  onSelect?: (method: PaymentMethod) => void;
+  onDelete?: (id: string) => void;
+  onSetDefault?: (id: string) => void;
+  onAddNew?: () => void;
+}
+
+const getCardIcon = (type: PaymentMethod["type"]) => {
+  return <CreditCard className="h-4 w-4" />;
+};
+
+const PaymentMethodCard: React.FC<{
+  method: PaymentMethod;
+  onSelect?: () => void;
+  onDelete?: () => void;
+  onSetDefault?: () => void;
+}> = ({ method, onSelect, onDelete, onSetDefault }) => {
+  return (
+    <Card className={cn("relative overflow-hidden", method.isDefault && "border-primary")}>
+      {method.isDefault && (
+        <Badge className="absolute right-2 top-2 bg-primary text-primary-foreground">
+          Default
+        </Badge>
+      )}
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {getCardIcon(method.type)}
+            <CardTitle className="text-base">
+              {method.type.charAt(0).toUpperCase() + method.type.slice(1)} •••• {method.last4}
+            </CardTitle>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-2 pt-0">
+        <CardDescription>
+          Expires {method.expiryMonth}/{method.expiryYear}
+        </CardDescription>
+      </CardContent>
+      <CardFooter className="flex justify-between pt-2">
+        <Button variant="ghost" size="sm" onClick={onSelect}>
+          Use this card
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {!method.isDefault && (
+              <DropdownMenuItem onClick={onSetDefault}>
+                <Check className="mr-2 h-4 w-4" />
+                Set as default
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={onDelete} className="text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove card
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardFooter>
+    </Card>
+  );
+};
+
+const PaymentMethods: React.FC<PaymentMethodsProps> = ({
+  methods,
+  onSelect,
+  onDelete,
+  onSetDefault,
+  onAddNew,
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Payment Methods</h2>
+        <Button variant="outline" onClick={onAddNew}>
+          Add new card
+        </Button>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {methods.map((method) => (
+          <PaymentMethodCard
+            key={method.id}
+            method={method}
+            onSelect={() => onSelect?.(method)}
+            onDelete={() => onDelete?.(method.id)}
+            onSetDefault={() => onSetDefault?.(method.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default function HomePage() {
   const nodes = [
@@ -194,7 +321,7 @@ export default function HomePage() {
         {nodes.map((node, i) => <NetworkNode key={`node-${i}`} style={node} />)}
         {lines.map((line, i) => <NetworkLine key={`line-${i}`} style={line} />)}
       </div>
-      
+
       <div className="relative z-10 text-center mb-10 sm:mb-16 animate-fadeIn">
         <TriGoCentralLogo />
         <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-4 text-shadow-lg">TriGo</h1>
@@ -232,24 +359,26 @@ export default function HomePage() {
           href="/dispatcher"
           iconColorClass="text-yellow-400"
           buttonColorClass="bg-yellow-500 hover:bg-yellow-400"
-          openInNewTab={false} 
+          openInNewTab={false}
         />
         <RoleCard
           icon={AdminIconSettings}
           title="Admin"
           description="Oversee system and configure settings"
           buttonText="Select Role"
-          href="/dispatcher/admin-dashboard" 
+          href="/dispatcher/admin-dashboard"
           iconColorClass="text-emerald-400"
           buttonColorClass="bg-emerald-600 hover:bg-emerald-500"
-          openInNewTab={false} 
+          openInNewTab={false}
         />
       </div>
+
+
 
       <style jsx global>{`
         .text-shadow { text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         .text-shadow-lg { text-shadow: 0 2px 5px rgba(0,0,0,0.4); }
-        
+
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-20px); }
           to { opacity: 1; transform: translateY(0); }
@@ -263,9 +392,9 @@ export default function HomePage() {
         }
         .animate-slideUp {
           animation: slideUp 0.8s ease-out 0.3s forwards;
-          opacity: 0; 
+          opacity: 0;
         }
-        
+
         @keyframes bg-pulse-slow {
           0%, 100% { transform: scale(1); opacity: 0.3; }
           50% { transform: scale(1.15); opacity: 0.5; }
@@ -276,7 +405,7 @@ export default function HomePage() {
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
 
-        @keyframes card-shine { 
+        @keyframes card-shine {
           0% { transform: translateX(-120%) skewX(-30deg); opacity: 0.1; }
           20% { opacity: 0.3; }
           60% { opacity: 0.3; }
@@ -293,7 +422,7 @@ export default function HomePage() {
         .animate-sparkle {
           animation: sparkle 0.6s ease-in-out forwards;
         }
-        
+
         @keyframes pulse-soft {
           0%, 100% { opacity: 0.4; transform: scale(1); }
           50% { opacity: 0.8; transform: scale(1.1); }
@@ -305,19 +434,19 @@ export default function HomePage() {
         @keyframes line-flow-animation {
           /* Placeholder for more complex line animation if needed */
         }
-        
+
         .perspective {
           perspective: 1000px;
         }
         .transform-style-3d {
           transform-style: preserve-3d;
         }
-       
+
         @keyframes electric-pulse {
-          0%, 100% { 
-            box-shadow: 
-              0 0 6px rgba(200, 225, 255, 0.7), 
-              0 0 12px rgba(100, 180, 255, 0.6), 
+          0%, 100% {
+            box-shadow:
+              0 0 6px rgba(200, 225, 255, 0.7),
+              0 0 12px rgba(100, 180, 255, 0.6),
               0 0 20px rgba(0, 150, 255, 0.5),
               0 0 30px rgba(0, 150, 255, 0.4),
               /* Greenish/Blueish Tones */
@@ -325,10 +454,10 @@ export default function HomePage() {
               0 0 15px rgba(40, 180, 200, 0.6),
               0 0 25px rgba(20, 160, 180, 0.5);
           }
-          50% { 
-            box-shadow: 
-              0 0 10px rgba(225, 255, 255, 0.9), 
-              0 0 20px rgba(150, 200, 255, 0.8), 
+          50% {
+            box-shadow:
+              0 0 10px rgba(225, 255, 255, 0.9),
+              0 0 20px rgba(150, 200, 255, 0.8),
               0 0 35px rgba(50, 180, 255, 0.7),
               0 0 50px rgba(50, 180, 255, 0.6),
               /* Greenish/Blueish Tones - Brighter */
@@ -347,4 +476,3 @@ export default function HomePage() {
 }
 
 
-    

@@ -1,21 +1,20 @@
 
 "use client";
 
-import * as React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Ticket, User, Bike, MapPin, ArrowRight, CalendarDays, CircleDollarSign } from "lucide-react";
 import type { PassengerRideState } from '@/types';
 import { format } from 'date-fns';
+import { ArrowRight, Bike, CalendarDays, CircleDollarSign, MapPin, Ticket, User } from "lucide-react";
 
 interface RideReceiptDialogProps {
   isOpen: boolean;
@@ -40,46 +39,60 @@ export function RideReceiptDialog({ isOpen, onOpenChange, rideDetails }: RideRec
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card text-card-foreground shadow-xl rounded-lg">
-        <DialogHeader className="p-6">
-          <DialogTitle className="text-2xl font-semibold flex items-center text-primary">
-            <Ticket className="mr-3 h-7 w-7" />
+      <DialogContent className="sm:max-w-md bg-white shadow-2xl rounded-2xl border-0">
+        <DialogHeader className="p-6 pb-4">
+          <DialogTitle className="text-2xl font-semibold flex items-center text-gray-900">
+            <div className="p-2 bg-purple-100 rounded-xl mr-3">
+              <Ticket className="h-6 w-6 text-purple-600" />
+            </div>
             Ride Receipt
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
+          <DialogDescription className="text-sm text-gray-600 mt-2">
             Thank you for riding with TriGo! Here are your trip details.
           </DialogDescription>
         </DialogHeader>
-        <Separator />
-        <div className="p-6 space-y-4 text-sm">
+        <div className="h-px bg-gray-100 mx-6"></div>
+        <div className="p-6 space-y-5">
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Ticket ID:</span>
-            <span className="font-medium">{currentRideId || "N/A"}</span>
+            <span className="text-gray-600 font-medium">Ticket ID:</span>
+            <span className="font-semibold text-gray-900">{currentRideId || "N/A"}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Passenger:</span>
-            <span className="font-medium">{passengerName}</span>
+            <span className="text-gray-600 font-medium">Passenger:</span>
+            <span className="font-semibold text-gray-900">{passengerName}</span>
           </div>
-          
-          <Separator />
+
+          <div className="h-px bg-gray-100"></div>
 
           <div>
-            <h4 className="font-medium mb-1 text-muted-foreground">Trip Details:</h4>
-            <div className="flex items-center">
-              <MapPin className="h-4 w-4 mr-2 text-green-500" />
-              <p><span className="font-medium">From:</span> {pickupAddress}</p>
-            </div>
-            <div className="flex items-center my-1">
-              <ArrowRight className="h-4 w-4 mr-2 text-muted-foreground" />
-            </div>
-            <div className="flex items-center">
-              <MapPin className="h-4 w-4 mr-2 text-red-500" />
-              <p><span className="font-medium">To:</span> {dropoffAddress}</p>
+            <h4 className="font-semibold mb-3 text-gray-900">Trip Details</h4>
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <div className="p-1.5 bg-green-100 rounded-lg mr-3 mt-0.5">
+                  <MapPin className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">From</p>
+                  <p className="text-gray-900 font-medium">{pickupAddress}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-center">
+                <ArrowRight className="h-4 w-4 text-gray-400" />
+              </div>
+              <div className="flex items-start">
+                <div className="p-1.5 bg-red-100 rounded-lg mr-3 mt-0.5">
+                  <MapPin className="h-4 w-4 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">To</p>
+                  <p className="text-gray-900 font-medium">{dropoffAddress}</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <Separator />
-          
+          <div className="h-px bg-gray-100"></div>
+
           <div>
             <h4 className="font-medium mb-1 text-muted-foreground">Trider Details:</h4>
             <div className="flex items-center">

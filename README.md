@@ -1,4 +1,3 @@
-
 # TriGo Lite
 
 This is a Next.js application for TriGo Dispatch Lite, a real-time trider monitoring and dispatching system. Built with Next.js, TypeScript, Tailwind CSS, ShadCN UI components, and Mapbox GL JS.
@@ -9,6 +8,7 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - Dynamic, glassmorphic landing page with an animated background.
   - Central triangular TriGo logo (auto-rickshaw SVG) that flips and has an electric aura effect on hover, linking to `https://trigo.live`.
   - Role selection cards (Passenger, Trider, Dispatcher, Admin) with unique icons and color themes, linking to respective demo/dashboard pages.
+  - **Payment Method Selection:** Added a section to select a preferred payment method directly on the landing page with autosave functionality.
 - **Dispatch Dashboard (`/dispatcher`):**
   - Live map visualization of triders and ride requests using Mapbox.
   - TODA (Tricycle Operators and Drivers' Association) zone boundaries displayed on the map.
@@ -32,6 +32,24 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
   - Dispatcher-to-Trider chat functionality (mocked, UI in place).
 - **Passenger Role Simulation (`/passenger`):**
   - **New Landing Page:** Initial view for passengers featuring "Ride Before", "Ride Now", "Ride Later" options, with a background image and themed elements.
+  - **Fully Functional Button Interface:**
+    - All landing page buttons are now functional with appropriate actions and feedback.
+    - Menu, Search, Map Style Toggle, and Login/Logout buttons in header provide interactive functionality.
+    - Enhanced "Ride Before" and "Ride Later" buttons with detailed feature descriptions.
+    - Map style cycling (Streets → Satellite → Dark) with real-time preview and toast notifications.
+  - **Navigation System:**
+    - Bottom navigation bar with functional links to Home, Map View, and Profile pages.
+    - Dedicated Map page (`/passenger/map`) with enhanced map features and controls.
+    - Comprehensive Profile page (`/passenger/profile`) with user management capabilities.
+  - **Payment Methods Integration:**
+    - Complete payment methods management in profile page with **Apple-like dropdown design**.
+    - Support for GCash (with @gcash icon), PayMaya (with @public/maya-logo.png), and TriCoin (custom gold icon).
+    - **Autosave functionality** - payment method selections are automatically saved within 500ms.
+    - **Real-time autosave status indicator** with visual feedback (saving/saved/error states).
+    - **Individual user preferences** - each user's payment method selection persists across sessions.
+    - Balance display and payment method status indicators.
+    - **Apple-inspired UI** with rounded corners, smooth transitions, and elegant animations.
+    - **Manual save option** for immediate confirmation with "Save Now" button.
   - **Requesting Ride:**
     - Map view to select pickup and dropoff locations.
     - Initial pickup suggestion via geolocation. "Locate Me" button inside pickup input field.
@@ -130,13 +148,35 @@ This is a Next.js application for TriGo Dispatch Lite, a real-time trider monito
     npm run genkit:watch
     ```
 
+## Key Features Highlight
+
+### 🍎 Apple-like Payment Method Selector
+- **Design Philosophy:** Inspired by Apple's design language with clean, minimal aesthetics
+- **Smooth Animations:** 200ms transitions with rounded corners (rounded-2xl) and backdrop blur effects
+- **Intuitive Interaction:** Click-to-open dropdown with visual feedback and hover effects
+- **Accessibility:** Full keyboard navigation support and screen reader compatibility
+
+### 💾 Intelligent Autosave System
+- **Debounced Saving:** Automatic save after 500ms of inactivity to prevent excessive operations
+- **Real-time Status:** Visual indicator showing save progress (idle/saving/saved/error)
+- **Persistent Storage:** Uses localStorage for immediate persistence across browser sessions
+- **Error Handling:** Comprehensive error handling with manual save fallback option
+- **Individual Preferences:** Each user's payment method selection is saved independently
+
+### 🎨 User Experience Enhancements
+- **Visual Feedback:** Real-time autosave status with timestamps and error reporting
+- **Payment Method Icons:** Custom icons for GCash (@gcash), PayMaya (@public/maya-logo.png), and TriCoin (gold)
+- **Balance Display:** Shows current balance for each payment method
+- **Default Indicators:** Clear visual indication of selected default payment method
+
 ## Tech Stack
 
 - **Framework:** Next.js (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS, ShadCN UI
 - **Mapping:** Mapbox GL JS, react-map-gl
-- **State Management:** React Context (for settings), React Hooks (for page-level state)
+- **State Management:** React Context (for settings and user data), React Hooks (for page-level state)
+- **Data Persistence:** localStorage for client-side data persistence
 - **Charts:** Recharts
 - **Linting/Formatting:** ESLint, Prettier (via Next.js defaults)
 - **AI (Optional):** Genkit

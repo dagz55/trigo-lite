@@ -1,4 +1,3 @@
-
 export type Coordinates = {
   longitude: number;
   latitude: number;
@@ -53,7 +52,15 @@ export interface RideRequest {
   assignedTriderId?: string | null;
   pickupTodaZoneId: string | null;
   passengerId?: string;
-  ticketId?: string; 
+  ticketId?: string;
+  timeline?: TimelineEvent[];
+}
+
+export interface TimelineEvent {
+  timestamp: Date;
+  status: RideRequestStatus | PassengerRideStatus | TriderRideStatus | string;
+  description: string;
+  actor?: 'passenger' | 'trider' | 'system';
 }
 
 export interface AiInsight {
@@ -105,14 +112,14 @@ export interface TriderWalletTransaction {
   timestamp: Date;
 }
 
-export type PassengerMapStyle = 'streets' | 'satellite' | 'dark';
+export type PassengerMapStyle = 'standard' | 'satellite' | 'dark';
 
 export interface TriderAppSettings {
   notifications: {
     newRequests: boolean;
     chatMessages: boolean;
   };
-  mapStyle: PassengerMapStyle; 
+  mapStyle: PassengerMapStyle;
 }
 
 export interface TriderProfile extends Trider {
@@ -120,12 +127,12 @@ export interface TriderProfile extends Trider {
   wallet: TriderWallet;
   contactNumber?: string;
   profilePictureUrl?: string;
-  dataAiHint?: string; 
+  dataAiHint?: string;
   lastSeen?: Date;
   requestedTodaZoneId?: string;
   todaZoneChangeRequestStatus?: TodaZoneChangeRequestStatus;
   // New fields for Trider page expansion
-  walletBalance?: number; 
+  walletBalance?: number;
   transactions?: TriderWalletTransaction[];
   appSettings?: TriderAppSettings;
   subscriptionStatus?: 'basic' | 'premium';
@@ -151,8 +158,8 @@ export interface AppSettings {
   triderUpdateIntervalMs: number;
   aiInsightIntervalMs: number;
   convenienceFee: number;
-  todaBaseFares: Record<string, number>; 
-  defaultBaseFare: number; 
+  todaBaseFares: Record<string, number>;
+  defaultBaseFare: number;
   perKmCharge: number;
   todaTerminalExitPoints: Record<string, { point: Coordinates; address: string } | undefined>;
 }
@@ -162,23 +169,35 @@ export type UpdateSettingPayload<K extends keyof AppSettings = keyof AppSettings
   value: AppSettings[K];
 };
 
+export type PassengerRideStatus =
+  | 'idle'
+  | 'selectingPickup'
+  | 'selectingDropoff'
+  | 'confirmingRide'
+  | 'searching'
+  | 'triderAssigned'
+  | 'inProgress'
+  | 'completed'
+  | 'cancelled';
+
 export interface PassengerRideState {
-  status: 'idle' | 'selectingPickup' | 'selectingDropoff' | 'confirmingRide' | 'searching' | 'triderAssigned' | 'inProgress' | 'completed' | 'cancelled';
-  passengerName: string; 
+  status: PassengerRideStatus;
+  passengerName: string;
   pickupLocation: Coordinates | null;
   dropoffLocation: Coordinates | null;
-  pickupAddress: string; 
-  dropoffAddress: string; 
+  pickupAddress: string;
+  dropoffAddress: string;
   estimatedFare: number | null;
   assignedTrider: TriderProfile | null;
   currentRideId: string | null;
-  triderToPickupPath: RoutePath | null; 
-  pickupToDropoffPath: RoutePath | null; 
-  currentTriderPathIndex?: number; 
+  triderToPickupPath: RoutePath | null;
+  pickupToDropoffPath: RoutePath | null;
+  currentTriderPathIndex?: number;
   pickupTodaZoneId: string | null;
   countdownSeconds: number | null;
   estimatedDurationSeconds: number | null;
-  completionTime?: Date; 
+  completionTime?: Date;
+  timeline?: TimelineEvent[];
 }
 
 export type TriderRideStatus = 'onlineAvailable' | 'onlineBusyEnRouteToPickup' | 'onlineBusyEnRouteToDropoff' | 'offline';
@@ -188,13 +207,45 @@ export interface TriderSimState {
   currentLocation: Coordinates;
   activeRideRequest: RideRequest | null;
   availableRideRequests: RideRequest[];
-  currentPath: RoutePath | null; 
-  currentPathIndex: number; 
+  currentPath: RoutePath | null;
+  currentPathIndex: number;
+}
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  type: 'ewallet' | 'crypto' | 'card';
+  isDefault: boolean;
+  balance?: number;
+  icon?: string;
+}
+
+export type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
+
+export interface PaymentTransaction {
+  id: string;
+  amount: number;
+  paymentMethodId: string;
+  status: PaymentStatus;
+  timestamp: Date;
+  referenceId?: string;
+  errorMessage?: string;
+}
+
+export interface PaymentProcessingState {
+  status: PaymentStatus;
+  transaction: PaymentTransaction | null;
+  error: string | null;
 }
 
 export interface PassengerSettings {
   mapStyle: PassengerMapStyle;
+  notifications?: boolean;
+  soundEnabled?: boolean;
+  vibrationEnabled?: boolean;
+  defaultPaymentMethodId?: string;
 }
+
 export interface MockPassengerProfile {
   id: string;
   name: string;
@@ -202,4 +253,5 @@ export interface MockPassengerProfile {
   todaZoneName: string;
   settings?: PassengerSettings;
   profilePictureUrl?: string;
+  paymentMethods?: PaymentMethod[];
 }

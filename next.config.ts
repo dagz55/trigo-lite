@@ -1,5 +1,4 @@
-
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 // Configuration for Next.js
 const nextConfig: NextConfig = {
@@ -31,7 +30,8 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
  'https://*-firebase-studio-*.cloudworkstations.dev',
  'https://*-firebase-studio-*.web.app',
- 'https://9000-firebase-studio-1747135188719.cluster-bg6uurscprhn6qxr6xwtrhvkf6.cloudworkstations.dev'
+ 'https://9000-firebase-studio-1747135188719.cluster-bg6uurscprhn6qxr6xwtrhvkf6.cloudworkstations.dev',
+ 'http://192.168.1.107:9002'
  ],
   // Adding a comment to ensure the file is seen as modified
   // Last attempt to force a clean rebuild for chunk loading issues.

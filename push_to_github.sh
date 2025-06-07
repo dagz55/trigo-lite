@@ -4,7 +4,7 @@
 # Target repository: dagz55/trigo-lite.git
 
 REPO_URL="https://github.com/dagz55/trigo-lite.git"
-BRANCH_NAME="master" # Or your preferred default branch
+BRANCH_NAME="main" # Updated to match the actual default branch
 
 # Check if git is installed
 if ! command -v git &> /dev/null; then
@@ -52,11 +52,11 @@ COMMIT_MESSAGE="$DEFAULT_COMMIT_MESSAGE"
 if git diff --staged --quiet; then
     echo "No changes staged for commit. If you want to push existing commits, you can run 'git push' manually or re-run this script after making new changes."
 else
-    read -p "Enter commit message (default: "$DEFAULT_COMMIT_MESSAGE"): " USER_INPUT_MESSAGE
+    read -p "Enter commit message (default: $DEFAULT_COMMIT_MESSAGE): " USER_INPUT_MESSAGE
     if [ ! -z "$USER_INPUT_MESSAGE" ]; then
         COMMIT_MESSAGE="$USER_INPUT_MESSAGE"
     fi
-    echo "Committing files with message: "$COMMIT_MESSAGE""
+    echo "Committing files with message: $COMMIT_MESSAGE"
     git commit -m "$COMMIT_MESSAGE"
     if [ $? -ne 0 ]; then
         echo "Failed to commit files. This might be because there are no actual changes to commit, or a git pre-commit hook failed."
@@ -70,12 +70,38 @@ fi
 # Push the changes to GitHub
 echo "Pushing to $BRANCH_NAME branch on remote 'origin'..."
 git push -u origin "$BRANCH_NAME"
-if [ $? -ne 0 ]; then
-    echo "Failed to push to GitHub. Please ensure:"
-    echo "1. The remote repository $REPO_URL exists and you have push permissions."
-    echo "2. Your local branch '$BRANCH_NAME' is up-to-date or can be fast-forwarded."
-    echo "3. You have authenticated with Git for GitHub (e.g., using a Personal Access Token or SSH key)."
-    exit 1
+PUSH_EXIT_CODE=$?
+
+if [ $PUSH_EXIT_CODE -ne 0 ]; then
+    # Check for non-fast-forward error
+    GIT_PUSH_OUTPUT=$(git push -u origin "$BRANCH_NAME" 2>&1)
+    if echo "$GIT_PUSH_OUTPUT" | grep -q "fetch first"; then
+        echo "Push failed: Remote contains work that you do not have locally."
+        echo "You need to pull and merge the remote changes first."
+        read -p "Do you want to pull and merge remote changes now? (y/n): " PULL_CONFIRM
+        if [ "$PULL_CONFIRM" = "y" ] || [ "$PULL_CONFIRM" = "Y" ]; then
+            git pull origin "$BRANCH_NAME"
+            if [ $? -ne 0 ]; then
+                echo "Failed to pull and merge remote changes. Please resolve any conflicts and try again."
+                exit 1
+            fi
+            echo "Retrying push..."
+            git push -u origin "$BRANCH_NAME"
+            if [ $? -ne 0 ]; then
+                echo "Push still failed. Please check for conflicts or other issues."
+                exit 1
+            fi
+        else
+            echo "Aborting push. Please pull and merge manually, then re-run this script."
+            exit 1
+        fi
+    else
+        echo "Failed to push to GitHub. Please ensure:"
+        echo "1. The remote repository $REPO_URL exists and you have push permissions."
+        echo "2. Your local branch '$BRANCH_NAME' is up-to-date or can be fast-forwarded."
+        echo "3. You have authenticated with Git for GitHub (e.g., using a Personal Access Token or SSH key)."
+        exit 1
+    fi
 fi
 
 echo ""

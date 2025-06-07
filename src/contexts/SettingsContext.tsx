@@ -2,7 +2,7 @@
 "use client";
 
 import type { AppSettings, Coordinates, ThemeSetting } from '@/types';
-import * as React from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useContext, createContext } from 'react';
 
 const LAS_PINAS_CENTER_DEFAULT: Coordinates = { latitude: 14.4445, longitude: 120.9938 };
 const DEFAULT_ZOOM = 12.5;
@@ -26,7 +26,9 @@ const defaultSettings: AppSettings = {
   todaBaseFares: {}, 
   defaultBaseFare: DEFAULT_GLOBAL_BASE_FARE,
   perKmCharge: DEFAULT_PER_KM_CHARGE,
-  todaTerminalExitPoints: {},
+  todaTerminalExitPoints: {
+    'ALABANG_ZAPOTE_EXIT': { point: { latitude: 14.4167, longitude: 121.0000 }, address: 'Alabang-Zapote Road Exit' },
+  },
 };
 
 interface SettingsContextType extends AppSettings {
@@ -37,13 +39,13 @@ interface SettingsContextType extends AppSettings {
   getTodaTerminalExitPoint: (todaZoneId: string) => { point: Coordinates; address: string } | undefined;
 }
 
-const SettingsContext = React.createContext<SettingsContextType | undefined>(undefined);
+const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
-  const [settings, setSettings] = React.useState<AppSettings>(defaultSettings);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       const storedSettings = localStorage.getItem('triGoAppSettings');
       if (storedSettings) {
@@ -67,7 +69,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isLoading) return; 
 
     const root = window.document.documentElement;
@@ -87,7 +89,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
 
   }, [settings, isLoading]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (settings.theme !== 'system' || isLoading) return;
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -101,14 +103,14 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
   }, [settings.theme, isLoading]);
 
 
-  const updateSetting = React.useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+  const updateSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings(prevSettings => ({
       ...prevSettings,
       [key]: value,
     }));
   }, []);
 
-  const resetSettings = React.useCallback(() => {
+  const resetSettings = useCallback(() => {
     setSettings(defaultSettings);
     try {
       localStorage.removeItem('triGoAppSettings');
@@ -117,15 +119,15 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     }
   }, []);
 
-  const getTodaBaseFare = React.useCallback((todaZoneId: string): number => {
+  const getTodaBaseFare = useCallback((todaZoneId: string): number => {
     return settings.todaBaseFares[todaZoneId] ?? settings.defaultBaseFare ?? DEFAULT_TODA_BASE_FARE_FALLBACK;
   }, [settings.todaBaseFares, settings.defaultBaseFare]);
 
-  const getTodaTerminalExitPoint = React.useCallback((todaZoneId: string): { point: Coordinates; address: string } | undefined => {
+  const getTodaTerminalExitPoint = useCallback((todaZoneId: string): { point: Coordinates; address: string } | undefined => {
     return settings.todaTerminalExitPoints[todaZoneId];
   }, [settings.todaTerminalExitPoints]);
 
-  const contextValue = React.useMemo(() => ({
+  const contextValue = useMemo(() => ({
     ...settings,
     updateSetting,
     resetSettings,
@@ -143,7 +145,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
 };
 
 export const useSettings = (): SettingsContextType => {
-  const context = React.useContext(SettingsContext);
+  const context = useContext(SettingsContext);
   if (context === undefined) {
     throw new Error('useSettings must be used within a SettingsProvider');
   }

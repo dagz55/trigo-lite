@@ -1,0 +1,95 @@
+:root {
+  --passenger-accent-color: hsl(262, 78%, 59%);
+  --passenger-header-bg: black;
+  --passenger-header-text: white;
+}
+
+.passenger-overlay-bg {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.passenger-input-text-color {
+  color: var(--passenger-header-text); /* Using header text color for now, adjust if needed */
+}
+
+.passenger-placeholder-text-color::placeholder {
+  color: rgba(163, 163, 163, 1); /* text-neutral-400 */
+}
+
+/* Landing page styles */
+.landing-background {
+  background-image: url('/images/traffic_blur.png');
+  background-position: center;
+  background-size: cover;
+}
+
+.landing-header-logo-circle {
+  background: linear-gradient(to right, #fbbf24, #f59e0b); /* from-amber-400 to-yellow-500 */
+}
+
+.landing-header-icon-button {
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.4); /* border-white/40 */
+  transition: all 0.2s ease-in-out;
+}
+
+.landing-header-icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.2); /* hover:bg-white/20 */
+  border-color: rgba(255, 255, 255, 0.6); /* hover:border-white/60 */
+}
+
+.landing-header-icon-button.emergency {
+  color: #f87171; /* text-red-400 */
+  border-color: rgba(248, 113, 113, 0.4); /* border-red-400/40 */
+}
+
+.landing-header-icon-button.emergency:hover {
+  color: #ef4444; /* hover:text-red-300 */
+  border-color: rgba(239, 68, 68, 0.6); /* hover:border-red-300/60 */
+}
+
+.landing-title-color {
+  color: var(--passenger-accent-color);
+}
+
+.glass-crystal-effect {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.landing-ride-button {
+    border-width: 2px;
+    border-color: var(--passenger-accent-color);
+    color: var(--passenger-accent-color);
+    transition: all 0.2s ease-in-out;
+}
+
+.landing-ride-button:hover {
+    transform: scale(1.05);
+}
+.landing-ride-button:focus {
+    transform: scale(1.05);
+}
+.landing-ride-button:active {
+    transform: scale(0.95);
+}
+
+.landing-payment-trigger-color {
+  color: var(--passenger-accent-color);
+}
+
+.main-button-color {
+  background-color: var(--passenger-accent-color);
+}
+
+.main-button-color:hover {
+  background-color: hsl(262, 78%, 59%) / 0.9; /* Adjust or remove if using Tailwind hover */
+}
+
+.countdown-text-color {
+  color: var(--passenger-header-text);
+}
+
+/* Keyframes */

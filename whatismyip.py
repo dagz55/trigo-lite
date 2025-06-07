@@ -1,6 +1,8 @@
-import socket
-import requests
 import platform
+import socket
+
+import requests
+
 
 def get_wan_ip():
     """Gets the public WAN IP address."""
@@ -25,15 +27,37 @@ def get_ip_geolocation(ip_address):
         return None # Return None on failure
 
 def get_lan_ip():
-    """Gets the local LAN IP address."""
+    """Gets the local LAN IP address using multiple methods for reliability."""
     try:
-        # Get the hostname
+        # Method 1: Connect to a remote address to determine local IP (most reliable)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))  # Connect to Google DNS
+        lan_ip = s.getsockname()[0]
+        s.close()
+        if lan_ip and lan_ip != '127.0.0.1':
+            return lan_ip
+    except Exception:
+        pass
+
+    try:
+        # Method 2: Try hostname resolution with .local suffix
         hostname = socket.gethostname()
-        # Get the IP address associated with the hostname
+        lan_ip = socket.gethostbyname(hostname + '.local')
+        if lan_ip and lan_ip != '127.0.0.1':
+            return lan_ip
+    except Exception:
+        pass
+
+    try:
+        # Method 3: Original method as fallback
+        hostname = socket.gethostname()
         lan_ip = socket.gethostbyname(hostname)
-        return lan_ip
-    except socket.gaierror:
-        return "Could not retrieve LAN IP"
+        if lan_ip and lan_ip != '127.0.0.1':
+            return lan_ip
+    except Exception:
+        pass
+
+    return "Could not retrieve LAN IP"
 
 def get_hostname():
     """Gets the system hostname."""
@@ -46,6 +70,11 @@ def get_os_info():
 # Note: Getting detailed WiFi info and listing open ports reliably and cross-platform
 # requires more complex methods or external libraries/commands specific to each OS.
 # This script provides basic network identification information.
+#
+# LAN IP Detection: Uses multiple methods for reliability:
+# 1. Socket connection to external address (most reliable)
+# 2. Hostname resolution with .local suffix
+# 3. Standard hostname resolution (fallback)
 
 def main():
     print("Gathering network information...")

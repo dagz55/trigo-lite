@@ -1,4 +1,3 @@
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -9,6 +8,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **🍎 Apple-like Payment Method Selector with Autosave Functionality:**
+    - **Apple-inspired Design:** Beautiful dropdown with rounded corners (rounded-2xl), smooth transitions, and backdrop blur effects.
+    - **Intelligent Autosave System:** Automatic saving of payment method selections within 500ms using debounced save logic.
+    - **Real-time Status Indicator:** Visual feedback showing save progress (idle/saving/saved/error) with timestamps.
+    - **Individual User Preferences:** Each user's payment method selection persists across browser sessions using localStorage.
+    - **Manual Save Option:** "Save Now" button for immediate confirmation when needed.
+    - **Enhanced User Experience:** Smooth animations, hover effects, and accessibility features including keyboard navigation.
+    - **Error Handling:** Comprehensive error handling with fallback options and detailed error reporting.
+    - **Performance Optimized:** Debounced saving prevents excessive localStorage operations while maintaining responsiveness.
+    - **Comprehensive Testing:** Created automated test suites for dropdown functionality, autosave verification, and Apple design elements validation.
+    - **Production Ready:** Cross-browser compatibility, accessibility compliance, and comprehensive documentation included.
+- **Payment Method Selection on Landing Page:** Added a section to select a preferred payment method directly on the landing page, including autosave functionality.
+- **Passenger Landing Page Button Functionality:**
+    - Made all buttons on the passenger landing page fully functional with appropriate actions and feedback.
+    - **Header Buttons:** Menu, Search, Map Style Toggle, and Login/Logout buttons now provide interactive functionality.
+    - **Menu Button:** Shows informational toast about upcoming menu features.
+    - **Search Button:** Switches between landing view and ride booking mode with contextual feedback.
+    - **Map Style Toggle:** Cycles through map styles (Streets → Satellite → Dark) with real-time preview and toast notifications.
+    - **Login/Logout Button:** Simulates authentication flow - opens sign-in page for login or clears profile data for logout.
+    - **Enhanced Action Buttons:** "Ride Before" and "Ride Later" buttons now show detailed feature descriptions instead of generic "coming soon" messages.
+- **Passenger Navigation System:**
+    - **Bottom Navigation Bar:** Functional navigation with Home, Map View, and Profile links.
+    - **Map Page (`/passenger/map`):** New dedicated map view page with enhanced features, navigation controls, and map feature descriptions.
+    - **Profile Page (`/passenger/profile`):** Comprehensive user profile management page with personal information editing and quick actions.
+- **Payment Methods Integration:**
+    - **Complete Payment Methods Management:** Full-featured payment system in the passenger profile page.
+    - **Supported Payment Methods:**
+        - **GCash:** Uses actual GCash logo from `/GCash.png` with e-wallet functionality.
+        - **PayMaya:** Uses actual Maya logo from `/maya-logo.png` with e-wallet functionality.
+        - **TriCoin:** Custom gold gradient circular icon with "₮" symbol for cryptocurrency payments.
+    - **Payment Features:**
+        - Set default payment method with visual feedback and state management.
+        - Balance display for each payment method (₱1,250.50 for GCash, ₱850.25 for PayMaya, ₱45.75 for TriCoin).
+        - Modal-based payment method selection and management interface.
+        - Visual distinction for default payment method (purple border and background).
+        - "Add Payment Method" functionality with placeholder for future expansion.
+        - Toast notifications for payment method updates and user feedback.
 - **Route Restructuring:**
     - Dispatcher related pages (Dashboard, Triders, Settings) moved under `/dispatcher` route.
     - `/passenger` and `/trider` routes remain top-level for role simulation.
@@ -18,15 +54,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Mock ride request flow: searching, trider assignment, trider en route, ride completion.
     - Map display of assigned trider's live location (simulated) and ETA, with trider accurately following Mapbox-calculated route.
     - Distinct route colors for trider-to-pickup and pickup-to-dropoff segments.
-    - Geolocation for initial pickup suggestion. "Locate Me" button added inside pickup input field.
+    - **Geolocation Services Integration:**
+    - **Browser Geolocation API:** Uses `navigator.geolocation.getCurrentPosition()` with high accuracy enabled and 10-second timeout.
+    - **Coordinate System:** Implements WGS84 coordinate system (latitude/longitude) with 4-decimal precision for location accuracy.
+    - **Default Location:** Las Piñas City, Philippines center coordinates (14.4445°N, 120.9938°E) as fallback location.
+    - **Reverse Geocoding:** Mapbox Geocoding API integration for converting coordinates to human-readable addresses.
+    - **"Locate Me" Functionality:** Interactive button inside pickup input field for automatic location detection with error handling.
     - Address input fields with Mapbox Geocoding API for autocomplete/suggestions.
     - Orange-themed header (was Red Hat inspired, then purple, now orange accents).
     - Glassmorphism countdown timer card with neon green text for ETA, with visual cues for final 10 seconds.
     - Ride Ticket ID display.
     - Ride receipt dialog displayed upon ride completion (data logged to console, not DB).
     - Per-passenger map style settings (streets, satellite, dark) saved to localStorage.
+- **Development Server & Network Configuration:**
+    - **Local Development:** Next.js development server configured to run on `localhost:9002` with Turbopack enabled for faster builds.
+    - **Network Utilities:** Integrated `whatismyip.py` script for network diagnostics including LAN IP detection using `socket.gethostbyname()` method.
+    - **IP Geolocation Services:** External IP geolocation via ipinfo.io API for location-based network information.
+    - **Cross-platform Networking:** Socket-based hostname resolution and network interface detection compatible across operating systems.
 - **Trider Role Simulation (`/trider`):**
-    - UI for trider to go online/offline. Geolocation on going online to set initial position.
+    - UI for trider to go online/offline. **Enhanced Geolocation:** Uses browser's native geolocation API with high accuracy positioning and automatic fallback to TODA zone center coordinates.
     - View and accept mock ride requests within their TODA zone.
     - Map display of current location, active ride details, and route.
     - Simulation of trider movement along Mapbox-calculated routes.
@@ -64,6 +110,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Homepage (`/`) now uses a dynamic, glassmorphic design with a central triangular TriGo logo (auto-rickshaw SVG) that flips and has an electric aura on hover. Links to passenger, trider, dispatcher, and admin roles.
 
 ### Changed
+- **Enhanced User Experience:** All passenger landing page buttons now provide meaningful interactions instead of placeholder functionality.
+- **Improved Navigation:** Bottom navigation bar now links to actual functional pages instead of placeholder routes.
+- **Payment System Integration:** Profile page now includes a complete payment management system with real payment method options.
 - Dispatch Dashboard main page is now `/dispatcher`.
 - Trider Management Dashboard is now `/dispatcher/triders`.
 - Application Settings page is now `/dispatcher/settings`.
@@ -120,12 +169,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Chat functionality UI (mocked).
     - Simulated payout and status change actions.
 - Custom TriGo logo and alert icon in the sidebar.
-- Helper utilities for geolocation (`geoUtils.ts`).
-- Defined TODA zones for Las Piñas City, Philippines.
-- Ensured triders respect TODA zone boundaries for pickups.
+- **Geolocation Utilities (`geoUtils.ts`):**
+    - **Haversine Formula Implementation:** Calculates accurate distances between coordinates using Earth's radius (6371 km).
+    - **Coordinate System:** WGS84 standard with latitude/longitude decimal degrees for global compatibility.
+    - **Zone Boundary Detection:** Point-in-circle algorithms for TODA zone validation using radius-based calculations.
+    - **GeoJSON Circle Generation:** Creates polygon approximations of circular zones with configurable point density (default 64 points).
+    - **Random Point Generation:** Generates random coordinates within circular boundaries for simulation purposes.
+- **Geographic Configuration:**
+    - **Default Location:** Las Piñas City, Philippines center coordinates (14.4445°N, 120.9938°E).
+    - **TODA Zone Definitions:** Circular zones with center coordinates and radius specifications for tricycle operations.
+    - **Zone Boundary Enforcement:** Ensures triders respect TODA zone boundaries for pickup requests.
 - Initial README.md and CHANGELOG.md.
-- Updated Mapbox map default location to Las Piñas City, Philippines.
-- Used Philippine Peso (₱) symbol for currency display.
+- **Localization:** Philippine Peso (₱) symbol for currency display and local market adaptation.
 - Refined map marker colors and styles for better visibility.
 - Corrected Mapbox GL JS color parsing issues for dynamic theme colors.
 - Updated trider names to Jesus' apostles (12 triders with mock profiles).
