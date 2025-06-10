@@ -1,0 +1,48 @@
+{
+  "mcpServers": {
+    "time": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/robertsuarez/clone-trigo-lite/trigo-lite/mcp_servers/servers/src/time",
+        "mcp-server-time"
+      ]
+    },
+    "filesystem": {
+      "command": "node",
+      "args": [
+        "/Users/robertsuarez/clone-trigo-lite/trigo-lite/mcp_servers/servers/src/filesystem/dist/index.js",
+        "/Users/robertsuarez/clone-trigo-lite/trigo-lite",
+        "/Users/robertsuarez/Desktop",
+        "/tmp"
+      ]
+    },
+    "git": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/robertsuarez/clone-trigo-lite/trigo-lite/mcp_servers/servers/src/git",
+        "mcp-server-git",
+        "--repository",
+        "/Users/robertsuarez/clone-trigo-lite/trigo-lite"
+      ]
+    },
+    "fetch": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/robertsuarez/clone-trigo-lite/trigo-lite/mcp_servers/servers/src/fetch",
+        "mcp-server-fetch"
+      ]
+    },
+    "memory": {
+      "command": "node",
+      "args": [
+        "/Users/robertsuarez/clone-trigo-lite/trigo-lite/mcp_servers/servers/src/memory/dist/index.js"
+      ]
+    }
+  }
+}
