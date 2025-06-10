@@ -77,8 +77,6 @@ body {
     --button-circle-orbit-ellipse-duration: calc(10s / var(--animation-speed-multiplier));
   }
 
-  /* Remove the .dark class specific overrides as this is now the default */
-
   * {
     @apply border-[--border];
   }
@@ -560,14 +558,14 @@ body {
 .apple-glass {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px); /* Added for Safari compatibility */
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .apple-glass-dark {
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px); /* Added for Safari compatibility */
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 

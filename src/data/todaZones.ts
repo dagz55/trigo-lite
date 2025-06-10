@@ -22,5 +22,6 @@ export const todaZones: TodaZone[] = [
   { id: '19', name: 'NUVTODA', areaOfOperation: 'Urbanville Village, Talon Tres', center: { latitude: 14.439000, longitude: 120.998000 }, radiusKm: 0.2, boundary: [] },
   { id: '20', name: 'ZOLIVIMATODA', areaOfOperation: 'DBP Village, Almanza Uno', center: { latitude: 14.430000, longitude: 121.000000 }, radiusKm: 0.4, boundary: [] },
   { id: '21', name: 'P1TODA', areaOfOperation: 'Pamplona Uno', center: { latitude: 14.4550, longitude: 120.9800 }, radiusKm: 0.7, boundary: [] },
+  { id: '22', name: 'BFRDTODA', areaOfOperation: 'BF Resort Drive, Talon Dos', center: { latitude: 14.4444, longitude: 120.9938 }, radiusKm: 0.5, boundary: [] },
   { id: 'ALABANG_ZAPOTE_EXIT', name: 'Alabang-Zapote Road Exit', areaOfOperation: 'Alabang-Zapote Road, Las Piñas', center: { latitude: 14.4167, longitude: 121.0000 }, radiusKm: 0.1, boundary: [] },
 ];
