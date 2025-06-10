@@ -42,6 +42,7 @@ const TriGoCentralLogo = () => (
         transform-style-3d
         group-hover:rotate-y-180
         electric-animation
+        clip-path-triangle
       "
       style={{
         clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
@@ -474,5 +475,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-

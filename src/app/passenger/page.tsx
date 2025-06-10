@@ -47,9 +47,13 @@ import {
   MapPin,
   SettingsIcon as SettingsIconLucide,
   Ticket,
-  XCircle
+  XCircle,
+  MenuIcon,
+  AlertCircle,
+  MessageCircle
 } from 'lucide-react';
-import * as React from 'react'; // Ensure React is imported for useState/useRef
+import * as React from 'react'; // Ensure React is imported for useState/useRef, and Suspense
+import { Suspense } from 'react'; // Import Suspense
 import Map, { Layer, MapRef, Marker, Source } from 'react-map-gl';
 import { useSearchParams } from 'next/navigation'; // Import useSearchParams
 import Link from 'next/link'; // Import Link component
@@ -117,8 +121,6 @@ function formatCountdown(seconds: number | null): string {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-import { AlertCircle, MessageCircle } from 'lucide-react'; // Import AlertCircle and MessageCircle icons
-
 const TriGoPassengerLogoInHeader = () => (
   <Link href="/passenger" passHref>
     <img src="/trigo_icon.png" alt="TriGo Logo" width="36" height="36" className="mr-1" />
@@ -126,7 +128,7 @@ const TriGoPassengerLogoInHeader = () => (
 );
 
 
-export default function PassengerPage() {
+function PassengerPageContent() {
   const searchParams = useSearchParams(); // Initialize useSearchParams
   const initialView = searchParams.get('view') === 'transport' ? 'requestingRide' : 'landing';
 
@@ -277,7 +279,7 @@ export default function PassengerPage() {
         const accentColorVar = computedStyles.getPropertyValue('--accent').trim();
         // Keep dynamic route colors for now, can refine later if needed
         setTriderToPickupRouteColor(accentColorVar ? parseHsl(accentColorVar) : 'hsl(120, 70%, 50%)');
-        const passengerAccentColorVar = computedStyles.getPropertyValue('--passenger-accent-color').trim();
+        const passengerAccentColorVar = computedStyles.getPropertyValue('--passenger-accent').trim();
         setPickupToDropoffRouteColor(passengerAccentColorVar ? parseHsl(passengerAccentColorVar) : 'hsl(262, 78%, 59%)'); // Fallback to default if not found
     }
   }, []);
@@ -407,17 +409,26 @@ export default function PassengerPage() {
       if (showToastFeedback) handleStatusToast("Route Error", "Failed to fetch route information.", "destructive");
     }
     return null;
-  }, [MAPBOX_TOKEN, handleStatusToast]);
+  }, [MAPBOX_TOKEN, handleStatusToast, addTimelineEvent, rideState.status]);
 
   const performGeolocation = React.useCallback(async (setAsPickup = true) => {
     if (settingsLoading) {
         setIsGeolocating(false);
         return;
     }
-    if (!navigator.geolocation || !MAPBOX_TOKEN) {
-        handleStatusToast("Geolocation Unavailable", "Your browser does not support geolocation or Mapbox token is missing.", "destructive");
+    if (!navigator.geolocation) {
+        handleStatusToast("Geolocation Unavailable", "Your browser does not support geolocation.", "destructive");
         return;
     }
+    if (!MAPBOX_TOKEN || MAPBOX_TOKEN.trim() === '') {
+        handleStatusToast("Configuration Error", "Mapbox access token is missing or invalid. Cannot perform geocoding.", "destructive");
+        return;
+    }
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      handleStatusToast("Geolocation Restricted", "Geolocation requires a secure connection (HTTPS). Please run the application over HTTPS.", "destructive");
+      return;
+    }
+
     setIsGeolocating(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -485,9 +496,9 @@ export default function PassengerPage() {
         if(setAsPickup) setRideState(prev => ({ ...prev, status: 'selectingPickup' }));
         setIsGeolocating(false);
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      { timeout: 30000, enableHighAccuracy: true } // Increased timeout to 30 seconds
     );
-  }, [getTodaZoneForLocation, handleStatusToast, getTodaTerminalExitPoint, calculateEstimatedFare, fetchRoute, settingsLoading, addTimelineEvent]);
+  }, [getTodaZoneForLocation, handleStatusToast, getTodaTerminalExitPoint, calculateEstimatedFare, fetchRoute, settingsLoading, addTimelineEvent, MAPBOX_TOKEN]);
 
   React.useEffect(() => {
     let storedProfile = null;
@@ -819,7 +830,8 @@ export default function PassengerPage() {
       setDropoffInput(suggestion.place_name);
       setDropoffSuggestions([]);
        addTimelineEvent(`Dropoff location set to: ${suggestion.place_name}`, 'confirmingRide', 'passenger');
-       handleStatusToast("Dropoff Set", "Review details and confirm.");
+       if(rideState.pickupLocation) fetchRoute(rideState.pickupLocation, location, 'confirmation', false);
+      handleStatusToast("Dropoff Set", "Review details and confirm.");
       if (rideState.pickupLocation && location && !settingsLoading) {
         const fare = calculateEstimatedFare(rideState.pickupLocation, location, rideState.pickupTodaZoneId);
         await fetchRoute(rideState.pickupLocation, location, 'confirmation', false);
@@ -828,7 +840,7 @@ export default function PassengerPage() {
     }
     setViewState(prev => ({ ...prev, ...location, zoom: 15 }));
     setActiveSuggestionBox(null);
-  }, [getTodaZoneForLocation, handleStatusToast, calculateEstimatedFare, fetchRoute, rideState.pickupLocation, rideState.dropoffLocation, rideState.pickupTodaZoneId, getTodaTerminalExitPoint, settingsLoading, addTimelineEvent]);
+  }, [getTodaZoneForLocation, handleStatusToast, calculateEstimatedFare, fetchRoute, rideState.pickupLocation, rideState.pickupTodaZoneId, getTodaTerminalExitPoint, settingsLoading, addTimelineEvent]);
 
 
   const handleMapClick = React.useCallback((event: mapboxgl.MapLayerMouseEvent) => {
@@ -975,8 +987,7 @@ export default function PassengerPage() {
        addTimelineEvent(`Simulated dropoff location set: ${simulatedDropoffAddress}`, 'confirmingRide', 'passenger');
        handleStatusToast("Simulated Dropoff Set", "Review details and confirm.");
     }
-
- }, [rideState.pickupLocation, rideState.pickupTodaZoneId, rideState.dropoffLocation, calculateEstimatedFare, fetchRoute, handleStatusToast, getTodaTerminalExitPoint, settingsLoading, addTimelineEvent]);
+  }, [rideState.pickupLocation, rideState.pickupTodaZoneId, rideState.dropoffLocation, calculateEstimatedFare, fetchRoute, handleStatusToast, getTodaTerminalExitPoint, settingsLoading, addTimelineEvent]);
 
   const handleEmergencyAlert = React.useCallback(() => {
     if (!isPremium) {
@@ -1489,7 +1500,7 @@ export default function PassengerPage() {
                         <SelectValue placeholder="Select map style" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="streets">Streets</SelectItem>
+                        <SelectItem value="standard">Streets</SelectItem>
                         <SelectItem value="satellite">Satellite</SelectItem>
                         <SelectItem value="dark">Dark</SelectItem>
                       </SelectContent>
@@ -1578,7 +1589,7 @@ export default function PassengerPage() {
                     <Card className="absolute top-full mt-1 w-full shadow-lg z-20 bg-white">
                       <CardContent className="p-0 max-h-48 overflow-y-auto">
                         {pickupSuggestions.map(suggestion => (
-                          <div key={suggestion.id} className={`p-3 cursor-pointer hover:bg-neutral-100 border-b last:border-b-0 text-neutral-100`} onClick={() => handleSuggestionSelect(suggestion, 'pickup')}>
+                          <div key={suggestion.id} className={`p-3 cursor-pointer hover:bg-neutral-100 border-b last:border-b-0 text-black`} onClick={() => handleSuggestionSelect(suggestion, 'pickup')}>
                             {suggestion.place_name}
                           </div> ))}
                       </CardContent>
@@ -1599,7 +1610,7 @@ export default function PassengerPage() {
                       <Card className="absolute top-full mt-1 w-full shadow-lg z-20 bg-white">
                         <CardContent className="p-0 max-h-48 overflow-y-auto">
                           {dropoffSuggestions.map(suggestion => (
-                            <div key={suggestion.id} className={`p-3 cursor-pointer hover:bg-neutral-100 border-b last:border-b-0 text-neutral-100`} onClick={() => handleSuggestionSelect(suggestion, 'dropoff')}>
+                            <div key={suggestion.id} className={`p-3 cursor-pointer hover:bg-neutral-100 border-b last:border-b-0 text-black`} onClick={() => handleSuggestionSelect(suggestion, 'dropoff')}>
                               {suggestion.place_name}
                             </div> ))}
                         </CardContent>
@@ -1726,4 +1737,12 @@ export default function PassengerPage() {
 
   </div>
 );
+}
+
+export default function PassengerPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PassengerPageContent />
+    </Suspense>
+  );
 }
