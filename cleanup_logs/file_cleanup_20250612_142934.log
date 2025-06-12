@@ -1,0 +1,233 @@
+2025-06-12 14:29:34,196 - INFO - ============================================================
+2025-06-12 14:29:34,196 - INFO - macOS File Cleanup Script Started
+2025-06-12 14:29:34,196 - INFO - Target Directory: /Users/robertsuarez/Downloads
+2025-06-12 14:29:34,196 - INFO - Minimum File Size: 1.00 GB
+2025-06-12 14:29:34,196 - INFO - Interactive Mode: True
+2025-06-12 14:29:34,196 - INFO - Dry Run Mode: False
+2025-06-12 14:29:34,197 - INFO - ============================================================
+2025-06-12 14:29:34,197 - INFO - 🔍 Starting file scan...
+2025-06-12 14:29:34,238 - INFO - Progress: 1000 files scanned, 0 large files found
+2025-06-12 14:29:34,261 - INFO - Progress: 2000 files scanned, 0 large files found
+2025-06-12 14:29:34,279 - INFO - Progress: 3000 files scanned, 0 large files found
+2025-06-12 14:29:34,299 - INFO - Progress: 4000 files scanned, 0 large files found
+2025-06-12 14:29:34,315 - INFO - Progress: 5000 files scanned, 0 large files found
+2025-06-12 14:29:34,337 - INFO - Progress: 6000 files scanned, 0 large files found
+2025-06-12 14:29:34,352 - INFO - Progress: 7000 files scanned, 0 large files found
+2025-06-12 14:29:34,368 - INFO - Progress: 8000 files scanned, 0 large files found
+2025-06-12 14:29:34,445 - INFO - Progress: 9000 files scanned, 0 large files found
+2025-06-12 14:29:34,498 - INFO - Progress: 10000 files scanned, 0 large files found
+2025-06-12 14:29:34,521 - INFO - Progress: 11000 files scanned, 0 large files found
+2025-06-12 14:29:34,546 - INFO - Progress: 12000 files scanned, 0 large files found
+2025-06-12 14:29:34,565 - INFO - Progress: 13000 files scanned, 0 large files found
+2025-06-12 14:29:34,590 - INFO - Progress: 14000 files scanned, 0 large files found
+2025-06-12 14:29:34,597 - INFO - Progress: 15000 files scanned, 0 large files found
+2025-06-12 14:29:34,605 - INFO - Progress: 16000 files scanned, 0 large files found
+2025-06-12 14:29:34,616 - INFO - Progress: 17000 files scanned, 0 large files found
+2025-06-12 14:29:34,625 - INFO - Progress: 18000 files scanned, 0 large files found
+2025-06-12 14:29:34,640 - INFO - Progress: 19000 files scanned, 0 large files found
+2025-06-12 14:29:34,657 - INFO - Progress: 20000 files scanned, 0 large files found
+2025-06-12 14:29:34,701 - INFO - Progress: 21000 files scanned, 0 large files found
+2025-06-12 14:29:34,717 - INFO - Progress: 22000 files scanned, 0 large files found
+2025-06-12 14:29:34,733 - INFO - Progress: 23000 files scanned, 0 large files found
+2025-06-12 14:29:34,752 - INFO - Progress: 24000 files scanned, 0 large files found
+2025-06-12 14:29:34,769 - INFO - Progress: 25000 files scanned, 0 large files found
+2025-06-12 14:29:34,792 - INFO - Progress: 26000 files scanned, 0 large files found
+2025-06-12 14:29:34,809 - INFO - Progress: 27000 files scanned, 0 large files found
+2025-06-12 14:29:34,827 - INFO - Progress: 28000 files scanned, 0 large files found
+2025-06-12 14:29:34,843 - INFO - Progress: 29000 files scanned, 0 large files found
+2025-06-12 14:29:34,857 - INFO - Progress: 30000 files scanned, 0 large files found
+2025-06-12 14:29:34,871 - INFO - Progress: 31000 files scanned, 0 large files found
+2025-06-12 14:29:34,886 - INFO - Progress: 32000 files scanned, 0 large files found
+2025-06-12 14:29:34,902 - INFO - Progress: 33000 files scanned, 0 large files found
+2025-06-12 14:29:34,914 - INFO - Progress: 34000 files scanned, 0 large files found
+2025-06-12 14:29:34,922 - INFO - Progress: 35000 files scanned, 0 large files found
+2025-06-12 14:29:34,933 - INFO - Progress: 36000 files scanned, 0 large files found
+2025-06-12 14:29:34,945 - INFO - Progress: 37000 files scanned, 0 large files found
+2025-06-12 14:29:34,956 - INFO - Progress: 38000 files scanned, 0 large files found
+2025-06-12 14:29:34,967 - INFO - Progress: 39000 files scanned, 0 large files found
+2025-06-12 14:29:34,971 - INFO - Large file found: /Users/robertsuarez/Downloads/348d39b8-0d55-4a1c-bd79-30e01fcfe9dd-files/android/android-studio-2024.3.2.14-mac_arm.dmg (1.25 GB)
+2025-06-12 14:29:34,981 - INFO - Progress: 40000 files scanned, 1 large files found
+2025-06-12 14:29:34,991 - INFO - Progress: 41000 files scanned, 1 large files found
+2025-06-12 14:29:34,999 - INFO - Progress: 42000 files scanned, 1 large files found
+2025-06-12 14:29:35,009 - INFO - Progress: 43000 files scanned, 1 large files found
+2025-06-12 14:29:35,023 - INFO - Progress: 44000 files scanned, 1 large files found
+2025-06-12 14:29:35,032 - INFO - Progress: 45000 files scanned, 1 large files found
+2025-06-12 14:29:35,043 - INFO - Progress: 46000 files scanned, 1 large files found
+2025-06-12 14:29:35,054 - INFO - Progress: 47000 files scanned, 1 large files found
+2025-06-12 14:29:35,063 - INFO - Progress: 48000 files scanned, 1 large files found
+2025-06-12 14:29:35,076 - INFO - Progress: 49000 files scanned, 1 large files found
+2025-06-12 14:29:35,096 - INFO - Progress: 50000 files scanned, 1 large files found
+2025-06-12 14:29:35,110 - INFO - Progress: 51000 files scanned, 1 large files found
+2025-06-12 14:29:35,131 - INFO - Progress: 52000 files scanned, 1 large files found
+2025-06-12 14:29:35,145 - INFO - Progress: 53000 files scanned, 1 large files found
+2025-06-12 14:29:35,157 - INFO - Progress: 54000 files scanned, 1 large files found
+2025-06-12 14:29:35,167 - INFO - Progress: 55000 files scanned, 1 large files found
+2025-06-12 14:29:35,177 - INFO - Progress: 56000 files scanned, 1 large files found
+2025-06-12 14:29:35,192 - INFO - Progress: 57000 files scanned, 1 large files found
+2025-06-12 14:29:35,203 - INFO - Progress: 58000 files scanned, 1 large files found
+2025-06-12 14:29:35,219 - INFO - Progress: 59000 files scanned, 1 large files found
+2025-06-12 14:29:35,233 - INFO - Progress: 60000 files scanned, 1 large files found
+2025-06-12 14:29:35,243 - INFO - Progress: 61000 files scanned, 1 large files found
+2025-06-12 14:29:35,258 - INFO - Progress: 62000 files scanned, 1 large files found
+2025-06-12 14:29:35,269 - INFO - Progress: 63000 files scanned, 1 large files found
+2025-06-12 14:29:35,284 - INFO - Progress: 64000 files scanned, 1 large files found
+2025-06-12 14:29:35,295 - INFO - Progress: 65000 files scanned, 1 large files found
+2025-06-12 14:29:35,306 - INFO - Progress: 66000 files scanned, 1 large files found
+2025-06-12 14:29:35,317 - INFO - Progress: 67000 files scanned, 1 large files found
+2025-06-12 14:29:35,327 - INFO - Progress: 68000 files scanned, 1 large files found
+2025-06-12 14:29:35,338 - INFO - Progress: 69000 files scanned, 1 large files found
+2025-06-12 14:29:35,349 - INFO - Progress: 70000 files scanned, 1 large files found
+2025-06-12 14:29:35,360 - INFO - Progress: 71000 files scanned, 1 large files found
+2025-06-12 14:29:35,366 - INFO - Progress: 72000 files scanned, 1 large files found
+2025-06-12 14:29:35,376 - INFO - Progress: 73000 files scanned, 1 large files found
+2025-06-12 14:29:35,385 - INFO - Progress: 74000 files scanned, 1 large files found
+2025-06-12 14:29:35,393 - INFO - Progress: 75000 files scanned, 1 large files found
+2025-06-12 14:29:35,401 - INFO - Progress: 76000 files scanned, 1 large files found
+2025-06-12 14:29:35,415 - INFO - Progress: 77000 files scanned, 1 large files found
+2025-06-12 14:29:35,421 - INFO - Progress: 78000 files scanned, 1 large files found
+2025-06-12 14:29:35,427 - INFO - Progress: 79000 files scanned, 1 large files found
+2025-06-12 14:29:35,433 - INFO - Progress: 80000 files scanned, 1 large files found
+2025-06-12 14:29:35,442 - INFO - Progress: 81000 files scanned, 1 large files found
+2025-06-12 14:29:35,449 - INFO - Progress: 82000 files scanned, 1 large files found
+2025-06-12 14:29:35,455 - INFO - Progress: 83000 files scanned, 1 large files found
+2025-06-12 14:29:35,462 - INFO - Progress: 84000 files scanned, 1 large files found
+2025-06-12 14:29:35,473 - INFO - Progress: 85000 files scanned, 1 large files found
+2025-06-12 14:29:35,483 - INFO - Progress: 86000 files scanned, 1 large files found
+2025-06-12 14:29:35,495 - INFO - Progress: 87000 files scanned, 1 large files found
+2025-06-12 14:29:35,518 - INFO - Progress: 88000 files scanned, 1 large files found
+2025-06-12 14:29:35,543 - INFO - Progress: 89000 files scanned, 1 large files found
+2025-06-12 14:29:35,557 - INFO - Progress: 90000 files scanned, 1 large files found
+2025-06-12 14:29:35,578 - INFO - Progress: 91000 files scanned, 1 large files found
+2025-06-12 14:29:35,594 - INFO - Progress: 92000 files scanned, 1 large files found
+2025-06-12 14:29:35,605 - INFO - Progress: 93000 files scanned, 1 large files found
+2025-06-12 14:29:35,617 - INFO - Progress: 94000 files scanned, 1 large files found
+2025-06-12 14:29:35,630 - INFO - Progress: 95000 files scanned, 1 large files found
+2025-06-12 14:29:35,639 - INFO - Progress: 96000 files scanned, 1 large files found
+2025-06-12 14:29:35,652 - INFO - Progress: 97000 files scanned, 1 large files found
+2025-06-12 14:29:35,666 - INFO - Progress: 98000 files scanned, 1 large files found
+2025-06-12 14:29:35,683 - INFO - Progress: 99000 files scanned, 1 large files found
+2025-06-12 14:29:35,692 - INFO - Progress: 100000 files scanned, 1 large files found
+2025-06-12 14:29:35,701 - INFO - Progress: 101000 files scanned, 1 large files found
+2025-06-12 14:29:35,711 - INFO - Progress: 102000 files scanned, 1 large files found
+2025-06-12 14:29:35,725 - INFO - Progress: 103000 files scanned, 1 large files found
+2025-06-12 14:29:35,736 - INFO - Progress: 104000 files scanned, 1 large files found
+2025-06-12 14:29:35,748 - INFO - Progress: 105000 files scanned, 1 large files found
+2025-06-12 14:29:35,758 - INFO - Progress: 106000 files scanned, 1 large files found
+2025-06-12 14:29:35,769 - INFO - Progress: 107000 files scanned, 1 large files found
+2025-06-12 14:29:35,777 - INFO - Progress: 108000 files scanned, 1 large files found
+2025-06-12 14:29:35,789 - INFO - Progress: 109000 files scanned, 1 large files found
+2025-06-12 14:29:35,799 - INFO - Progress: 110000 files scanned, 1 large files found
+2025-06-12 14:29:35,809 - INFO - Progress: 111000 files scanned, 1 large files found
+2025-06-12 14:29:35,821 - INFO - Progress: 112000 files scanned, 1 large files found
+2025-06-12 14:29:35,833 - INFO - Progress: 113000 files scanned, 1 large files found
+2025-06-12 14:29:35,843 - INFO - Progress: 114000 files scanned, 1 large files found
+2025-06-12 14:29:35,855 - INFO - Progress: 115000 files scanned, 1 large files found
+2025-06-12 14:29:35,865 - INFO - Progress: 116000 files scanned, 1 large files found
+2025-06-12 14:29:35,874 - INFO - Progress: 117000 files scanned, 1 large files found
+2025-06-12 14:29:35,887 - INFO - Progress: 118000 files scanned, 1 large files found
+2025-06-12 14:29:35,902 - INFO - Progress: 119000 files scanned, 1 large files found
+2025-06-12 14:29:35,917 - INFO - Progress: 120000 files scanned, 1 large files found
+2025-06-12 14:29:35,932 - INFO - Progress: 121000 files scanned, 1 large files found
+2025-06-12 14:29:35,945 - INFO - Progress: 122000 files scanned, 1 large files found
+2025-06-12 14:29:35,957 - INFO - Progress: 123000 files scanned, 1 large files found
+2025-06-12 14:29:35,968 - INFO - Progress: 124000 files scanned, 1 large files found
+2025-06-12 14:29:35,979 - INFO - Progress: 125000 files scanned, 1 large files found
+2025-06-12 14:29:35,990 - INFO - Progress: 126000 files scanned, 1 large files found
+2025-06-12 14:29:36,001 - INFO - Progress: 127000 files scanned, 1 large files found
+2025-06-12 14:29:36,012 - INFO - Progress: 128000 files scanned, 1 large files found
+2025-06-12 14:29:36,024 - INFO - Progress: 129000 files scanned, 1 large files found
+2025-06-12 14:29:36,035 - INFO - Progress: 130000 files scanned, 1 large files found
+2025-06-12 14:29:36,047 - INFO - Progress: 131000 files scanned, 1 large files found
+2025-06-12 14:29:36,058 - INFO - Progress: 132000 files scanned, 1 large files found
+2025-06-12 14:29:36,071 - INFO - Progress: 133000 files scanned, 1 large files found
+2025-06-12 14:29:36,092 - INFO - Progress: 134000 files scanned, 1 large files found
+2025-06-12 14:29:36,102 - INFO - Progress: 135000 files scanned, 1 large files found
+2025-06-12 14:29:36,116 - INFO - Progress: 136000 files scanned, 1 large files found
+2025-06-12 14:29:36,123 - INFO - Progress: 137000 files scanned, 1 large files found
+2025-06-12 14:29:36,133 - INFO - Progress: 138000 files scanned, 1 large files found
+2025-06-12 14:29:36,141 - INFO - Progress: 139000 files scanned, 1 large files found
+2025-06-12 14:29:36,151 - INFO - Progress: 140000 files scanned, 1 large files found
+2025-06-12 14:29:36,159 - INFO - Progress: 141000 files scanned, 1 large files found
+2025-06-12 14:29:36,170 - INFO - Progress: 142000 files scanned, 1 large files found
+2025-06-12 14:29:36,179 - INFO - Progress: 143000 files scanned, 1 large files found
+2025-06-12 14:29:36,187 - INFO - Progress: 144000 files scanned, 1 large files found
+2025-06-12 14:29:36,198 - INFO - Progress: 145000 files scanned, 1 large files found
+2025-06-12 14:29:36,208 - INFO - Progress: 146000 files scanned, 1 large files found
+2025-06-12 14:29:36,218 - INFO - Progress: 147000 files scanned, 1 large files found
+2025-06-12 14:29:36,256 - INFO - Progress: 148000 files scanned, 1 large files found
+2025-06-12 14:29:36,311 - INFO - Progress: 149000 files scanned, 1 large files found
+2025-06-12 14:29:36,353 - INFO - Progress: 150000 files scanned, 1 large files found
+2025-06-12 14:29:36,388 - INFO - Progress: 151000 files scanned, 1 large files found
+2025-06-12 14:29:36,417 - INFO - Progress: 152000 files scanned, 1 large files found
+2025-06-12 14:29:36,458 - INFO - Progress: 153000 files scanned, 1 large files found
+2025-06-12 14:29:36,488 - INFO - Progress: 154000 files scanned, 1 large files found
+2025-06-12 14:29:36,518 - INFO - Progress: 155000 files scanned, 1 large files found
+2025-06-12 14:29:36,545 - INFO - Progress: 156000 files scanned, 1 large files found
+2025-06-12 14:29:36,566 - INFO - Progress: 157000 files scanned, 1 large files found
+2025-06-12 14:29:36,593 - INFO - Progress: 158000 files scanned, 1 large files found
+2025-06-12 14:29:36,623 - INFO - Progress: 159000 files scanned, 1 large files found
+2025-06-12 14:29:36,656 - INFO - Progress: 160000 files scanned, 1 large files found
+2025-06-12 14:29:36,689 - INFO - Progress: 161000 files scanned, 1 large files found
+2025-06-12 14:29:36,712 - INFO - Progress: 162000 files scanned, 1 large files found
+2025-06-12 14:29:36,738 - INFO - Progress: 163000 files scanned, 1 large files found
+2025-06-12 14:29:36,761 - INFO - Progress: 164000 files scanned, 1 large files found
+2025-06-12 14:29:36,783 - INFO - Progress: 165000 files scanned, 1 large files found
+2025-06-12 14:29:36,810 - INFO - Progress: 166000 files scanned, 1 large files found
+2025-06-12 14:29:36,833 - INFO - Progress: 167000 files scanned, 1 large files found
+2025-06-12 14:29:36,856 - INFO - Progress: 168000 files scanned, 1 large files found
+2025-06-12 14:29:36,881 - INFO - Progress: 169000 files scanned, 1 large files found
+2025-06-12 14:29:36,903 - INFO - Progress: 170000 files scanned, 1 large files found
+2025-06-12 14:29:36,920 - INFO - Progress: 171000 files scanned, 1 large files found
+2025-06-12 14:29:36,940 - INFO - Progress: 172000 files scanned, 1 large files found
+2025-06-12 14:29:36,958 - INFO - Progress: 173000 files scanned, 1 large files found
+2025-06-12 14:29:36,975 - INFO - Progress: 174000 files scanned, 1 large files found
+2025-06-12 14:29:36,996 - INFO - Progress: 175000 files scanned, 1 large files found
+2025-06-12 14:29:37,016 - INFO - Progress: 176000 files scanned, 1 large files found
+2025-06-12 14:29:37,033 - INFO - Progress: 177000 files scanned, 1 large files found
+2025-06-12 14:29:37,053 - INFO - Progress: 178000 files scanned, 1 large files found
+2025-06-12 14:29:37,068 - INFO - Progress: 179000 files scanned, 1 large files found
+2025-06-12 14:29:37,087 - INFO - Progress: 180000 files scanned, 1 large files found
+2025-06-12 14:29:37,106 - INFO - Progress: 181000 files scanned, 1 large files found
+2025-06-12 14:29:37,143 - INFO - Progress: 182000 files scanned, 1 large files found
+2025-06-12 14:29:37,176 - INFO - Progress: 183000 files scanned, 1 large files found
+2025-06-12 14:29:37,208 - INFO - Progress: 184000 files scanned, 1 large files found
+2025-06-12 14:29:37,247 - INFO - Progress: 185000 files scanned, 1 large files found
+2025-06-12 14:29:37,277 - INFO - Progress: 186000 files scanned, 1 large files found
+2025-06-12 14:29:37,312 - INFO - Progress: 187000 files scanned, 1 large files found
+2025-06-12 14:29:37,351 - INFO - Progress: 188000 files scanned, 1 large files found
+2025-06-12 14:29:37,404 - INFO - Progress: 189000 files scanned, 1 large files found
+2025-06-12 14:29:37,444 - INFO - Progress: 190000 files scanned, 1 large files found
+2025-06-12 14:29:37,483 - INFO - Progress: 191000 files scanned, 1 large files found
+2025-06-12 14:29:37,520 - INFO - Progress: 192000 files scanned, 1 large files found
+2025-06-12 14:29:37,554 - INFO - Progress: 193000 files scanned, 1 large files found
+2025-06-12 14:29:37,587 - INFO - Progress: 194000 files scanned, 1 large files found
+2025-06-12 14:29:37,621 - INFO - Progress: 195000 files scanned, 1 large files found
+2025-06-12 14:29:37,654 - INFO - Progress: 196000 files scanned, 1 large files found
+2025-06-12 14:29:37,691 - INFO - Progress: 197000 files scanned, 1 large files found
+2025-06-12 14:29:37,720 - INFO - Progress: 198000 files scanned, 1 large files found
+2025-06-12 14:29:37,754 - INFO - Progress: 199000 files scanned, 1 large files found
+2025-06-12 14:29:37,787 - INFO - Progress: 200000 files scanned, 1 large files found
+2025-06-12 14:29:37,816 - INFO - Progress: 201000 files scanned, 1 large files found
+2025-06-12 14:29:37,843 - INFO - Progress: 202000 files scanned, 1 large files found
+2025-06-12 14:29:37,899 - INFO - Progress: 203000 files scanned, 1 large files found
+2025-06-12 14:29:37,933 - INFO - Progress: 204000 files scanned, 1 large files found
+2025-06-12 14:29:37,950 - INFO - 📊 Scan completed. Found 1 large files.
+2025-06-12 14:29:55,052 - INFO - ✅ Deleted: /Users/robertsuarez/Downloads/348d39b8-0d55-4a1c-bd79-30e01fcfe9dd-files/android/android-studio-2024.3.2.14-mac_arm.dmg (1.25 GB)
+2025-06-12 14:29:55,052 - INFO - CLEANUP SUMMARY:
+2025-06-12 14:29:55,053 - INFO - {
+  "start_time": "2025-06-12T14:29:34.195760",
+  "runtime_seconds": 20.857233,
+  "completion_status": "COMPLETED",
+  "files_scanned": 204786,
+  "files_deleted": 1,
+  "bytes_freed": 1346761753,
+  "large_files_found": 1,
+  "directories_scanned": 1,
+  "errors": {
+    "total": 0,
+    "permission_errors": 0,
+    "io_errors": 0,
+    "other_errors": 0
+  },
+  "interrupted": false
+}

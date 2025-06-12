@@ -1,0 +1,17 @@
+{
+  "start_time": "2025-06-12T14:29:34.195760",
+  "runtime_seconds": 20.85783,
+  "completion_status": "COMPLETED",
+  "files_scanned": 204786,
+  "files_deleted": 1,
+  "bytes_freed": 1346761753,
+  "large_files_found": 1,
+  "directories_scanned": 1,
+  "errors": {
+    "total": 0,
+    "permission_errors": 0,
+    "io_errors": 0,
+    "other_errors": 0
+  },
+  "interrupted": false
+}
