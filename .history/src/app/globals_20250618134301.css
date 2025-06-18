@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Font fallback definitions */
+:root {
+  --font-geist-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-geist-mono: Consolas, Monaco, 'Courier New', monospace;
+}
+
+body {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-geist-mono), monospace;
+}
+
+@layer base {
+  :root {
+    /* Dark theme based on the previous image, with updated primary/accent */
+    --background: 220 13% 7%; /* Very dark gray/blueish: #0F1114 */
+    --foreground: 210 20% 88%; /* Light gray/off-white: #D9DEE3 */
+    --card: 220 13% 11%; /* Darker content background: #1A1D21 */
+    --card-foreground: 210 20% 88%; /* Light gray/off-white */
+    --popover: 220 13% 9%; /* Slightly darker popover: #14171A */
+    --popover-foreground: 210 20% 88%;
+    
+    --primary: 90 90% 50%;            /* Vibrant Lime Green for buttons */
+    --primary-foreground: 90 90% 10%; /* Very Dark Green for text on lime buttons */
+    
+    --secondary: 220 13% 18%; /* Lighter dark gray for secondary elements/borders: #2A2F36 */
+    --secondary-foreground: 210 20% 88%;
+    --muted: 220 13% 22%; /* Muted dark gray: #333940 */
+    --muted-foreground: 210 15% 60%; /* Softer gray for muted text: #8C96A3 */
+    
+    --accent: 90 90% 50%;             /* Vibrant Lime Green for accent buttons/elements */
+    --accent-foreground: 90 90% 10%;  /* Very Dark Green for text on lime accent */
+    
+    --destructive: 0 72% 51%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 18%; /* #2A2F36 */
+    --input: 220 13% 14%; /* Darker input background: #1F2328 */
+    --ring: 90 90% 55%; /* Slightly lighter lime for rings */
+    --radius: 0.5rem;
+
+    /* Chart colors - can be adjusted if charts are used extensively */
+    --chart-1: 90 90% 50%; /* Lime */
+    --chart-2: 180 70% 45%; /* Teal as a secondary chart color */
+    --chart-3: 30 80% 55%;  /* Orange */
+    --chart-4: 280 65% 60%; /* Purple */
+    --chart-5: 340 75% 55%; /* Pink/Red */
+
+    /* Sidebar specific theme variables using the new dark theme */
+    --sidebar-background: 220 13% 9%; /* #14171A */
+    --sidebar-foreground: 210 20% 88%; /* #D9DEE3 */
+    --sidebar-primary: 90 90% 50%; /* Lime, for consistency if primary elements are in sidebar */
+    --sidebar-primary-foreground: 90 90% 10%; 
+    --sidebar-accent: 220 13% 22%; /* Muted dark gray for hover/active items #333940 */
+    --sidebar-accent-foreground: 210 20% 98%; /* White text on accent */
+    --sidebar-border: 220 13% 14%; /* #1F2328 */
+    --sidebar-ring: 90 90% 55%; /* Lime for ring */
+  }
+
+  /* Remove the .dark class specific overrides as this is now the default */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Mapbox specific styles to work with dark theme */
+.mapboxgl-popup-content {
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.3); /* Adjusted shadow for dark theme */
+}
+
+.mapboxgl-popup-close-button {
+  color: hsl(var(--card-foreground));
+  padding: 4px;
+}
+.mapboxgl-popup-close-button:hover {
+  background: hsl(var(--muted));
+}
+
+.mapboxgl-ctrl-attrib-inner a {
+  color: hsl(var(--primary)) !important;
+}
+
+.mapboxgl-ctrl-group {
+  background-color: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
+  /* Icons are typically SVGs, their fill might need to be targeted if they don't adapt */
+  /* For now, ensure button background is visible */
+}
+.mapboxgl-ctrl button {
+   background-color: hsl(var(--card)) !important;
+}
+.mapboxgl-ctrl button span {
+  /* Defaulting to Mapbox's icon color, can be overridden if needed */
+}
+
+.mapboxgl-ctrl button:not(:disabled):hover {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* Ensure Mapbox input fields in geocoder (if used) are themed */
+.mapboxgl-ctrl-geocoder--input {
+  background-color: hsl(var(--input)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+.mapboxgl-ctrl-geocoder--suggestion-list {
+  background-color: hsl(var(--popover)) !important;
+}
+.mapboxgl-ctrl-geocoder--suggestion {
+  color: hsl(var(--popover-foreground)) !important;
+}
+.mapboxgl-ctrl-geocoder--suggestion:hover {
+  background-color: hsl(var(--muted)) !important;
+}
+

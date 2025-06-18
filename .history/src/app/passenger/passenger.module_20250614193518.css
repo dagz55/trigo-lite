@@ -1,0 +1,10 @@
+/* Passenger Page CSS Module */
+
+.passengerHeader {
+  background-color: #1A1A1A;
+  color: #FFFFFF;
+}
+
+.redAccent {
+  color: hsl(0, 87%, 46%);
+} 

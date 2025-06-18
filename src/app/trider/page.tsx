@@ -1,6 +1,6 @@
-
 "use client";
 
+<<<<<<< HEAD
 import * as React from 'react';
 import { MapPin, Users, Bike, LogIn, UserCircle, CircleDollarSign, CheckCircle, XCircle, Loader2, Send, Edit3, LayoutDashboard, Wallet as WalletIcon, Settings as SettingsIcon, Star, ChevronRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,10 +17,51 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+||||||| parent of 1c0fdf2 (latest-jun182025)
+import * as React from 'react';
+import { MapPin, Users, Bike, LogIn, UserCircle, CircleDollarSign, CheckCircle, XCircle, Loader2, Send, Edit3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import Map, { Marker, Popup, Source, Layer, NavigationControl, MapRef } from 'react-map-gl';
+import type { Coordinates, RideRequest, TriderSimState, TriderProfile, RoutePath, TodaZone, TodaZoneChangeRequestStatus } from '@/types';
+import { todaZones as appTodaZones } from '@/data/todaZones';
+import { getRandomPointInCircle, calculateDistance } from '@/lib/geoUtils';
+import { useSettings } from '@/contexts/SettingsContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+=======
+>>>>>>> 1c0fdf2 (latest-jun182025)
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+<<<<<<< HEAD
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+||||||| parent of 1c0fdf2 (latest-jun182025)
+=======
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useSettings } from '@/contexts/SettingsContext';
+import { todaZones as appTodaZones } from '@/data/todaZones';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
+import { calculateDistance, getRandomPointInCircle } from '@/lib/geoUtils';
+import { cn } from '@/lib/utils';
+import type { Coordinates, RideRequest, RoutePath, TriderProfile, TriderSimState } from '@/types';
+import { formatDistanceToNow } from 'date-fns';
+import { Bike, ChevronDown, ChevronUp, CircleDollarSign, Edit3, Loader2, MapPin, Maximize2, Minimize2, Send, UserCircle, Users, XCircle } from 'lucide-react';
+import * as React from 'react';
+import Map, { Layer, MapRef, Marker, NavigationControl, Source } from 'react-map-gl';
+>>>>>>> 1c0fdf2 (latest-jun182025)
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TALON_KUATRO_ZONE_ID = '2'; 
@@ -61,14 +102,147 @@ const selfTriderProfileInitial: TriderProfile = {
   subscriptionStatus: 'basic',
 };
 
+<<<<<<< HEAD
 type TriderActiveView = 'dashboard' | 'wallet' | 'settings' | 'premium';
+||||||| parent of 1c0fdf2 (latest-jun182025)
+=======
+// CollapsibleCard component
+interface CollapsibleCardProps {
+  id: string;
+  children: React.ReactNode;
+  className?: string;
+  defaultCollapsed?: boolean;
+  title?: string;
+  badge?: React.ReactNode;
+}
+
+const CollapsibleCard: React.FC<CollapsibleCardProps> = ({ 
+  id, 
+  children, 
+  className, 
+  defaultCollapsed = false,
+  title,
+  badge
+}) => {
+  const [isCollapsed, setIsCollapsed] = React.useState(() => {
+    // Load saved state from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`trider-card-${id}-collapsed`);
+      return saved ? JSON.parse(saved) : defaultCollapsed;
+    }
+    return defaultCollapsed;
+  });
+
+  const [isMinimized, setIsMinimized] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`trider-card-${id}-minimized`);
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  const toggleCollapse = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`trider-card-${id}-collapsed`, JSON.stringify(newState));
+    }
+  };
+
+  const toggleMinimize = () => {
+    const newState = !isMinimized;
+    setIsMinimized(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`trider-card-${id}-minimized`, JSON.stringify(newState));
+    }
+  };
+
+  // Extract card header from children
+  const childrenArray = React.Children.toArray(children);
+  const cardHeader = childrenArray.find(child => 
+    React.isValidElement(child) && child.type === CardHeader
+  );
+  const cardContent = childrenArray.filter(child => 
+    React.isValidElement(child) && child.type !== CardHeader
+  );
+
+  if (isMinimized) {
+    return (
+      <Card className={cn("shadow-lg transition-all duration-300", className, "h-auto")}>
+        <CardHeader className="pb-3 cursor-pointer" onClick={toggleMinimize}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {title && <CardTitle className="text-md">{title}</CardTitle>}
+              {badge}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleMinimize();
+              }}
+              className="h-6 w-6 p-0"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={cn("shadow-lg transition-all duration-300", className)}>
+      {React.isValidElement(cardHeader) && React.cloneElement(cardHeader as React.ReactElement<any>, {
+        children: (
+          <>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                {(cardHeader as React.ReactElement).props.children}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleCollapse}
+                  className="h-6 w-6 p-0"
+                >
+                  {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleMinimize}
+                  className="h-6 w-6 p-0"
+                >
+                  <Minimize2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        )
+      })}
+      <div className={cn(
+        "transition-all duration-300 overflow-hidden",
+        isCollapsed ? "max-h-0" : "max-h-[1000px]"
+      )}>
+        {cardContent}
+      </div>
+    </Card>
+  );
+};
+>>>>>>> 1c0fdf2 (latest-jun182025)
 
 export default function TriderPage() {
   const { defaultMapCenter, defaultMapZoom, isLoading: settingsLoading } = useSettings();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const [triderProfile, setTriderProfile] = React.useState<TriderProfile>(selfTriderProfileInitial);
   const [selectedNewZone, setSelectedNewZone] = React.useState<string>('');
+  const [showQuickStats, setShowQuickStats] = React.useState(true);
+  const [mobileSheetOpen, setMobileSheetOpen] = React.useState(false);
 
   const [activeTriderView, setActiveTriderView] = React.useState<TriderActiveView>('dashboard');
   
@@ -389,12 +563,28 @@ export default function TriderPage() {
         transactions: [newTransaction, ...(prev.transactions || [])].slice(0,10),
         wallet: {
             ...prev.wallet,
+<<<<<<< HEAD
             currentBalance: (prev.wallet.currentBalance || 0) + earnings,
             totalEarnedAllTime: (prev.wallet.totalEarnedAllTime || 0) + earnings,
             todayTotalRides: (prev.wallet.todayTotalRides || 0) + 1,
             todayTotalFareCollected: (prev.wallet.todayTotalFareCollected || 0) + fare,
             todayNetEarnings: (prev.wallet.todayNetEarnings || 0) + earnings,
             recentRides: [{id: prev.activeRideRequest!.id, date: new Date(), pickupAddress: prev.activeRideRequest!.pickupAddress || 'N/A', dropoffAddress: prev.activeRideRequest!.dropoffAddress || 'N/A', fare, commissionDeducted: fare * 0.2, netEarnings: earnings}, ...prev.wallet.recentRides.slice(0,4)]
+||||||| parent of 1c0fdf2 (latest-jun182025)
+            currentBalance: prev.wallet.currentBalance + earnings,
+            totalEarnedAllTime: prev.wallet.totalEarnedAllTime + earnings,
+            todayTotalRides: prev.wallet.todayTotalRides + 1,
+            todayTotalFareCollected: prev.wallet.todayTotalFareCollected + fare,
+            todayNetEarnings: prev.wallet.todayNetEarnings + earnings,
+            recentRides: [{id: prev.activeRideRequest!.id, date: new Date(), pickupAddress: prev.activeRideRequest!.pickupAddress || 'N/A', dropoffAddress: prev.activeRideRequest!.dropoffAddress || 'N/A', fare, commissionDeducted: fare * 0.2, netEarnings: earnings}, ...prev.wallet.recentRides.slice(0,4)]
+=======
+            currentBalance: prev.wallet.currentBalance + earnings,
+            totalEarnedAllTime: prev.wallet.totalEarnedAllTime + earnings,
+            todayTotalRides: prev.wallet.todayTotalRides + 1,
+            todayTotalFareCollected: prev.wallet.todayTotalFareCollected + fare,
+            todayNetEarnings: prev.wallet.todayNetEarnings + earnings,
+            recentRides: [{id: triderState.activeRideRequest!.id, date: new Date(), pickupAddress: triderState.activeRideRequest!.pickupAddress || 'N/A', dropoffAddress: triderState.activeRideRequest!.dropoffAddress || 'N/A', fare, commissionDeducted: fare * 0.2, netEarnings: earnings}, ...prev.wallet.recentRides.slice(0,4)]
+>>>>>>> 1c0fdf2 (latest-jun182025)
         }
     }));
 
@@ -493,6 +683,7 @@ export default function TriderPage() {
     }
   }, [triderAppSettings.mapStyle]);
 
+<<<<<<< HEAD
   const renderDashboardView = () => (
     <>
       <header className="p-4 border-b shadow-sm flex justify-between items-center">
@@ -509,12 +700,157 @@ export default function TriderPage() {
             onCheckedChange={handleToggleOnline}
             disabled={isGeolocating || triderState.status === 'onlineBusyEnRouteToPickup' || triderState.status === 'onlineBusyEnRouteToDropoff'}
           />
+||||||| parent of 1c0fdf2 (latest-jun182025)
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      <header className="p-4 border-b shadow-sm flex justify-between items-center">
+        <h1 className="text-2xl font-semibold text-primary flex items-center">
+          <Bike className="mr-2" /> {triderProfile.todaZoneName} Trider
+        </h1>
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="online-toggle" className={triderState.status !== 'offline' ? "text-accent" : "text-muted-foreground"}>
+            {isGeolocating ? "Geolocating..." : (triderState.status !== 'offline' ? 'Online' : 'Offline')}
+          </Label>
+          <Switch
+            id="online-toggle"
+            checked={triderState.status !== 'offline'}
+            onCheckedChange={handleToggleOnline}
+            disabled={isGeolocating || triderState.status === 'onlineBusyEnRouteToPickup' || triderState.status === 'onlineBusyEnRouteToDropoff'}
+          />
+=======
+  // Ride content component to share between mobile sheet and desktop card
+  const RideContent = () => (
+    <>
+      {triderState.activeRideRequest ? (
+        <div className="space-y-2">
+          <p><strong>Passenger:</strong> {triderState.activeRideRequest.passengerName}</p>
+          <p className="text-sm"><strong>From:</strong> {triderState.activeRideRequest.pickupAddress}</p>
+          <p className="text-sm"><strong>To:</strong> {triderState.activeRideRequest.dropoffAddress}</p>
+          <p className="text-sm"><strong>Est. Fare:</strong> ₱{triderState.activeRideRequest.fare?.toFixed(2)}</p>
+          {triderState.status === 'onlineBusyEnRouteToPickup' && 
+            <Button 
+                onClick={handlePickedUp} 
+                className="w-full mt-2" 
+                disabled={!(triderState.currentPath && triderState.currentPathIndex >= triderState.currentPath.coordinates.length - 1 || calculateDistance(triderState.currentLocation, triderState.activeRideRequest.pickupLocation) < 0.05)}
+            >Mark as Picked Up</Button>}
+          {triderState.status === 'onlineBusyEnRouteToDropoff' && 
+            <Button 
+                onClick={handleCompleteRide} 
+                className="w-full mt-2 bg-accent hover:bg-accent/90 text-accent-foreground" 
+                disabled={!(triderState.currentPath && triderState.currentPathIndex >= triderState.currentPath.coordinates.length - 1 || calculateDistance(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation) < 0.05)}
+            >Complete Ride</Button>}
         </div>
+      ) : triderState.availableRideRequests.filter(req => req.pickupTodaZoneId === triderProfile.todaZoneId).length > 0 ? (
+         <ScrollArea className="h-[200px] pr-3">
+            <ul className="space-y-3">
+            {triderState.availableRideRequests.filter(req => req.pickupTodaZoneId === triderProfile.todaZoneId).map(req => (
+                <li key={req.id} className="p-3 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="font-semibold text-sm">{req.passengerName}</p>
+                            <p className="text-xs text-muted-foreground">To: {req.dropoffAddress}</p>
+                            <p className="text-xs text-muted-foreground">Fare: ~₱{req.fare?.toFixed(2)}</p>
+                        </div>
+                        <Button size="sm" onClick={() => handleAcceptRide(req)} disabled={triderState.status !== 'onlineAvailable'}>
+                            Accept
+                        </Button>
+                    </div>
+                     <p className="text-xs text-muted-foreground mt-1">
+                        From: {req.pickupAddress} ({appTodaZones.find(z=>z.id === req.pickupTodaZoneId)?.name})
+                    </p>
+                     <p className="text-xs text-muted-foreground mt-1">
+                        {formatDistanceToNow(req.requestedAt, { addSuffix: true })}
+                    </p>
+                </li>
+            ))}
+            </ul>
+         </ScrollArea>
+      ) : (
+        <p className="text-muted-foreground text-center py-4">
+          {triderState.status === 'onlineAvailable' ? `No ride requests in ${triderProfile.todaZoneName} currently. Waiting...` : "Go online to see ride requests."}
+        </p>
+      )}
+    </>
+  );
+
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      <header className="p-4 border-b shadow-sm">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-primary flex items-center">
+            <Bike className="mr-2" /> {triderProfile.todaZoneName} Trider
+          </h1>
+          <div className="flex items-center gap-4">
+            {/* Quick Stats Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowQuickStats(!showQuickStats)}
+              className="hidden md:flex items-center gap-2"
+            >
+              <CircleDollarSign className="h-4 w-4" />
+              <span className="text-sm">Quick Stats</span>
+            </Button>
+            
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="online-toggle" className={triderState.status !== 'offline' ? "text-accent" : "text-muted-foreground"}>
+                {isGeolocating ? "Geolocating..." : (triderState.status !== 'offline' ? 'Online' : 'Offline')}
+              </Label>
+              <Switch
+                id="online-toggle"
+                checked={triderState.status !== 'offline'}
+                onCheckedChange={handleToggleOnline}
+                disabled={isGeolocating || triderState.status === 'onlineBusyEnRouteToPickup' || triderState.status === 'onlineBusyEnRouteToDropoff'}
+              />
+            </div>
+          </div>
+>>>>>>> 1c0fdf2 (latest-jun182025)
+        </div>
+
+        {/* Floating Quick Stats Panel */}
+        {showQuickStats && (
+          <div className="absolute top-20 right-4 z-20 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-4 border transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-sm">Quick Stats</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowQuickStats(false)}
+                className="h-6 w-6 p-0"
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Balance:</span>
+                <span className="font-medium">₱{triderProfile.wallet.currentBalance.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Today's Rides:</span>
+                <span className="font-medium">{triderProfile.wallet.todayTotalRides}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Today's Earnings:</span>
+                <span className="font-medium text-green-600">₱{triderProfile.wallet.todayNetEarnings.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 md:p-4 overflow-hidden">
         <div className="md:col-span-1 flex flex-col gap-4 p-4 md:p-0 h-full">
-          <Card className="shadow-lg flex-shrink-0">
+          <CollapsibleCard 
+            id="ride-requests" 
+            className="flex-shrink-0"
+            title={triderState.activeRideRequest ? "Active Ride" : "Available Requests"}
+            badge={
+              <Badge variant={triderState.status === 'offline' ? "destructive" : triderState.status === 'onlineAvailable' ? "default" : "secondary"} className="capitalize text-xs">
+                {triderState.status.replace(/([A-Z])/g, ' $1').trim().toLowerCase()}
+              </Badge>
+            }
+          >
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>{triderState.activeRideRequest ? "Active Ride" : "Available Requests"}</span>
@@ -524,59 +860,15 @@ export default function TriderPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="min-h-[150px]">
-              {triderState.activeRideRequest ? (
-                <div className="space-y-2">
-                  <p><strong>Passenger:</strong> {triderState.activeRideRequest.passengerName}</p>
-                  <p className="text-sm"><strong>From:</strong> {triderState.activeRideRequest.pickupAddress}</p>
-                  <p className="text-sm"><strong>To:</strong> {triderState.activeRideRequest.dropoffAddress}</p>
-                  <p className="text-sm"><strong>Est. Fare:</strong> ₱{triderState.activeRideRequest.fare?.toFixed(2)}</p>
-                  {triderState.status === 'onlineBusyEnRouteToPickup' && 
-                    <Button 
-                        onClick={handlePickedUp} 
-                        className="w-full mt-2" 
-                        disabled={!(triderState.currentPath && triderState.currentPathIndex >= triderState.currentPath.coordinates.length - 1 || calculateDistance(triderState.currentLocation, triderState.activeRideRequest.pickupLocation) < 0.05)}
-                    >Mark as Picked Up</Button>}
-                  {triderState.status === 'onlineBusyEnRouteToDropoff' && 
-                    <Button 
-                        onClick={handleCompleteRide} 
-                        className="w-full mt-2 bg-accent hover:bg-accent/90 text-accent-foreground" 
-                        disabled={!(triderState.currentPath && triderState.currentPathIndex >= triderState.currentPath.coordinates.length - 1 || calculateDistance(triderState.currentLocation, triderState.activeRideRequest.dropoffLocation) < 0.05)}
-                    >Complete Ride</Button>}
-                </div>
-              ) : triderState.availableRideRequests.filter(req => req.pickupTodaZoneId === triderProfile.todaZoneId).length > 0 ? (
-                 <ScrollArea className="h-[200px] pr-3">
-                    <ul className="space-y-3">
-                    {triderState.availableRideRequests.filter(req => req.pickupTodaZoneId === triderProfile.todaZoneId).map(req => (
-                        <li key={req.id} className="p-3 rounded-lg border bg-card hover:border-primary/50 transition-colors">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="font-semibold text-sm">{req.passengerName}</p>
-                                    <p className="text-xs text-muted-foreground">To: {req.dropoffAddress}</p>
-                                    <p className="text-xs text-muted-foreground">Fare: ~₱{req.fare?.toFixed(2)}</p>
-                                </div>
-                                <Button size="sm" onClick={() => handleAcceptRide(req)} disabled={triderState.status !== 'onlineAvailable'}>
-                                    Accept
-                                </Button>
-                            </div>
-                             <p className="text-xs text-muted-foreground mt-1">
-                                From: {req.pickupAddress} ({appTodaZones.find(z=>z.id === req.pickupTodaZoneId)?.name})
-                            </p>
-                             <p className="text-xs text-muted-foreground mt-1">
-                                {formatDistanceToNow(req.requestedAt, { addSuffix: true })}
-                            </p>
-                        </li>
-                    ))}
-                    </ul>
-                 </ScrollArea>
-              ) : (
-                <p className="text-muted-foreground text-center py-4">
-                  {triderState.status === 'onlineAvailable' ? `No ride requests in ${triderProfile.todaZoneName} currently. Waiting...` : "Go online to see ride requests."}
-                </p>
-              )}
+              <RideContent />
             </CardContent>
-          </Card>
+          </CollapsibleCard>
           
-          <Card className="shadow-lg mt-auto">
+          <CollapsibleCard 
+            id="trider-profile" 
+            className="mt-auto"
+            title={triderProfile.name}
+          >
              <CardHeader>
                 <CardTitle className="text-md flex items-center"><UserCircle className="mr-2"/>{triderProfile.name} (#{triderProfile.bodyNumber})</CardTitle>
                 <CardDescription>Current TODA: {triderProfile.todaZoneName} - {triderProfile.vehicleType}</CardDescription>
@@ -617,10 +909,37 @@ export default function TriderPage() {
                   )}
                 </div>
              </CardContent>
-          </Card>
+          </CollapsibleCard>
         </div>
 
-        <div className="md:col-span-2 h-[300px] md:h-full min-h-[300px] rounded-lg overflow-hidden shadow-lg border">
+        <div className="md:col-span-2 h-[300px] md:h-full min-h-[300px] rounded-lg overflow-hidden shadow-lg border relative">
+          {/* Floating Map Controls */}
+          <div className="absolute top-4 left-4 z-10 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg p-2 border">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">
+                <MapPin className="h-3 w-3 mr-1" />
+                Map View
+              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (mapRefTrider.current) {
+                    mapRefTrider.current.flyTo({
+                      center: [triderState.currentLocation.longitude, triderState.currentLocation.latitude],
+                      zoom: 16,
+                      duration: 1000
+                    });
+                  }
+                }}
+                className="h-7 px-2"
+              >
+                <UserCircle className="h-4 w-4 mr-1" />
+                Center
+              </Button>
+            </div>
+          </div>
+
           <Map
             {...viewState}
             ref={mapRefTrider}

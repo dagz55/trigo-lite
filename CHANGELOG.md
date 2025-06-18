@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+<<<<<<< HEAD
 - **🍎 Apple-like Payment Method Selector with Autosave Functionality:**
     - **Apple-inspired Design:** Beautiful dropdown with rounded corners (rounded-2xl), smooth transitions, and backdrop blur effects.
     - **Intelligent Autosave System:** Automatic saving of payment method selections within 500ms using debounced save logic.
@@ -45,6 +46,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         - Visual distinction for default payment method (purple border and background).
         - "Add Payment Method" functionality with placeholder for future expansion.
         - Toast notifications for payment method updates and user feedback.
+||||||| parent of 1c0fdf2 (latest-jun182025)
+=======
+- **Passenger-Trider Chat Feature (2024-01-19):**
+    - **Real-time Chat Session:**
+        - Created `RideChatSheet` component for in-ride communication
+        - Two-way messaging between passenger and trider during active rides
+        - Auto-scrolling chat interface with timestamp display
+        - Different message bubble styles for passenger vs trider messages
+        - Automatic greeting message when trider is assigned
+    - **Premium Voice Call Feature:**
+        - Voice call button integrated into chat interface
+        - Call functionality restricted to Premium account holders
+        - Non-premium users see upgrade prompt with gem icon
+        - Toast notifications for call initiation and connection status
+        - Premium badge display for premium users in chat
+    - **Intelligent Auto-Responses:**
+        - Simulated trider responses based on message context
+        - Contextual replies for location queries, ETA questions, traffic concerns
+        - Natural conversation flow with 2-4 second response delay
+        - Support for greetings and thanks in multiple languages
+    - **Chat Integration:**
+        - Chat button added to trider card during active rides
+        - Chat state management with message history
+        - Chat history automatically cleared between rides
+        - Seamless integration with existing ride flow
+    - **UI/UX Enhancements:**
+        - Clean, modern chat interface matching app design
+        - Responsive layout for mobile and desktop
+        - Smooth animations and transitions
+        - Non-intrusive design with sheet component
+- **Advanced UI Components (2024-01-18):**
+    - **Collapsible/Minimizable Interface:**
+        - Created `CollapsibleCard` component for flexible UI panels
+        - All cards can be collapsed to show just headers or minimized to single line
+        - Smooth transition animations for all state changes
+        - Support for custom titles and badges
+    - **Persistent UI State Management:**
+        - UI preferences saved to localStorage
+        - Collapse/minimize states persist across page reloads
+        - Each card has unique ID for state management
+    - **Trider Dashboard Enhancements:**
+        - Collapsible ride request panel with status badge
+        - Minimizable profile card with wallet information
+        - Floating quick stats panel with balance, rides, and earnings
+        - Floating map controls with center button
+        - Mobile-ready with Sheet component integration
+    - **UI/UX Improvements:**
+        - Non-intrusive floating panels
+        - Backdrop blur effects for better readability
+        - Responsive design optimizations
+        - Clean, professional interface with reduced clutter
+>>>>>>> 1c0fdf2 (latest-jun182025)
 - **Route Restructuring:**
     - Dispatcher related pages (Dashboard, Triders, Settings) moved under `/dispatcher` route.
     - `/passenger` and `/trider` routes remain top-level for role simulation.
@@ -110,9 +163,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Homepage (`/`) now uses a dynamic, glassmorphic design with a central triangular TriGo logo (auto-rickshaw SVG) that flips and has an electric aura on hover. Links to passenger, trider, dispatcher, and admin roles.
 
 ### Changed
+<<<<<<< HEAD
 - **Enhanced User Experience:** All passenger landing page buttons now provide meaningful interactions instead of placeholder functionality.
 - **Improved Navigation:** Bottom navigation bar now links to actual functional pages instead of placeholder routes.
 - **Payment System Integration:** Profile page now includes a complete payment management system with real payment method options.
+||||||| parent of 1c0fdf2 (latest-jun182025)
+=======
+- **Documentation Updates (2024-01-18):**
+    - Completely revamped README.md with professional formatting
+    - Added emoji indicators for better visual navigation
+    - Restructured content with clear sections and subsections
+    - Added comprehensive feature descriptions
+    - Updated tech stack with latest versions
+    - Improved installation and setup instructions
+    - Added configuration guides for all integrations
+    - Created proper script documentation table
+    - Added contributing guidelines
+    - Professional acknowledgments section
+>>>>>>> 1c0fdf2 (latest-jun182025)
 - Dispatch Dashboard main page is now `/dispatcher`.
 - Trider Management Dashboard is now `/dispatcher/triders`.
 - Application Settings page is now `/dispatcher/settings`.

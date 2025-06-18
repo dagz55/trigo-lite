@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+<<<<<<< HEAD
   experimental: {
   },
   allowedDevOrigins: [
@@ -35,6 +36,17 @@ const nextConfig: NextConfig = {
  'http://192.168.0.245:9002',
  'http://192.168.0.245:3000'
  ],
+||||||| parent of 1c0fdf2 (latest-jun182025)
+  experimental: {
+ allowedDevOrigins: [
+ 'https://*-firebase-studio-*.cloudworkstations.dev',
+ 'https://*-firebase-studio-*.web.app',
+ 'https://9000-firebase-studio-1747135188719.cluster-bg6uurscprhn6qxr6xwtrhvkf6.cloudworkstations.dev'
+ ],
+  },
+=======
+  experimental: {},
+>>>>>>> 1c0fdf2 (latest-jun182025)
   // Adding a comment to ensure the file is seen as modified
   // Last attempt to force a clean rebuild for chunk loading issues.
 };

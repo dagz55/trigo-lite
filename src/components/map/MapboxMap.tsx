@@ -26,7 +26,8 @@ interface MapboxMapProps {
   routeGeoJson: GeoJSON.FeatureCollection | null;
   heatmapData: GeoJSON.FeatureCollection | null;
   todaZones: TodaZone[];
-  showHeatmap: boolean; 
+  showHeatmap: boolean;
+  restrictedTodaZone?: TodaZone;
 }
 
 const rideRequestStatusColors: Record<RideRequest['status'], string> = {
@@ -35,6 +36,7 @@ const rideRequestStatusColors: Record<RideRequest['status'], string> = {
   'in-progress': 'bg-purple-500 text-white',
   completed: 'bg-green-600 text-white',
   cancelled: 'bg-gray-500 text-white',
+<<<<<<< HEAD
   searching: 'bg-orange-500 text-white',
 };
 
@@ -54,6 +56,10 @@ const getTriderColor = (triderId: string, index: number): string => {
     hash = triderId.charCodeAt(i) + ((hash << 5) - hash);
   }
   return purpleShades[Math.abs(hash) % purpleShades.length];
+||||||| parent of 1c0fdf2 (latest-jun182025)
+=======
+  searching: 'bg-orange-500 text-white', // Added searching status
+>>>>>>> 1c0fdf2 (latest-jun182025)
 };
 
 
@@ -69,26 +75,46 @@ export function MapboxMap({
   heatmapData,
   todaZones,
   showHeatmap,
+  restrictedTodaZone,
 }: MapboxMapProps) {
+  const mapRef = React.useRef<MapRef>(null); // Keep this declaration
+
   const [viewState, setViewState] = React.useState<Partial<ViewState>>({
     longitude: initialViewState?.longitude ?? FALLBACK_LONGITUDE,
     latitude: initialViewState?.latitude ?? FALLBACK_LATITUDE,
     zoom: initialViewState?.zoom ?? FALLBACK_ZOOM,
-    pitch: 45, 
-    bearing: 0, 
-    ...initialViewState, 
+    pitch: 45,
+    bearing: 0,
+    ...initialViewState,
   });
-  
+
   React.useEffect(() => {
-    if (initialViewState) {
+    if (restrictedTodaZone && mapRef.current) {
+      const { center, radiusKm } = restrictedTodaZone;
+      // Calculate approximate bounds from center and radius
+      // 1 degree of latitude is approx 111 km
+      // 1 degree of longitude is approx 111 * cos(latitude) km
+      const latDelta = radiusKm / 111;
+      const lonDelta = radiusKm / (111 * Math.cos(center.latitude * Math.PI / 180));
+
+      const bounds: [[number, number], [number, number]] = [
+        [center.longitude - lonDelta, center.latitude - latDelta], // Southwest
+        [center.longitude + lonDelta, center.latitude + latDelta]  // Northeast
+      ];
+
+      mapRef.current.fitBounds(bounds, {
+        padding: 50, // Add some padding around the bounds
+        duration: 1000,
+      });
+    } else if (initialViewState) {
       setViewState(prev => ({
-        ...prev, 
+        ...prev,
         longitude: initialViewState.longitude ?? prev.longitude,
         latitude: initialViewState.latitude ?? prev.latitude,
         zoom: initialViewState.zoom ?? prev.zoom,
       }));
     }
-  }, [initialViewState]);
+  }, [initialViewState, restrictedTodaZone]);
 
 
   const [popupInfo, setPopupInfo] = React.useState<{
@@ -98,7 +124,7 @@ export function MapboxMap({
     details: React.ReactNode;
   } | null>(null);
 
-  const mapRef = React.useRef<MapRef>(null);
+  // Removed duplicate mapRef declaration
   
   const [resolvedPrimaryColor, setResolvedPrimaryColor] = React.useState<string>('hsl(90, 90%, 50%)'); // Default to lime green
   const [resolvedForegroundColor, setResolvedForegroundColor] = React.useState<string>('hsl(210, 20%, 88%)'); // Default to light gray
@@ -172,16 +198,18 @@ export function MapboxMap({
   };
 
   const todaZoneFeatures: GeoJSON.FeatureCollection<GeoJSON.Polygon> = React.useMemo(() => {
+    const zonesToDisplay = restrictedTodaZone ? [restrictedTodaZone] : todaZones;
     return {
       type: 'FeatureCollection',
-      features: todaZones.map(zone => createGeoJSONCircle([zone.center.longitude, zone.center.latitude], zone.radiusKm))
+      features: zonesToDisplay.map(zone => createGeoJSONCircle([zone.center.longitude, zone.center.latitude], zone.radiusKm))
     };
-  }, [todaZones]);
+  }, [todaZones, restrictedTodaZone]);
 
   const todaZoneLabelFeatures: GeoJSON.FeatureCollection<GeoJSON.Point> = React.useMemo(() => {
+    const zonesToDisplay = restrictedTodaZone ? [restrictedTodaZone] : todaZones;
     return {
       type: 'FeatureCollection',
-      features: todaZones.map(zone => ({
+      features: zonesToDisplay.map(zone => ({
         type: 'Feature',
         geometry: {
           type: 'Point',
@@ -192,7 +220,7 @@ export function MapboxMap({
         }
       }))
     };
-  }, [todaZones]);
+  }, [todaZones, restrictedTodaZone]);
 
 
   const routeLayer: any = React.useMemo(() => ({
@@ -272,6 +300,17 @@ export function MapboxMap({
     );
   }
 
+  const maxBounds: [[number, number], [number, number]] | undefined = React.useMemo(() => {
+    if (!restrictedTodaZone) return undefined;
+    const { center, radiusKm } = restrictedTodaZone;
+    const latDelta = radiusKm / 111;
+    const lonDelta = radiusKm / (111 * Math.cos(center.latitude * Math.PI / 180));
+    return [
+      [center.longitude - lonDelta, center.latitude - latDelta],
+      [center.longitude + lonDelta, center.latitude + latDelta]
+    ];
+  }, [restrictedTodaZone]);
+
   return (
     <Map
       {...viewState}
@@ -281,6 +320,12 @@ export function MapboxMap({
       mapStyle="mapbox://styles/mapbox/streets-v12"
       mapboxAccessToken={MAPBOX_TOKEN}
       attributionControl={true}
+      maxBounds={maxBounds}
+      dragPan={restrictedTodaZone ? false : true} // Disable drag pan if restricted
+      dragRotate={restrictedTodaZone ? false : true} // Disable drag rotate if restricted
+      scrollZoom={restrictedTodaZone ? false : true} // Disable scroll zoom if restricted
+      touchZoomRotate={restrictedTodaZone ? false : true} // Disable touch zoom/rotate if restricted
+      doubleClickZoom={restrictedTodaZone ? false : true} // Disable double click zoom if restricted
     >
       <FullscreenControl position="top-right" />
       <NavigationControl position="top-right" />
