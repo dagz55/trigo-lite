@@ -36,9 +36,14 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.6",
     "@radix-ui/react-tooltip": "^1.1.8",
+<<<<<<< HEAD
+    "@supabase/supabase-js": "^2.50.0",
+||||||| parent of 1c0fdf2 (latest-jun182025)
+=======
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.0",
+>>>>>>> 1c0fdf2 (latest-jun182025)
     "@tanstack-query-firebase/react": "^1.0.5",
     "@tanstack/react-query": "^5.66.0",
     "class-variance-authority": "^0.7.1",
