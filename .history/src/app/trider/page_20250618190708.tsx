@@ -56,7 +56,7 @@ const selfTriderProfileInitial: TriderProfile = {
   ],
   appSettings: {
     notifications: { newRequests: true, chatMessages: true },
-    mapStyle: 'standard', // Corrected from 'streets' to 'standard'
+    mapStyle: 'streets',
   },
   subscriptionStatus: 'basic',
 };
@@ -203,7 +203,7 @@ export default function TriderPage() {
   const [activeTriderView, setActiveTriderView] = React.useState<TriderActiveView>('dashboard');
 
   const [triderAppSettings, setTriderAppSettings] = React.useState<TriderAppSettings>(
-    triderProfile.appSettings || { notifications: { newRequests: true, chatMessages: true }, mapStyle: 'standard' }
+    triderProfile.appSettings || { notifications: { newRequests: true, chatMessages: true }, mapStyle: 'streets' }
   );
   const [triderWalletBalance, setTriderWalletBalance] = React.useState(triderProfile.walletBalance || 250.75);
   const [triderTransactions, setTriderTransactions] = React.useState<TriderWalletTransaction[]>(
@@ -619,7 +619,6 @@ export default function TriderPage() {
     switch (triderAppSettings.mapStyle) {
       case 'satellite': return 'mapbox://styles/mapbox/satellite-streets-v12';
       case 'dark': return 'mapbox://styles/mapbox/dark-v11';
-      case 'standard': return 'mapbox://styles/mapbox/streets-v12'; // Added 'standard' case
       default: return 'mapbox://styles/mapbox/streets-v12';
     }
   }, [triderAppSettings.mapStyle]);
@@ -948,143 +947,3 @@ export default function TriderPage() {
     <ScrollArea className="h-full p-4 md:p-6">
       <Card className="mb-6 shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center"><SettingsIcon className="mr-2 text-primary" /> Trider Settings</CardTitle>
-          <CardDescription>Customize your app preferences.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <Label className="text-base">Notifications</Label>
-            <div className="space-y-2 mt-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="notif-new-requests">New Ride Requests</Label>
-                <Switch
-                  id="notif-new-requests"
-                  checked={triderAppSettings.notifications.newRequests}
-                  onCheckedChange={checked => setTriderAppSettings(s => ({...s, notifications: {...s.notifications, newRequests: checked}}))}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="notif-chat">Chat Messages</Label>
-                <Switch
-                  id="notif-chat"
-                  checked={triderAppSettings.notifications.chatMessages}
-                  onCheckedChange={checked => setTriderAppSettings(s => ({...s, notifications: {...s.notifications, chatMessages: checked}}))}
-                />
-              </div>
-            </div>
-          </div>
-          <Separator />
-          <div>
-            <Label htmlFor="map-style-select" className="text-base">Map Style</Label>
-            <Select
-              value={triderAppSettings.mapStyle}
-              onValueChange={(value: PassengerMapStyle) => setTriderAppSettings(s => ({...s, mapStyle: value}))}
-            >
-              <SelectTrigger id="map-style-select" className="mt-2">
-                <SelectValue placeholder="Select map style" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="streets">Streets</SelectItem>
-                <SelectItem value="satellite">Satellite</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={handleSaveTriderSettings} className="w-full">Save Settings</Button>
-        </CardFooter>
-      </Card>
-    </ScrollArea>
-  );
-
-  const renderPremiumView = () => (
-     <ScrollArea className="h-full p-4 md:p-6">
-      <Card className="shadow-lg">
-        <CardHeader className="items-center text-center">
-          <Star className="h-12 w-12 text-yellow-400 mb-2" />
-          <CardTitle className="text-2xl">TriGo Premium</CardTitle>
-          <CardDescription>
-            {triderSubscriptionStatus === 'premium'
-              ? "You are a Premium Trider!"
-              : "Unlock exclusive benefits with Premium."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-center">
-          {triderSubscriptionStatus === 'basic' && (
-            <Button
-              onClick={() => {
-                setTriderSubscriptionStatus('premium');
-                handleStatusToast("Welcome to Premium! (Mock)", "All premium features are now active.");
-              }}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
-              size="lg"
-            >
-              Upgrade to Premium Now (Mock)
-            </Button>
-          )}
-          <ul className="list-disc list-inside text-left space-y-1 text-sm text-muted-foreground">
-            <li>Priority in ride assignments</li>
-            <li>Lower commission rates (Coming Soon)</li>
-            <li>Access to exclusive TODA zones (Coming Soon)</li>
-            <li>Advanced analytics (Coming Soon)</li>
-            <li>24/7 Priority Support (Coming Soon)</li>
-          </ul>
-           {triderSubscriptionStatus === 'premium' && (
-            <Button
-              onClick={() => {
-                 setTriderSubscriptionStatus('basic');
-                 handleStatusToast("Subscription Changed (Mock)", "You are now on the Basic plan.");
-              }}
-              variant="outline"
-              className="w-full mt-4"
-            >
-              Downgrade to Basic (Mock)
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-    </ScrollArea>
-  );
-
-  const navItems = [
-    { view: 'dashboard' as TriderActiveView, label: 'Dashboard', icon: LayoutDashboard },
-    { view: 'wallet' as TriderActiveView, label: 'Wallet', icon: WalletIcon },
-    { view: 'settings' as TriderActiveView, label: 'Settings', icon: SettingsIcon },
-    { view: 'premium' as TriderActiveView, label: 'Premium', icon: Star },
-  ];
-
-  if (settingsLoading || !MAPBOX_TOKEN) {
-    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary mr-2" /><p>Loading Trider Dashboard...</p></div>;
-  }
-
-  return (
-    <div className="flex flex-col h-screen bg-background">
-      <div className="flex-grow overflow-y-auto">
-        {activeTriderView === 'dashboard' && renderDashboardView()}
-        {activeTriderView === 'wallet' && renderWalletView()}
-        {activeTriderView === 'settings' && renderSettingsView()}
-        {activeTriderView === 'premium' && renderPremiumView()}
-      </div>
-
-      <nav className="border-t bg-card shadow-md">
-        <div className="max-w-md mx-auto grid grid-cols-4 gap-px">
-          {navItems.map(item => (
-            <Button
-              key={item.view}
-              variant="ghost"
-              onClick={() => setActiveTriderView(item.view)}
-              className={cn(
-                "flex flex-col items-center justify-center h-16 rounded-none text-xs hover:bg-accent hover:text-accent-foreground transition-colors",
-                activeTriderView === item.view ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground"
-              )}
-            >
-              <item.icon size={20} className="mb-0.5" />
-              {item.label}
-            </Button>
-          ))}
-        </div>
-      </nav>
-    </div>
-  );
-}

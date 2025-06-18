@@ -36,30 +36,7 @@ const rideRequestStatusColors: Record<RideRequest['status'], string> = {
   'in-progress': 'bg-purple-500 text-white',
   completed: 'bg-green-600 text-white',
   cancelled: 'bg-gray-500 text-white',
-<<<<<<< HEAD
-  searching: 'bg-orange-500 text-white',
-};
-
-const purpleShades: string[] = [
-  'hsl(262, 78%, 59%)', // Base purple (from passenger accent)
-  'hsl(262, 70%, 50%)', // Darker
-  'hsl(262, 85%, 68%)', // Lighter
-  'hsl(270, 75%, 60%)', // Slight hue shift 1
-  'hsl(255, 70%, 65%)', // Slight hue shift 2
-  'hsl(280, 65%, 55%)', // Another variation
-];
-
-const getTriderColor = (triderId: string, index: number): string => {
-  // Simple hash function for consistent color based on ID, or cycle if index is reliable
-  let hash = 0;
-  for (let i = 0; i < triderId.length; i++) {
-    hash = triderId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return purpleShades[Math.abs(hash) % purpleShades.length];
-||||||| parent of 1c0fdf2 (latest-jun182025)
-=======
   searching: 'bg-orange-500 text-white', // Added searching status
->>>>>>> 1c0fdf2 (latest-jun182025)
 };
 
 

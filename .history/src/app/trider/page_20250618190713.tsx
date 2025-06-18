@@ -56,7 +56,7 @@ const selfTriderProfileInitial: TriderProfile = {
   ],
   appSettings: {
     notifications: { newRequests: true, chatMessages: true },
-    mapStyle: 'standard', // Corrected from 'streets' to 'standard'
+    mapStyle: 'streets',
   },
   subscriptionStatus: 'basic',
 };
@@ -203,7 +203,7 @@ export default function TriderPage() {
   const [activeTriderView, setActiveTriderView] = React.useState<TriderActiveView>('dashboard');
 
   const [triderAppSettings, setTriderAppSettings] = React.useState<TriderAppSettings>(
-    triderProfile.appSettings || { notifications: { newRequests: true, chatMessages: true }, mapStyle: 'standard' }
+    triderProfile.appSettings || { notifications: { newRequests: true, chatMessages: true }, mapStyle: 'streets' }
   );
   const [triderWalletBalance, setTriderWalletBalance] = React.useState(triderProfile.walletBalance || 250.75);
   const [triderTransactions, setTriderTransactions] = React.useState<TriderWalletTransaction[]>(
@@ -619,7 +619,6 @@ export default function TriderPage() {
     switch (triderAppSettings.mapStyle) {
       case 'satellite': return 'mapbox://styles/mapbox/satellite-streets-v12';
       case 'dark': return 'mapbox://styles/mapbox/dark-v11';
-      case 'standard': return 'mapbox://styles/mapbox/streets-v12'; // Added 'standard' case
       default: return 'mapbox://styles/mapbox/streets-v12';
     }
   }, [triderAppSettings.mapStyle]);
@@ -1068,23 +1067,3 @@ export default function TriderPage() {
       </div>
 
       <nav className="border-t bg-card shadow-md">
-        <div className="max-w-md mx-auto grid grid-cols-4 gap-px">
-          {navItems.map(item => (
-            <Button
-              key={item.view}
-              variant="ghost"
-              onClick={() => setActiveTriderView(item.view)}
-              className={cn(
-                "flex flex-col items-center justify-center h-16 rounded-none text-xs hover:bg-accent hover:text-accent-foreground transition-colors",
-                activeTriderView === item.view ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground"
-              )}
-            >
-              <item.icon size={20} className="mb-0.5" />
-              {item.label}
-            </Button>
-          ))}
-        </div>
-      </nav>
-    </div>
-  );
-}

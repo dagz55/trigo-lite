@@ -1087,4 +1087,3 @@ export default function TriderPage() {
       </nav>
     </div>
   );
-}

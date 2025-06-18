@@ -619,7 +619,6 @@ export default function TriderPage() {
     switch (triderAppSettings.mapStyle) {
       case 'satellite': return 'mapbox://styles/mapbox/satellite-streets-v12';
       case 'dark': return 'mapbox://styles/mapbox/dark-v11';
-      case 'standard': return 'mapbox://styles/mapbox/streets-v12'; // Added 'standard' case
       default: return 'mapbox://styles/mapbox/streets-v12';
     }
   }, [triderAppSettings.mapStyle]);
